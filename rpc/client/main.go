@@ -18,7 +18,7 @@ func NewClient(port int) *Client {
 	var opts []grpc.DialOption
 	opts = append(opts, grpc.WithTransportCredentials(insecure.NewCredentials()))
 
-	conn, _ := grpc.Dial(addr, opts...)
+	conn, _ := grpc.NewClient(addr, opts...)
 	client := pb.NewPalaceClient(conn)
 
 	return &Client{client}

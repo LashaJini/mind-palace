@@ -6,7 +6,7 @@ SOURCE_DIR=.
 
 all: build
 
-build: deps
+build: deps rpc
 	@echo "Building the binary..."
 	@go mod tidy
 	@go build -o $(BUILD_OUT_DIR)/$(BINARY_NAME) $(SOURCE_DIR)
