@@ -1,7 +1,7 @@
 package main
 
-import "fmt"
+import cli "github.com/lashajini/mind-palace/cli/cmd"
 
 func main() {
-	fmt.Println("hello")
+	cli.Execute()
 }
