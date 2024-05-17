@@ -1,0 +1,15 @@
+syntax = "proto3";
+
+option go_package = "github.com/lashajini/mind-palace/proto";
+
+service Palace {
+  rpc Add(Memory) returns (Status) {}
+}
+
+message Status { 
+  int32 code = 1;
+}
+
+message Memory {
+  string file = 1;
+}
