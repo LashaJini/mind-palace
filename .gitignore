@@ -4,3 +4,5 @@ gen/
 __pycache__/
 
 .env
+volumes/
+embedEtcd.yaml
