@@ -35,13 +35,13 @@ func User(cmd *cobra.Command, args []string) {
 	switchUser, _ := cmd.Flags().GetString("switch")
 
 	if newUser == "" && switchUser == "" {
-		fmt.Println("Error: Either --newUser or --switchUser must be provided")
+		fmt.Println("Error: Either --new or --switch must be provided")
 		cmd.Usage()
 		os.Exit(1)
 	}
 
 	if newUser != "" && switchUser != "" {
-		fmt.Println("Error: Only one of --newUser or --switchUser can be provided")
+		fmt.Println("Error: Only one of --new or --switch can be provided")
 		cmd.Usage()
 		os.Exit(1)
 	}
