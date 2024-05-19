@@ -4,10 +4,8 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
-	"path"
 
 	"github.com/lashajini/mind-palace/config"
-	"github.com/lashajini/mind-palace/constants"
 	"github.com/spf13/cobra"
 )
 
@@ -49,14 +47,14 @@ func User(cmd *cobra.Command, args []string) {
 	if newUser != "" {
 		CURRENT_USER = newUser
 
-		createMindPalace(newUser)
-		return
-	}
+		if err := createMindPalace(newUser); err != nil {
+			fmt.Println(err)
+			os.Exit(1)
+		}
+	} else if switchUser != "" {
+		mindPalaceUserPath := config.MindPalaceUserPath(switchUser)
 
-	if switchUser != "" {
-		userMindPalaceRoot := config.UserMindPalaceRoot(switchUser)
-
-		exists, err := dirExists(userMindPalaceRoot)
+		exists, err := dirExists(mindPalaceUserPath)
 		if err != nil {
 			fmt.Println(err)
 			os.Exit(1)
@@ -71,50 +69,48 @@ func User(cmd *cobra.Command, args []string) {
 		CURRENT_USER = switchUser
 	}
 
+	config.UpdateMindPalaceInfo(config.MindPalaceInfo{CurrentUser: CURRENT_USER})
 	user(args...)
 }
 
 func user(args ...string) {}
 
-func createMindPalace(user string) {
-	userMindPalaceRoot := config.UserMindPalaceRoot(user)
+func createMindPalace(user string) error {
+	mindPalaceUserPath := config.MindPalaceUserPath(user)
 
-	exists, err := dirExists(userMindPalaceRoot)
+	exists, err := dirExists(mindPalaceUserPath)
 	if err != nil {
-		fmt.Println(err)
-		os.Exit(1)
+		return err
 	}
 
 	if !exists {
-		memoryHierarchy := path.Join(userMindPalaceRoot, constants.MIND_PALACE_MEMORIES)
-		resourceHierarchy := path.Join(userMindPalaceRoot, constants.MIND_PALACE_RESOURCES)
+		memoryHierarchy := config.MindPalaceMemoryPath(user)
+		resourceHierarchy := config.MindPalaceOriginalResourcePath(user)
 
 		if err := os.MkdirAll(memoryHierarchy, os.ModePerm); err != nil {
-			fmt.Println("Error: Could not create memory hierarchy.")
-			os.Exit(1)
+			return fmt.Errorf("Error: Could not create memory hierarchy.")
 		}
 
 		if err := os.MkdirAll(resourceHierarchy, os.ModePerm); err != nil {
-			fmt.Println("Error: Could not create resource hierarchy.")
-			os.Exit(1)
+			return fmt.Errorf("Error: Could not create resource hierarchy.")
 		}
 
 		userConfig := config.NewUserConfig(user)
 		d, err := json.Marshal(userConfig)
 		if err != nil {
-			fmt.Println("Error: Could not encode user config.")
-			os.Exit(1)
+			return fmt.Errorf("Error: Could not encode user config.")
 		}
 
-		if err := os.WriteFile(path.Join(userMindPalaceRoot, constants.MIND_PALACE_CONFIG), d, 0777); err != nil {
-			fmt.Println("Error: Could not create user config.")
-			os.Exit(1)
+		if err := os.WriteFile(config.MindPalaceUserConfigPath(user), d, 0777); err != nil {
+			fmt.Println(err)
+			return fmt.Errorf("Error: Could not create user config.")
 		}
 
-		return
+		return nil
 	}
 
 	fmt.Println("User already exists. No actions taken.")
+	return nil
 }
 
 func dirExists(path string) (bool, error) {

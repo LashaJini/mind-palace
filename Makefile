@@ -23,6 +23,9 @@ clean-rpc:
 	@echo "Removing '.proto' files..."
 	@rm -rf ./rpc/client/gen ./rpc/server/gen
 
+db:
+	@bash scripts/postgres.sh $(ARGS)
+
 godoc:
 	@echo "Generating godoc..."
 	@godoc -http=:6060 -play

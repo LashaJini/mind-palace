@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/lashajini/mind-palace/config"
 	pb "github.com/lashajini/mind-palace/rpc/client/gen/proto"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
@@ -13,8 +14,8 @@ type Client struct {
 	client pb.PalaceClient
 }
 
-func NewClient(port int) *Client {
-	addr := fmt.Sprintf("localhost:%d", port)
+func NewClient(cfg *config.Config) *Client {
+	addr := fmt.Sprintf("localhost:%d", cfg.GRPC_SERVER_PORT)
 	var opts []grpc.DialOption
 	opts = append(opts, grpc.WithTransportCredentials(insecure.NewCredentials()))
 
