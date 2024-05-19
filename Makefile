@@ -1,4 +1,4 @@
-.PHONY: all build deps rpc clean-rpc db godoc
+.PHONY: all build deps dev-deps rpc clean-rpc db vdb godoc
 
 BUILD_OUT_DIR=bin
 BINARY_NAME=mind-palace
@@ -15,6 +15,9 @@ deps:
 	@go mod download
 	@go mod verify
 
+dev-deps:
+	@go install --tags 'postgres' github.com/golang-migrate/migrate/v4/cmd/migrate@latest
+
 rpc:
 	@echo "Compiling '.proto' files..."
 	@bash ./scripts/pb-compiler.sh
@@ -25,6 +28,9 @@ clean-rpc:
 
 db:
 	@bash scripts/postgres.sh $(ARGS)
+
+vdb:
+	@bash scripts/standalone_embed.sh $(ARGS)
 
 godoc:
 	@echo "Generating godoc..."

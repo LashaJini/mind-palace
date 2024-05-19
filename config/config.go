@@ -20,6 +20,11 @@ type Config struct {
 	DB_PASS string
 	DB_NAME string
 	DB_PORT int
+
+	// vector database
+	VDB_HOST string
+	VDB_NAME string
+	VDB_PORT int
 }
 
 func NewConfig() *Config {
@@ -29,11 +34,22 @@ func NewConfig() *Config {
 		os.Exit(1)
 	}
 
+	mindPalaceUser, err := CurrentUser()
+	if err != nil {
+		fmt.Println(err)
+		os.Exit(1)
+	}
+
 	grpcServerPort, _ := strconv.Atoi(os.Getenv("PYTHON_GRPC_SERVER_PORT"))
+
 	dbUser := os.Getenv("DB_USER")
 	dbPass := os.Getenv("DB_PASS")
-	dbName := os.Getenv("DB_NAME")
+	dbName := mindPalaceUser + os.Getenv("DB_NAME")
 	dbPort, _ := strconv.Atoi(os.Getenv("DB_PORT"))
+
+	vdbHost := os.Getenv("VDB_HOST")
+	vdbName := mindPalaceUser + os.Getenv("VDB_NAME")
+	vdbPort, _ := strconv.Atoi(os.Getenv("VDB_PORT"))
 
 	return &Config{
 		GRPC_SERVER_PORT: grpcServerPort,
@@ -42,7 +58,15 @@ func NewConfig() *Config {
 		DB_PASS: dbPass,
 		DB_NAME: dbName,
 		DB_PORT: dbPort,
+
+		VDB_HOST: vdbHost,
+		VDB_NAME: vdbName,
+		VDB_PORT: vdbPort,
 	}
+}
+
+func (c *Config) VDBAddr() string {
+	return fmt.Sprintf("%s:%d", c.VDB_HOST, c.VDB_PORT)
 }
 
 func MindPalacePath() string {

@@ -2,8 +2,15 @@
 
 source ./.env
 
+MIND_PALACE_USER=$(cat $HOME/.mind-palace/.info.json | jq -r '.current_user')
+if [ $? -eq 1 ]; then
+	echo "Can't get user."
+	exit 1
+fi
+
 NAME=postgres13
 POSTGRES_PASSWORD=$DB_PASS
+DB_NAME="${MIND_PALACE_USER}_${DB_NAME}"
 POSTGRESQL_URL="postgres://$DB_USER:$POSTGRES_PASSWORD@localhost:$DB_PORT/$DB_NAME?sslmode=disable"
 MIGRATIONS_DIR="migrations"
 
@@ -35,17 +42,19 @@ stop() {
 cli() {
 	docker exec -it postgres13 \
 		bash -c "echo 'set -o vi'>~/.bashrc && \
-              echo 'set editing-mode vi'>~/.inputrc && \
-              su - postgres -c 'psql -d $DB_NAME'"
+	             echo 'set editing-mode vi'>~/.inputrc && \
+	             psql -U $DB_USER -d $DB_NAME"
 }
 
 # run once, when application is created
 first() {
 	docker exec postgres13 \
-		bash -c "su - postgres -c 'createdb $DB_NAME'"
+		bash -c "su - $DB_USER -c 'createdb $DB_NAME'"
 }
 
 db:migrate() {
+	mkdir $MIGRATIONS_DIR -p
+
 	case $1 in
 	create)
 		db:migrate:create $2
