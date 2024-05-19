@@ -16,6 +16,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+source ./.env
+
 ROOT_DIR=_milvus
 mkdir -p $ROOT_DIR
 
@@ -39,7 +41,7 @@ EOF
 		-e COMMON_STORAGETYPE=local \
 		-v $(pwd)/$ROOT_DIR/volumes/milvus:/var/lib/milvus \
 		-v $(pwd)/$ROOT_DIR/embedEtcd.yaml:/milvus/configs/embedEtcd.yaml \
-		-p 19530:19530 \
+		-p $VDB_PORT:$VDB_PORT \
 		-p 9091:9091 \
 		-p 2379:2379 \
 		--health-cmd="curl -f http://localhost:9091/healthz" \

@@ -2,6 +2,7 @@
 
 source ./.env
 
+# TODO: this sucks
 MIND_PALACE_USER=$(cat $HOME/.mind-palace/.info.json | jq -r '.current_user')
 if [ $? -eq 1 ]; then
 	echo "Can't get user."
@@ -10,7 +11,7 @@ fi
 
 NAME=postgres13
 POSTGRES_PASSWORD=$DB_PASS
-DB_NAME="${MIND_PALACE_USER}_${DB_NAME}"
+DB_NAME="${MIND_PALACE_USER}${DB_NAME}"
 POSTGRESQL_URL="postgres://$DB_USER:$POSTGRES_PASSWORD@localhost:$DB_PORT/$DB_NAME?sslmode=disable"
 MIGRATIONS_DIR="migrations"
 

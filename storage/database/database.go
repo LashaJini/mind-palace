@@ -2,7 +2,6 @@ package database
 
 import (
 	"database/sql"
-	"fmt"
 	"log"
 
 	"github.com/lashajini/mind-palace/config"
@@ -14,8 +13,7 @@ type MindPalaceDB struct {
 }
 
 func InitDB(cfg *config.Config) *MindPalaceDB {
-	connStr := fmt.Sprintf("user=%s password=%s dbname=%s port=%d sslmode=disable", cfg.DB_USER, cfg.DB_PASS, cfg.DB_NAME, cfg.DB_PORT)
-	db, err := sql.Open("postgres", connStr)
+	db, err := sql.Open("postgres", cfg.DBAddr())
 	if err != nil {
 		log.Fatal(err)
 	}

@@ -69,6 +69,10 @@ func (c *Config) VDBAddr() string {
 	return fmt.Sprintf("%s:%d", c.VDB_HOST, c.VDB_PORT)
 }
 
+func (c *Config) DBAddr() string {
+	return fmt.Sprintf("postgres://%s:%s@localhost:%d/%s?sslmode=disable", c.DB_USER, c.DB_PASS, c.DB_PORT, c.DB_NAME)
+}
+
 func MindPalacePath() string {
 	userHome, _ := os.UserHomeDir()
 	mindPalaceRoot := filepath.Join(userHome, constants.MIND_PALACE_ROOT)
