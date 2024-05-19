@@ -1,4 +1,4 @@
-.PHONY: all build deps rpc clean-rpc godoc
+.PHONY: all build deps rpc clean-rpc db godoc
 
 BUILD_OUT_DIR=bin
 BINARY_NAME=mind-palace
