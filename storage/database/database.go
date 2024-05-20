@@ -24,3 +24,7 @@ func InitDB(cfg *config.Config) *MindPalaceDB {
 
 	return &MindPalaceDB{db}
 }
+
+func (m *MindPalaceDB) DB() *sql.DB {
+	return m.db
+}

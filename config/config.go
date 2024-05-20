@@ -73,29 +73,32 @@ func (c *Config) DBAddr() string {
 	return fmt.Sprintf("postgres://%s:%s@localhost:%d/%s?sslmode=disable", c.DB_USER, c.DB_PASS, c.DB_PORT, c.DB_NAME)
 }
 
-func MindPalacePath() string {
-	userHome, _ := os.UserHomeDir()
+func MindPalacePath(homePrefix bool) string {
+	userHome := ""
+	if homePrefix {
+		userHome, _ = os.UserHomeDir()
+	}
 	mindPalaceRoot := filepath.Join(userHome, constants.MIND_PALACE_ROOT)
 
 	return mindPalaceRoot
 }
 
-func MindPalaceUserPath(user string) string {
-	return filepath.Join(MindPalacePath(), user)
+func MindPalaceUserPath(user string, homePrefix bool) string {
+	return filepath.Join(MindPalacePath(homePrefix), user)
 }
 
-func MindPalaceInfoPath() string {
-	return filepath.Join(MindPalacePath(), constants.MIND_PALACE_INFO)
+func MindPalaceInfoPath(homePrefix bool) string {
+	return filepath.Join(MindPalacePath(homePrefix), constants.MIND_PALACE_INFO)
 }
 
-func MindPalaceOriginalResourcePath(user string) string {
-	return filepath.Join(MindPalaceUserPath(user), constants.MIND_PALACE_RESOURCES, constants.MIND_PALACE_ORIGINAL)
+func MindPalaceOriginalResourcePath(user string, homePrefix bool) string {
+	return filepath.Join(MindPalaceUserPath(user, homePrefix), constants.MIND_PALACE_RESOURCES, constants.MIND_PALACE_ORIGINAL)
 }
 
-func MindPalaceMemoryPath(user string) string {
-	return filepath.Join(MindPalaceUserPath(user), constants.MIND_PALACE_MEMORIES)
+func MindPalaceMemoryPath(user string, homePrefix bool) string {
+	return filepath.Join(MindPalaceUserPath(user, homePrefix), constants.MIND_PALACE_MEMORIES)
 }
 
-func MindPalaceUserConfigPath(user string) string {
-	return filepath.Join(MindPalaceUserPath(user), constants.MIND_PALACE_CONFIG)
+func MindPalaceUserConfigPath(user string, homePrefix bool) string {
+	return filepath.Join(MindPalaceUserPath(user, homePrefix), constants.MIND_PALACE_CONFIG)
 }

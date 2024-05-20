@@ -52,7 +52,7 @@ func User(cmd *cobra.Command, args []string) {
 			os.Exit(1)
 		}
 	} else if switchUser != "" {
-		mindPalaceUserPath := config.MindPalaceUserPath(switchUser)
+		mindPalaceUserPath := config.MindPalaceUserPath(switchUser, true)
 
 		exists, err := dirExists(mindPalaceUserPath)
 		if err != nil {
@@ -76,7 +76,7 @@ func User(cmd *cobra.Command, args []string) {
 func user(args ...string) {}
 
 func createMindPalace(user string) error {
-	mindPalaceUserPath := config.MindPalaceUserPath(user)
+	mindPalaceUserPath := config.MindPalaceUserPath(user, true)
 
 	exists, err := dirExists(mindPalaceUserPath)
 	if err != nil {
@@ -84,8 +84,8 @@ func createMindPalace(user string) error {
 	}
 
 	if !exists {
-		memoryHierarchy := config.MindPalaceMemoryPath(user)
-		resourceHierarchy := config.MindPalaceOriginalResourcePath(user)
+		memoryHierarchy := config.MindPalaceMemoryPath(user, true)
+		resourceHierarchy := config.MindPalaceOriginalResourcePath(user, true)
 
 		if err := os.MkdirAll(memoryHierarchy, os.ModePerm); err != nil {
 			return fmt.Errorf("Error: Could not create memory hierarchy.")
@@ -101,7 +101,7 @@ func createMindPalace(user string) error {
 			return fmt.Errorf("Error: Could not encode user config.")
 		}
 
-		if err := os.WriteFile(config.MindPalaceUserConfigPath(user), d, 0777); err != nil {
+		if err := os.WriteFile(config.MindPalaceUserConfigPath(user, true), d, 0777); err != nil {
 			fmt.Println(err)
 			return fmt.Errorf("Error: Could not create user config.")
 		}

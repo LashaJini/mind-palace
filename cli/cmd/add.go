@@ -1,13 +1,18 @@
 package cli
 
 import (
+	"bufio"
+	"context"
 	"fmt"
 	"io"
 	"os"
 	"path/filepath"
+	"unicode/utf8"
 
 	"github.com/google/uuid"
 	"github.com/lashajini/mind-palace/config"
+	"github.com/lashajini/mind-palace/models"
+	"github.com/lashajini/mind-palace/storage/database"
 	"github.com/spf13/cobra"
 )
 
@@ -56,13 +61,38 @@ func Add(cmd *cobra.Command, args []string) {
 		os.Exit(1)
 	}
 
-	id := uuid.New()
+	isText, err := isTextFile(file)
+	if err != nil {
+		fmt.Println("Error:", err)
+		os.Exit(1)
+	}
+
+	if !isText {
+		fmt.Printf("Error: File %s is not a text file\n", file)
+		os.Exit(1)
+	}
+
+	resourceID := uuid.New()
 	fileExtension := filepath.Ext(file)
-	dst := filepath.Join(config.MindPalaceOriginalResourcePath(currentUser), id.String()+fileExtension)
+	dst := filepath.Join(config.MindPalaceOriginalResourcePath(currentUser, true), resourceID.String()+fileExtension)
 	if err := copyFile(file, dst); err != nil {
 		fmt.Println(err)
 		os.Exit(1)
 	}
+
+	cfg := config.NewConfig()
+	// vdatabase.InitVDB(cfg)
+	db := database.InitDB(cfg)
+	memory := models.NewMemory()
+
+	ctx := context.Background()
+	tx := database.NewMultiInstruction(ctx, db.DB())
+	tx.Begin()
+	memoryID, _ := models.InsertMemoryTx(tx, memory)
+	resource := models.NewResource(resourceID, memoryID, config.MindPalaceOriginalResourcePath(currentUser, false))
+	models.InsertResourceTx(tx, resource)
+	tx.Commit()
+
 	add(args...)
 }
 
@@ -104,4 +134,43 @@ func copyFile(src, dst string) error {
 	}
 
 	return nil
+}
+
+func isTextFile(filename string) (bool, error) {
+	file, err := os.Open(filename)
+	if err != nil {
+		return false, err
+	}
+	defer file.Close()
+
+	reader := bufio.NewReader(file)
+	buf := make([]byte, 4096)
+	for {
+		n, err := reader.Read(buf)
+		if err != nil && err != io.EOF {
+			return false, err
+		}
+
+		if !isText(buf[:n]) {
+			return false, nil
+		}
+
+		if err == io.EOF {
+			break
+		}
+	}
+
+	return true, nil
+}
+
+func isText(data []byte) bool {
+	for len(data) > 0 {
+		r, size := utf8.DecodeRune(data)
+		if r == utf8.RuneError && size == 1 {
+			return false
+		}
+
+		data = data[size:]
+	}
+	return true
 }
