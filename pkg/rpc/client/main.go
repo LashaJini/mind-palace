@@ -4,8 +4,8 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/lashajini/mind-palace/config"
-	pb "github.com/lashajini/mind-palace/rpc/client/gen/proto"
+	"github.com/lashajini/mind-palace/pkg/config"
+	pb "github.com/lashajini/mind-palace/pkg/rpc/client/gen/proto"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
 )

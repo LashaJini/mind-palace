@@ -4,7 +4,7 @@ import (
 	"database/sql"
 	"log"
 
-	"github.com/lashajini/mind-palace/config"
+	"github.com/lashajini/mind-palace/pkg/config"
 	_ "github.com/lib/pq"
 )
 

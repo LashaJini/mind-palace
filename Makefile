@@ -24,7 +24,7 @@ rpc:
 
 clean-rpc:
 	@echo "Removing '.proto' files..."
-	@rm -rf ./rpc/client/gen ./rpc/server/gen
+	@rm -rf ./pkg/rpc/client/gen ./pkg/rpc/server/gen
 
 db:
 	@bash scripts/postgres.sh $(ARGS)

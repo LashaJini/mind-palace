@@ -3,8 +3,8 @@ package cli
 import (
 	"fmt"
 
-	"github.com/lashajini/mind-palace/addons"
-	"github.com/lashajini/mind-palace/config"
+	"github.com/lashajini/mind-palace/pkg/addons"
+	"github.com/lashajini/mind-palace/pkg/config"
 	"github.com/spf13/cobra"
 )
 

@@ -37,7 +37,7 @@ func (t Types) String() string {
 }
 
 var (
-	ResourceSummary = "mindpalace-resource-summary"
+	ResourceSummary = "mind-palace-resource-summary"
 )
 
 var List = []Addon{

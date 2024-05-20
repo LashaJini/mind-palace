@@ -17,17 +17,17 @@ if ! which protoc-gen-go-grpc >/dev/null; then
 	exit 1
 fi
 
-mkdir rpc/server/gen -p
-mkdir rpc/client/gen -p
+mkdir pkg/rpc/server/gen -p
+mkdir pkg/rpc/client/gen -p
 
 protoc \
-	--go_out=./rpc/client/gen --go_opt=paths=source_relative \
-	--go-grpc_out=./rpc/client/gen --go-grpc_opt=paths=source_relative \
+	--go_out=./pkg/rpc/client/gen --go_opt=paths=source_relative \
+	--go-grpc_out=./pkg/rpc/client/gen --go-grpc_opt=paths=source_relative \
 	proto/*.proto
 
 python \
 	-m grpc_tools.protoc -Igen=./proto \
-	--python_out=./rpc/server \
-	--pyi_out=./rpc/server \
-	--grpc_python_out=./rpc/server \
+	--python_out=./pkg/rpc/server \
+	--pyi_out=./pkg/rpc/server \
+	--grpc_python_out=./pkg/rpc/server \
 	proto/*.proto

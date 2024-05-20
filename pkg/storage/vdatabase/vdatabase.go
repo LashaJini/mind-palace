@@ -5,8 +5,8 @@ import (
 	"fmt"
 	"log"
 
-	"github.com/lashajini/mind-palace/config"
-	"github.com/lashajini/mind-palace/constants"
+	"github.com/lashajini/mind-palace/pkg/config"
+	"github.com/lashajini/mind-palace/pkg/constants"
 	"github.com/milvus-io/milvus-sdk-go/v2/client"
 	"github.com/milvus-io/milvus-sdk-go/v2/entity"
 )

@@ -7,7 +7,7 @@ import (
 	"time"
 
 	"github.com/google/uuid"
-	"github.com/lashajini/mind-palace/storage/database"
+	"github.com/lashajini/mind-palace/pkg/storage/database"
 )
 
 type Resource struct {

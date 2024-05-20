@@ -10,12 +10,12 @@ import (
 	"unicode/utf8"
 
 	"github.com/google/uuid"
-	"github.com/lashajini/mind-palace/config"
-	"github.com/lashajini/mind-palace/models"
-	rpcclient "github.com/lashajini/mind-palace/rpc/client"
-	pb "github.com/lashajini/mind-palace/rpc/client/gen/proto"
-	"github.com/lashajini/mind-palace/storage/database"
-	"github.com/lashajini/mind-palace/storage/vdatabase"
+	"github.com/lashajini/mind-palace/pkg/config"
+	"github.com/lashajini/mind-palace/pkg/models"
+	rpcclient "github.com/lashajini/mind-palace/pkg/rpc/client"
+	pb "github.com/lashajini/mind-palace/pkg/rpc/client/gen/proto"
+	"github.com/lashajini/mind-palace/pkg/storage/database"
+	"github.com/lashajini/mind-palace/pkg/storage/vdatabase"
 	"github.com/spf13/cobra"
 )
 
@@ -106,7 +106,7 @@ func Add(cmd *cobra.Command, args []string) {
 		File:  dst,
 		Type:  fileExtension,
 	})
-	fmt.Println(vectors.Vectors[0].Name)
+	fmt.Println(vectors)
 
 	add(args...)
 }

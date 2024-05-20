@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/lashajini/mind-palace/addons"
+	"github.com/lashajini/mind-palace/pkg/addons"
 )
 
 type Type addons.Type

@@ -1,6 +1,7 @@
 import gen.Palace_pb2 as pbPalace
 import gen.Palace_pb2_grpc as grpcPalace
 from sentence_transformers import SentenceTransformer
+from pkg.addons.example import Apply as exampleApply
 import grpc
 import time
 import os
@@ -26,11 +27,18 @@ def convert_data(data):
     return converted_data
 
 
+addonDict = {"mind-palace-resource-summary": exampleApply}
+
+
 class MindPalaceService:
     def Add(self, request, context):
         file = request.file
         with open(file) as f:
             input = f.read()
+
+        for step in request.steps:
+            if step in addonDict:
+                print(addonDict[step](input))
 
         data = [{"name": "original", "input": input}]
         ins = convert_data(data)
