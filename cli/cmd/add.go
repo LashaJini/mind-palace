@@ -12,7 +12,10 @@ import (
 	"github.com/google/uuid"
 	"github.com/lashajini/mind-palace/config"
 	"github.com/lashajini/mind-palace/models"
+	rpcclient "github.com/lashajini/mind-palace/rpc/client"
+	pb "github.com/lashajini/mind-palace/rpc/client/gen/proto"
 	"github.com/lashajini/mind-palace/storage/database"
+	"github.com/lashajini/mind-palace/storage/vdatabase"
 	"github.com/spf13/cobra"
 )
 
@@ -81,7 +84,8 @@ func Add(cmd *cobra.Command, args []string) {
 	}
 
 	cfg := config.NewConfig()
-	// vdatabase.InitVDB(cfg)
+	vdatabase.InitVDB(cfg)
+	rpcClient := rpcclient.NewClient(cfg)
 	db := database.InitDB(cfg)
 	memory := models.NewMemory()
 
@@ -92,11 +96,17 @@ func Add(cmd *cobra.Command, args []string) {
 	memoryID, _ := models.InsertMemoryTx(tx, memory)
 	resource := models.NewResource(resourceID, memoryID, config.MindPalaceOriginalResourcePath(currentUser, false))
 	models.InsertResourceTx(tx, resource)
+	tx.Commit()
 
 	userCfg, _ := config.ReadUserConfig(currentUser)
 	fmt.Println(userCfg)
 
-	tx.Commit()
+	vectors, _ := rpcClient.Add(ctx, &pb.Memory{
+		Steps: userCfg.Steps(),
+		File:  dst,
+		Type:  fileExtension,
+	})
+	fmt.Println(vectors.Vectors[0].Name)
 
 	add(args...)
 }

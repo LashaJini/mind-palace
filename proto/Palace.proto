@@ -3,13 +3,20 @@ syntax = "proto3";
 option go_package = "github.com/lashajini/mind-palace/proto";
 
 service Palace {
-  rpc Add(Memory) returns (Status) {}
+  rpc Add(Memory) returns (Vectors) {}
 }
 
-message Status { 
-  int32 code = 1;
+message Vectors {
+  repeated Vector vectors = 1;
+}
+
+message Vector {
+  string name = 1;
+  repeated float vector = 2;
 }
 
 message Memory {
-  string file = 1;
+  repeated string steps = 1;
+  string file = 2;
+  string type = 3;
 }

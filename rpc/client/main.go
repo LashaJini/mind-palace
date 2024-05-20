@@ -25,6 +25,6 @@ func NewClient(cfg *config.Config) *Client {
 	return &Client{client}
 }
 
-func (c *Client) Add(ctx context.Context, memory *pb.Memory) (*pb.Status, error) {
+func (c *Client) Add(ctx context.Context, memory *pb.Memory) (*pb.Vectors, error) {
 	return c.client.Add(ctx, memory)
 }

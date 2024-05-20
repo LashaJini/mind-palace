@@ -14,6 +14,10 @@ type UserConfig struct {
 	Config UserConfigRoot `json:"config"`
 }
 
+func (u *UserConfig) Steps() []string {
+	return u.Config.Text.Steps
+}
+
 func (u *UserConfig) EnableAddon(addon addons.Addon) error {
 	inputTypes := addon.Input
 	var needsUpdate bool
