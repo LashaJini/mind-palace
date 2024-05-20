@@ -87,10 +87,15 @@ func Add(cmd *cobra.Command, args []string) {
 
 	ctx := context.Background()
 	tx := database.NewMultiInstruction(ctx, db.DB())
+
 	tx.Begin()
 	memoryID, _ := models.InsertMemoryTx(tx, memory)
 	resource := models.NewResource(resourceID, memoryID, config.MindPalaceOriginalResourcePath(currentUser, false))
 	models.InsertResourceTx(tx, resource)
+
+	userCfg, _ := config.ReadUserConfig(currentUser)
+	fmt.Println(userCfg)
+
 	tx.Commit()
 
 	add(args...)
