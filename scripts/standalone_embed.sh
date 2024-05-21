@@ -18,6 +18,7 @@
 
 source ./.env
 
+NETWORK=mind_palace_milvus_network
 ROOT_DIR=_milvus
 mkdir -p $ROOT_DIR
 
@@ -34,6 +35,7 @@ EOF
 
 	sudo docker run -d \
 		--name milvus-standalone \
+		--network $NETWORK \
 		--security-opt seccomp:unconfined \
 		-e ETCD_USE_EMBED=true \
 		-e ETCD_DATA_DIR=/var/lib/milvus/etcd \
@@ -114,6 +116,16 @@ delete() {
 	echo "Delete successfully."
 }
 
+cli() {
+	docker run -it \
+		--network $NETWORK \
+		--entrypoint='' \
+		zilliz/milvus_cli:latest \
+		bash -c "echo 'set -o vi'>~/.bashrc && \
+	             echo 'set editing-mode vi'>~/.inputrc && \
+	             milvus_cli"
+}
+
 case $1 in
 start)
 	start
@@ -124,7 +136,10 @@ stop)
 delete)
 	delete
 	;;
+cli)
+	cli
+	;;
 *)
-	echo "please use bash standalone_embed.sh start|stop|delete"
+	echo "please use bash standalone_embed.sh start|stop|delete|cli"
 	;;
 esac
