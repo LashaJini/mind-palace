@@ -1,3 +1,4 @@
+from typing import List
 from pathlib import Path
 from llama_index.core import (
     Settings,
@@ -65,6 +66,7 @@ class CustomLLamaCPP(LlamaCPP):
             prompt_template_str=CustomLLamaCPP.summary_template(),
             verbose=verbose,
         )
+
         return program(context_str=prompt)
 
     def gen_summary(self, prompt):
@@ -74,6 +76,7 @@ class CustomLLamaCPP(LlamaCPP):
 
     @classmethod
     def gen_structured_keywords(cls, llm, prompt, verbose=False):
+        """Should return list of keywords."""
         program = LLMTextCompletionProgram.from_defaults(
             llm=llm,
             output_parser=KeywordsParser(verbose=verbose),

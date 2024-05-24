@@ -5,8 +5,8 @@ import os
 from dotenv import load_dotenv
 from concurrent import futures
 
+from pkg.rpc.server.addons import AddonsDict
 from pkg.rpc.server.vdb import Milvus
-from pkg.rpc.server.llm import llm
 
 import gen.Palace_pb2 as pbPalace
 import gen.Palace_pb2_grpc as grpcPalace
@@ -17,10 +17,6 @@ PYTHON_GRPC_SERVER_PORT = os.getenv("PYTHON_GRPC_SERVER_PORT", 50051)
 _ONE_DAY_IN_SECONDS = 60 * 60 * 24
 
 prompt = "The tower is 324 metres (1,063 ft) tall, about the same height as an 81-storey building, and the tallest structure in Paris. Its base is square, measuring 125 metres (410 ft) on each side. During its construction, the Eiffel Tower surpassed the Washington Monument to become the tallest man-made structure in the world, a title it held for 41 years until the Chrysler Building in New York City was finished in 1930. It was the first structure to reach a height of 300 metres. Due to the addition of a broadcasting aerial at the top of the tower in 1957, it is now taller than the Chrysler Building by 5.2 metres (17 ft). Excluding transmitters, the Eiffel Tower is the second tallest free-standing structure in France after the Millau Viaduct."
-addonDict = {
-    "mind-palace-resource-summary": llm.gen_summary,
-    "mind-palace-resource-keywords": llm.gen_keywords,
-}
 
 host = "localhost"
 port = 19530
@@ -34,36 +30,27 @@ client = Milvus(
 )
 
 
-# grpc input file
-# input -> simple document
-# gen summary
-# gen tags
-# gen embeddings for original document + summary -> insert embeddings
-# summary, tags -> grpc
-
-
 class MindPalaceService:
-    def Add(self, request, context):
+    def ApplyAddon(self, request, context):
         file = request.file
-        document = SimpleDirectoryReader(input_files=[file]).load_data()
-        original = document[0].text
+        documents = SimpleDirectoryReader(input_files=[file]).load_data()
 
+        # TODO: AddMany
+        if len(documents) > 0:
+            pass
+
+        document = documents[0]
+        input = document.text
+
+        result = None
         try:
-            output = llm.gen_structured_summary(llm, original)
-            print(output)
-            output = llm.gen_structured_keywords(llm, original)
-            print(output)
+            if request.step in AddonsDict.keys():
+                addonApply = AddonsDict[request.step]
+                result = addonApply(original_id=request.id, input=input, client=client)
         except Exception as e:
-            print("err", e)
+            print(e)
 
-        # for step in request.steps:
-        #     if step in addonDict:
-        #         print(addonDict[step](input))
-
-        data = [{"name": "original", "input": input}]
-        ins = data
-
-        return pbPalace.Vectors(vectors=ins)
+        return result
 
 
 def server():

@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/google/uuid"
 	"github.com/lashajini/mind-palace/pkg/config"
 	pb "github.com/lashajini/mind-palace/pkg/rpc/client/gen/proto"
 	"google.golang.org/grpc"
@@ -25,6 +26,19 @@ func NewClient(cfg *config.Config) *Client {
 	return &Client{client}
 }
 
-func (c *Client) Add(ctx context.Context, memory *pb.Memory) (*pb.Vectors, error) {
-	return c.client.Add(ctx, memory)
+func (c *Client) Add(ctx context.Context, file string, id uuid.UUID, userCfg *config.UserConfig) (*pb.AddonResult, error) {
+	for _, step := range userCfg.Steps() {
+		addonResult, _ := c.client.ApplyAddon(ctx, &pb.Resource{
+			File: file,
+			Id:   id.String(),
+			Step: step,
+		})
+
+		fmt.Println("step:", step)
+		if addonResult != nil {
+			fmt.Println("result:", addonResult.Data)
+		}
+	}
+
+	return nil, nil
 }

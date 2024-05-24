@@ -84,9 +84,15 @@ func (u *UserConfig) Update() error {
 }
 
 func NewUserConfig(user string) *UserConfig {
+
 	return &UserConfig{
 		Config: UserConfigRoot{
 			User: user,
+			Text: Input{
+				Steps: []string{
+					addons.Default,
+				},
+			},
 		},
 	}
 }

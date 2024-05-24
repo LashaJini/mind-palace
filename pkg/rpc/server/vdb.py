@@ -56,8 +56,8 @@ class Milvus:
                 index_params=index_params,
             )
 
-    def insert(self, data: List[InputDataDict]):
-        embedded_data = self._get_text_embedding(data)
+    def insert(self, data: InputDataDict):
+        embedded_data = self._get_text_embedding([data])
         self.client.insert(collection_name=self.collection_name, data=embedded_data)
 
     def _get_text_embedding(self, data: List[InputDataDict]):

@@ -3,20 +3,20 @@ syntax = "proto3";
 option go_package = "github.com/lashajini/mind-palace/proto";
 
 service Palace {
-  rpc Add(Memory) returns (Vectors) {}
+  rpc ApplyAddon(Resource) returns (AddonResult) {}
 }
 
-message Vectors {
-  repeated Vector vectors = 1;
+message AddonResult {
+  string id = 1;
+  map<string, Strings> data = 2;
 }
 
-message Vector {
-  string name = 1;
-  repeated float vector = 2;
+message Strings {
+  repeated string value = 1;
 }
 
-message Memory {
-  repeated string steps = 1;
-  string file = 2;
-  string type = 3;
+message Resource {
+  string file = 1;
+  string id = 2;
+  string step = 3;
 }

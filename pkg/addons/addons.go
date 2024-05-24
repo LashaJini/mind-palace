@@ -37,11 +37,15 @@ func (t Types) String() string {
 }
 
 var (
-	ResourceSummary = "mind-palace-resource-summary"
+	Default          = "mind-palace-default"
+	ResourceSummary  = "mind-palace-resource-summary"
+	ResourceKeywords = "mind-palace-resource-keywords"
 )
 
 var List = []Addon{
+	{Name: Default, Description: "Default", Input: []Type{Text}, Output: []Type{Text}},
 	{Name: ResourceSummary, Description: "Summarizes a resource", Input: []Type{Text}, Output: []Type{Text}},
+	{Name: ResourceKeywords, Description: "Captures keywords from a resource", Input: []Type{Text}, Output: []Type{Text}},
 }
 
 func Find(name string) Addon {
