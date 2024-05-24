@@ -1,9 +1,8 @@
-from typing import List
 from pathlib import Path
 from llama_index.core import (
     Settings,
 )
-from llama_index.core.bridge.pydantic import BaseModel
+
 from llama_index.core.program import LLMTextCompletionProgram
 from pkg.rpc.server.embeddings import EMBED_MODEL
 from llama_index.llms.llama_cpp import LlamaCPP
@@ -13,33 +12,19 @@ from llama_index.core.prompts.default_prompts import (
     DEFAULT_KEYWORD_EXTRACT_TEMPLATE_TMPL,
 )
 
+from pkg.rpc.server.output_parsers import (
+    Keywords,
+    Summary,
+    SummaryParser,
+    KeywordsParser,
+)
+
 # TODO: read from config
 user_home = str(Path.home())
 model_path = (
     user_home
     + "/.cache/lm-studio/models/lmstudio-community/Meta-Llama-3-8B-Instruct-GGUF/Meta-Llama-3-8B-Instruct-IQ3_M.gguf"
 )
-
-
-class Summary(BaseModel):
-    """Data model for a summary."""
-
-    text: str
-
-
-class Song(BaseModel):
-    """Data model for a song."""
-
-    title: str
-    length_seconds: int
-
-
-class Album(BaseModel):
-    """Data model for an album."""
-
-    name: str
-    artist: str
-    songs: List[Song]
 
 
 class CustomLLamaCPP(LlamaCPP):
@@ -53,20 +38,50 @@ class CustomLLamaCPP(LlamaCPP):
             **kwargs,
         )
 
+    @classmethod
+    def summary_template(cls):
+        prompt = DEFAULT_SUMMARY_PROMPT_TMPL
+        return f"<|system|>\n{DEFAULT_SYSTEM_PROMPT}</s>\n<|user|>\n{prompt}</s>\n<|assistant|>\n"
+
     def summary_completion_to_prompt(self, completion):
-        prompt = DEFAULT_SUMMARY_PROMPT_TMPL.format(context_str=completion)
+        return CustomLLamaCPP.summary_template().format(context_str=completion)
+
+    @classmethod
+    def keywords_template(cls):
+        prompt = DEFAULT_KEYWORD_EXTRACT_TEMPLATE_TMPL
         return f"<|system|>\n{DEFAULT_SYSTEM_PROMPT}</s>\n<|user|>\n{prompt}</s>\n<|assistant|>\n"
 
     def keywords_completion_to_prompt(self, completion):
-        prompt = DEFAULT_KEYWORD_EXTRACT_TEMPLATE_TMPL.format(
-            max_keywords=15, text=completion
+        return CustomLLamaCPP.keywords_template().format(
+            text=completion, max_keywords=15
         )
-        return f"<|system|>\n{DEFAULT_SYSTEM_PROMPT}</s>\n<|user|>\n{prompt}</s>\n<|assistant|>\n"
+
+    @classmethod
+    def gen_structured_summary(cls, llm, prompt, verbose=False):
+        program = LLMTextCompletionProgram.from_defaults(
+            llm=llm,
+            output_parser=SummaryParser(verbose=verbose),
+            output_cls=Summary,  # type:ignore
+            prompt_template_str=CustomLLamaCPP.summary_template(),
+            verbose=verbose,
+        )
+        return program(context_str=prompt)
 
     def gen_summary(self, prompt):
         return self.complete(
             prompt=self.summary_completion_to_prompt(prompt), formatted=True
         )
+
+    @classmethod
+    def gen_structured_keywords(cls, llm, prompt, verbose=False):
+        program = LLMTextCompletionProgram.from_defaults(
+            llm=llm,
+            output_parser=KeywordsParser(verbose=verbose),
+            output_cls=Keywords,  # type:ignore
+            prompt_template_str=CustomLLamaCPP.keywords_template(),
+            verbose=verbose,
+        )
+        return program(text=prompt, max_keywords=15)
 
     def gen_keywords(self, prompt):
         return self.complete(

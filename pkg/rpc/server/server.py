@@ -1,20 +1,12 @@
-from typing import List
-from llama_index.core import PromptTemplate, SimpleDirectoryReader
+from llama_index.core import SimpleDirectoryReader
 import grpc
 import time
 import os
 from dotenv import load_dotenv
 from concurrent import futures
 
-from llama_index.core.program import LLMTextCompletionProgram
-from llama_index.llms.llama_cpp.llama_utils import DEFAULT_SYSTEM_PROMPT
-from llama_index.core.prompts.default_prompts import (
-    DEFAULT_SUMMARY_PROMPT_TMPL,
-    DEFAULT_KEYWORD_EXTRACT_TEMPLATE_TMPL,
-)
-
-from pkg.rpc.server.vdb import InputDataDict, Milvus
-from pkg.rpc.server.llm import Summary, Album, llm
+from pkg.rpc.server.vdb import Milvus
+from pkg.rpc.server.llm import llm
 
 import gen.Palace_pb2 as pbPalace
 import gen.Palace_pb2_grpc as grpcPalace
@@ -41,12 +33,6 @@ client = Milvus(
     collection_name=collection_name,
 )
 
-# documents = SimpleDirectoryReader("/home/jini/examples/").load_data()
-# data: List[InputDataDict] = [
-#     {"id": "abcdefg", "input": documents[0].text},
-#     {"id": "abcdefgh", "input": documents[1].text},
-# ]
-# client.insert(data)
 
 # grpc input file
 # input -> simple document
@@ -62,10 +48,13 @@ class MindPalaceService:
         document = SimpleDirectoryReader(input_files=[file]).load_data()
         original = document[0].text
 
-        summary = llm.gen_summary(original)
-        keywords = llm.gen_keywords(original)
-        print(summary)
-        print(keywords)
+        try:
+            output = llm.gen_structured_summary(llm, original)
+            print(output)
+            output = llm.gen_structured_keywords(llm, original)
+            print(output)
+        except Exception as e:
+            print("err", e)
 
         # for step in request.steps:
         #     if step in addonDict:
