@@ -84,6 +84,7 @@ func Add(cmd *cobra.Command, args []string) {
 	}
 
 	cfg := config.NewConfig()
+	// TODO: move to py
 	vdatabase.InitVDB(cfg)
 	rpcClient := rpcclient.NewClient(cfg)
 	db := database.InitDB(cfg)
