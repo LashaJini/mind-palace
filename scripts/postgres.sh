@@ -66,8 +66,14 @@ db:migrate() {
 	down)
 		db:migrate:down $2
 		;;
+	version)
+		db:migrate:version
+		;;
+	fix)
+		db:migrate:fix $2
+		;;
 	*)
-		echo "please use bash postgres.sh db:migrate create|up|down"
+		echo "please use bash postgres.sh db:migrate create|up|down|version|fix"
 		;;
 	esac
 }
@@ -93,13 +99,32 @@ db:migrate:up() {
 }
 
 db:migrate:down() {
-	yes | migrate -database $POSTGRESQL_URL -path $MIGRATIONS_DIR down
+	migrate -database $POSTGRESQL_URL -path $MIGRATIONS_DIR down 1
 
 	if [ $? -ne 0 ]; then
 		echo "db:migrate down failed."
 		exit 1
 	fi
 	echo "Success"
+}
+
+db:migrate:version() {
+	migrate -database $POSTGRESQL_URL -path $MIGRATIONS_DIR version
+
+	if [ $? -ne 0 ]; then
+		echo "db:migrate version failed."
+		exit 1
+	fi
+	echo "Success"
+}
+
+db:migrate:fix() {
+	migrate -database $POSTGRESQL_URL -path $MIGRATIONS_DIR force $2
+
+	if [ $? -ne 0 ]; then
+		echo "db:migrate fix failed."
+		exit 1
+	fi
 }
 
 case $1 in
