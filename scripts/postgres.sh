@@ -119,7 +119,7 @@ db:migrate:version() {
 }
 
 db:migrate:fix() {
-	migrate -database $POSTGRESQL_URL -path $MIGRATIONS_DIR force $2
+	migrate -database $POSTGRESQL_URL -path $MIGRATIONS_DIR force $1
 
 	if [ $? -ne 0 ]; then
 		echo "db:migrate fix failed."

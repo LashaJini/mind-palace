@@ -10,7 +10,7 @@ import (
 	"github.com/lashajini/mind-palace/pkg/storage/database"
 )
 
-type Resource struct {
+type OriginalResource struct {
 	ID        uuid.UUID
 	MemoryID  uuid.UUID
 	FilePath  string
@@ -18,10 +18,10 @@ type Resource struct {
 	UpdatedAt int64
 }
 
-func NewResource(id uuid.UUID, memoryID uuid.UUID, filepath string) *Resource {
+func NewResource(id uuid.UUID, memoryID uuid.UUID, filepath string) *OriginalResource {
 	now := time.Now().UTC().Unix()
 
-	return &Resource{
+	return &OriginalResource{
 		ID:        id,
 		MemoryID:  memoryID,
 		FilePath:  filepath,
@@ -30,7 +30,7 @@ func NewResource(id uuid.UUID, memoryID uuid.UUID, filepath string) *Resource {
 	}
 }
 
-func InsertResource(ctx context.Context, db *sql.DB, resource *Resource) error {
+func InsertResource(ctx context.Context, db *sql.DB, resource *OriginalResource) error {
 	tx := database.NewMultiInstruction(ctx, db)
 	if err := tx.Begin(); err != nil {
 		return err
@@ -48,7 +48,7 @@ func InsertResource(ctx context.Context, db *sql.DB, resource *Resource) error {
 	return nil
 }
 
-func InsertResourceTx(tx *database.MultiInstruction, resource *Resource) error {
+func InsertResourceTx(tx *database.MultiInstruction, resource *OriginalResource) error {
 	q := fmt.Sprintf(`
 INSERT INTO resource (
 	id,
