@@ -27,16 +27,25 @@ func NewClient(cfg *config.Config) *Client {
 }
 
 func (c *Client) Add(ctx context.Context, file string, id uuid.UUID, userCfg *config.UserConfig) (*pb.AddonResult, error) {
-	for _, step := range userCfg.Steps() {
-		addonResult, _ := c.client.ApplyAddon(ctx, &pb.Resource{
-			File: file,
-			Id:   id.String(),
-			Step: step,
-		})
+	resource := &pb.Resource{
+		File:  file,
+		Id:    id.String(),
+		Steps: userCfg.Steps(),
+	}
+	joinedAddons, _ := c.client.JoinAddons(ctx, resource)
 
-		fmt.Println("step:", step)
-		if addonResult != nil {
-			fmt.Println("result:", addonResult.Data)
+	if joinedAddons != nil {
+		for _, joinedAddon := range joinedAddons.Addons {
+			tmp := &pb.JoinedAddons{
+				File:   file,
+				Id:     id.String(),
+				Addons: joinedAddon,
+			}
+			addonResult, _ := c.client.ApplyAddon(ctx, tmp)
+
+			for _, value := range addonResult.Data {
+				fmt.Println(value)
+			}
 		}
 	}
 

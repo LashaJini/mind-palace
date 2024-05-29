@@ -1,12 +1,19 @@
-from llama_index.core import SimpleDirectoryReader
+from typing import List
 import grpc
 import time
 import os
 from dotenv import load_dotenv
 from concurrent import futures
 
-from pkg.rpc.server.addons import AddonsDict
+from llama_index.core import SimpleDirectoryReader
+
+from pkg.rpc.server.addons.factory import AddonFactory
+from pkg.rpc.server.addons.joined import JoinedAddons
+from pkg.rpc.server.prompts.joined import JoinedPrompts
+from pkg.rpc.server.prompts.abstract import Prompts
+from pkg.rpc.server.prompts.factory import PromptsFactory
 from pkg.rpc.server.vdb import Milvus
+from pkg.rpc.server.llm import CustomLlamaCPP
 
 import gen.Palace_pb2 as pbPalace
 import gen.Palace_pb2_grpc as grpcPalace
@@ -15,8 +22,6 @@ load_dotenv()
 
 PYTHON_GRPC_SERVER_PORT = os.getenv("PYTHON_GRPC_SERVER_PORT", 50051)
 _ONE_DAY_IN_SECONDS = 60 * 60 * 24
-
-prompt = "The tower is 324 metres (1,063 ft) tall, about the same height as an 81-storey building, and the tallest structure in Paris. Its base is square, measuring 125 metres (410 ft) on each side. During its construction, the Eiffel Tower surpassed the Washington Monument to become the tallest man-made structure in the world, a title it held for 41 years until the Chrysler Building in New York City was finished in 1930. It was the first structure to reach a height of 300 metres. Due to the addition of a broadcasting aerial at the top of the tower in 1957, it is now taller than the Chrysler Building by 5.2 metres (17 ft). Excluding transmitters, the Eiffel Tower is the second tallest free-standing structure in France after the Millau Viaduct."
 
 host = "localhost"
 port = 19530
@@ -29,9 +34,23 @@ client = Milvus(
     collection_name=collection_name,
 )
 
+llm = CustomLlamaCPP(
+    verbose=True,
+    generate_kwargs={
+        "top_k": 1,  # TODO: config
+        "stop": ["<|endoftext|>", "</s>"],  # TODO: wtf
+    },
+    # kwargs to pass to __init__()
+    model_kwargs={
+        "n_gpu_layers": -1,  # TODO: config
+    },
+)
+
+verbose = False
+
 
 class MindPalaceService:
-    def ApplyAddon(self, request, context):
+    def ApplyAddon(self, request: pbPalace.JoinedAddons, context):
         file = request.file
         documents = SimpleDirectoryReader(input_files=[file]).load_data()
 
@@ -43,14 +62,98 @@ class MindPalaceService:
         input = document.text
 
         result = None
-        try:
-            if request.step in AddonsDict.keys():
-                addonApply = AddonsDict[request.step]
-                result = addonApply(original_id=request.id, input=input, client=client)
-        except Exception as e:
-            print(e)
+        addons = request.addons
+        if addons.joined:
+            instructions = []
+            formats = []
+            names = []
+            for name in addons.names:
+                prompt = PromptsFactory.construct(name)
+                joinable = prompt.joinable_template()
+
+                addon_instructions = joinable.instructions
+                addon_format = joinable.format
+
+                instructions.append(addon_instructions)
+                formats.append(addon_format)
+                names.append(name)
+
+            result = JoinedAddons(names).apply(
+                id=request.id,
+                input=input,
+                llm=llm,
+                client=client,
+                instructions=", ".join([s for s in instructions if s]),
+                format="\n".join([s for s in formats if s]),
+                verbose=verbose,
+            )
+        else:
+            name = addons.names[0]
+            addon = AddonFactory.construct(name)
+            result = addon.apply(
+                id=request.id,
+                input=input,
+                llm=llm,
+                client=client,
+                verbose=verbose,
+                max_keywords=10,
+            )
 
         return result
+
+    def JoinAddons(self, request, context):
+        file = request.file
+        documents = SimpleDirectoryReader(input_files=[file]).load_data()
+        input_text = documents[0].text
+
+        input_text_token_count = llm.token_size(input_text)
+        sys_prompt_token_count = Prompts.system_prompt_token_count(llm)
+        joined_prompt_token_count = JoinedPrompts().standalone_template_token_count(llm)
+
+        addons_tokens = []
+        for step in request.steps:
+            prompt = PromptsFactory.construct(name=step)
+            token_count = prompt.joinable_template_token_count(llm=llm)
+            addons_tokens.append({"name": step, "token": token_count})
+
+        addons_tokens.sort(key=lambda x: x["token"])
+
+        available_tokens = llm.calculate_available_tokens(
+            input_text_token_count,
+            sys_prompt_token_count,
+            joined_prompt_token_count,
+            verbose,
+        )
+        addons: List[pbPalace.JoinedAddon] = []
+        batch_addons = []
+        for addon in addons_tokens:
+            if addon.get("token") < available_tokens:
+                available_tokens -= addon.get("token")
+                batch_addons.append(addon.get("name"))
+                continue
+
+            available_tokens = llm.calculate_available_tokens(
+                input_text_token_count,
+                sys_prompt_token_count,
+                joined_prompt_token_count,
+                verbose,
+            )
+            addons.append(
+                pbPalace.JoinedAddon(names=batch_addons, joined=len(batch_addons) > 1)
+            )
+            batch_addons = []
+
+            available_tokens -= addon.get("token")
+            batch_addons.append(addon.get("name"))
+
+        if len(batch_addons) > 0:
+            addons.append(
+                pbPalace.JoinedAddon(names=batch_addons, joined=len(batch_addons) > 1)
+            )
+
+        joinedAddons = pbPalace.JoinedAddonsResponse(addons=addons)
+
+        return joinedAddons
 
 
 def server():

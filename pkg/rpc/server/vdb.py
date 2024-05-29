@@ -1,6 +1,7 @@
 from typing import List, TypedDict
 from pymilvus import MilvusClient, connections, DataType
-from pkg.rpc.server.llm import Settings
+
+from pkg.rpc.server.embeddings import embed_model
 
 
 class InputDataDict(TypedDict):
@@ -65,7 +66,7 @@ class Milvus:
         for item in data:
             new_item = {
                 "id": item["id"],
-                "vector": Settings.embed_model.get_text_embedding(item["input"]),
+                "vector": embed_model.get_text_embedding(item["input"]),
             }
             embedded_data.append(new_item)
         return embedded_data

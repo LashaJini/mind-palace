@@ -3,12 +3,29 @@ syntax = "proto3";
 option go_package = "github.com/lashajini/mind-palace/proto";
 
 service Palace {
-  rpc ApplyAddon(Resource) returns (AddonResult) {}
+  rpc ApplyAddon(JoinedAddons) returns (AddonResult) {}
+  rpc JoinAddons(Resource) returns (JoinedAddonsResponse) {}
 }
 
 message AddonResult {
   string id = 1;
   map<string, Strings> data = 2;
+}
+
+message JoinedAddons {
+  string file = 1;
+  string id = 2;
+  JoinedAddon addons = 3;
+}
+
+
+message JoinedAddonsResponse {
+  repeated JoinedAddon addons = 1;
+}
+
+message JoinedAddon {
+  repeated string names = 1;
+  bool joined = 2;
 }
 
 message Strings {
@@ -18,5 +35,5 @@ message Strings {
 message Resource {
   string file = 1;
   string id = 2;
-  string step = 3;
+  repeated string steps = 3;
 }

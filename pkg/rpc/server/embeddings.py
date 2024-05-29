@@ -1,3 +1,5 @@
 from llama_index.embeddings.huggingface import HuggingFaceEmbedding
 
-EMBED_MODEL = HuggingFaceEmbedding(model_name="sentence-transformers/all-MiniLM-L6-v2")
+EMBED_MODEL_NAME = "sentence-transformers/all-MiniLM-L6-v2"
+
+embed_model = HuggingFaceEmbedding(model_name=EMBED_MODEL_NAME)
