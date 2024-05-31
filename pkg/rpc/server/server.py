@@ -34,19 +34,22 @@ client = Milvus(
     collection_name=collection_name,
 )
 
+
+verbose = True
+
 llm = CustomLlamaCPP(
-    verbose=True,
+    verbose=verbose,
     generate_kwargs={
         "top_k": 1,  # TODO: config
         "stop": ["<|endoftext|>", "</s>"],  # TODO: wtf
+        # "seed": 4294967295,
+        # "seed": -1,
     },
     # kwargs to pass to __init__()
     model_kwargs={
         "n_gpu_layers": -1,  # TODO: config
     },
 )
-
-verbose = False
 
 
 class MindPalaceService:

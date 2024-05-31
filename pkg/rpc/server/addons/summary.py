@@ -1,4 +1,5 @@
 import uuid
+from llama_index.core import PromptTemplate
 from llama_index.core.program import LLMTextCompletionProgram
 
 import gen.Palace_pb2 as pbPalace
@@ -21,11 +22,12 @@ class SummaryAddon(Addon):
         **kwargs,
     ):
         """input -> generate summary -> insert embeddings -> return summary"""
+        prompt = SummaryPrompts().prompt(text=input, verbose=verbose, **kwargs)
         program = LLMTextCompletionProgram.from_defaults(
             llm=llm,
             output_parser=SummaryParser(verbose=verbose),
             output_cls=Summary,  # type:ignore
-            prompt_template_str=SummaryPrompts().standalone_template(verbose=verbose),
+            prompt=PromptTemplate(prompt),
             verbose=verbose,
         )
 

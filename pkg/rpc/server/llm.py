@@ -1,6 +1,8 @@
 from pathlib import Path
 from typing import ClassVar
+import numpy as np
 
+from llama_index.embeddings.huggingface import HuggingFaceEmbedding
 from llama_index.llms.llama_cpp import LlamaCPP
 
 # TODO: read from config
@@ -18,7 +20,7 @@ class CustomLlamaCPP(LlamaCPP):
         super().__init__(
             model_path=model_path,
             temperature=0.1,
-            max_new_tokens=256,
+            max_new_tokens=1024,
             context_window=3900,
             verbose=verbose,
             **kwargs,
@@ -49,3 +51,28 @@ class CustomLlamaCPP(LlamaCPP):
             print(f"> Available tokens: {available_tokens}")
 
         return available_tokens
+
+
+class EmbeddingModel:
+    # https://www.sbert.net/docs/sentence_transformer/pretrained_models.html
+    model_name = "sentence-transformers/all-MiniLM-L6-v2"
+    dimension = 384
+    max_length = 512
+    metric_type = "COSINE"
+
+    def __init__(self):
+        self._embedding_model = HuggingFaceEmbedding(
+            model_name=EmbeddingModel.model_name,
+            max_length=EmbeddingModel.max_length,
+            cache_folder=user_home + "/.mind-palace/.cache/",
+        )
+
+    def embeddings(self, text):
+        sentences = text.split(".")
+        sentence_embeddings = [
+            self._embedding_model.get_text_embedding(sentence)
+            for sentence in sentences
+            if sentence
+        ]
+        aggregated_embedding = np.mean(sentence_embeddings, axis=0)
+        return aggregated_embedding

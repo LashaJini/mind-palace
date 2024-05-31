@@ -27,13 +27,18 @@ class JoinedPrompts(Prompts):
     def standalone_template_token_count(self, llm: CustomLlamaCPP):
         return llm.token_size(text=self.tmpl)
 
-    def prompt(self, text: str, **kwargs):
+    def prompt(self, text: str, verbose=False, **kwargs):
         if "instructions" not in kwargs:
             kwargs["instructions"] = ""
 
         if "format" not in kwargs:
             kwargs["format"] = ""
-        return self.standalone_template().format(context_str=text, **kwargs)
+
+        result = self.standalone_template().format(context_str=text, **kwargs)
+        if verbose:
+            print(result)
+
+        return result
 
     def joinable_template(self, **kwargs) -> JoinableTemplate:
         return JoinableTemplate({"instructions": "", "format": ""})

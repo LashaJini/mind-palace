@@ -1,4 +1,5 @@
 from typing import List
+from llama_index.core import PromptTemplate
 from llama_index.core.program import LLMTextCompletionProgram
 
 import gen.Palace_pb2 as pbPalace
@@ -23,13 +24,15 @@ class JoinedAddons(Addon):
         verbose=False,
         **kwargs,
     ):
+        prompt = JoinedPrompts().prompt(text=input, verbose=verbose, **kwargs)
         program = LLMTextCompletionProgram.from_defaults(
             llm=llm,
             output_parser=JoinedParser(verbose=verbose, addons=self.addons),
             output_cls=Joined,  # type:ignore
-            prompt_template_str=JoinedPrompts().standalone_template(),
+            prompt=PromptTemplate(prompt),
             verbose=verbose,
         )
+
         results = (
             program(context_str=input, verbose=verbose, **kwargs).dict().get("value")
         )

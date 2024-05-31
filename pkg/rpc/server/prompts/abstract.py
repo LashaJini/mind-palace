@@ -35,7 +35,7 @@ class Prompts(ABC):
         pass
 
     @abstractmethod
-    def prompt(self, text: str, **kwargs) -> str:
+    def prompt(self, text: str, verbose: bool, **kwargs) -> str:
         pass
 
     @abstractmethod
