@@ -31,6 +31,12 @@ jobs:
         pip install poetry
         poetry install
 
+    - name: Compile protocol buffers
+      if: matrix.language == 'python'
+      run: |
+          make clean-rpc
+          make rpc
+
     - name: Run Python tests
       if: matrix.language == 'python'
       run: |
