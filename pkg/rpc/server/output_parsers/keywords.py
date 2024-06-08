@@ -58,3 +58,12 @@ class KeywordsParser(OutputParser):
             print(f"> Extracted keywords: {keywords}")
 
         return Keywords(value=keywords)
+
+    @classmethod
+    def construct_output(cls, **kwargs) -> str:
+        """
+        Args:
+            input (List[str]): List of input text.
+        """
+        input = kwargs.get("input", [])
+        return f"{KeywordsPrompts.format_start} {','.join(input)} {KeywordsPrompts.format_end}"

@@ -6,6 +6,10 @@ from typing_extensions import TypedDict
 
 from pkg.rpc.server.output_parsers.abstract import OutputParser, CustomBaseModel
 from pkg.rpc.server.output_parsers.factory import OutputParserFactory
+from pkg.rpc.server.output_parsers.keywords import KeywordsParser
+from pkg.rpc.server.output_parsers.summary import SummaryParser
+from pkg.rpc.server.prompts.keywords import KeywordsPrompts
+from pkg.rpc.server.prompts.summary import SummaryPrompts
 
 
 class PalaceAddonResultInfo(TypedDict):
@@ -72,3 +76,18 @@ class JoinedParser(OutputParser):
             pass
 
         return Joined(value=results)
+
+    @classmethod
+    def construct_output(cls, **kwargs) -> str:
+        """
+        Args:
+            summary_input (str): Summary input
+            keywords_input (List[str]): Keywords input
+        """
+        summary_input = kwargs.get("summary_input", "")
+        keywords_input = kwargs.get("keywords_input", [])
+
+        summary_output = SummaryParser.construct_output(input=summary_input)
+        keywords_output = KeywordsParser.construct_output(input=keywords_input)
+
+        return f"{summary_output}\n{keywords_output}"

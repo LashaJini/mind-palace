@@ -55,3 +55,12 @@ class SummaryParser(OutputParser):
             print(f"> Extracted summary: {summary}")
 
         return Summary(value=[summary])
+
+    @classmethod
+    def construct_output(cls, **kwargs) -> str:
+        """
+        Args:
+            input (str): Input text.
+        """
+        input = kwargs.get("input", "")
+        return f"{SummaryPrompts.format_start} {input} {SummaryPrompts.format_end}"

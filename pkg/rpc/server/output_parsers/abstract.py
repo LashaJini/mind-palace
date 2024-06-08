@@ -1,5 +1,5 @@
 from abc import ABC, abstractmethod
-from typing import Any, ClassVar
+from typing import Any, ClassVar, List
 from llama_index.core.output_parsers.base import ChainableOutputParser
 from pydantic import BaseModel
 
@@ -34,4 +34,10 @@ class OutputParser(ChainableOutputParser, ABC):
 
     @abstractmethod
     def parse(self, output: str) -> CustomBaseModel:
+        raise NotImplementedError
+
+    @classmethod
+    @abstractmethod
+    def construct_output(cls, **kwargs) -> str:
+        """For testing purposes."""
         raise NotImplementedError
