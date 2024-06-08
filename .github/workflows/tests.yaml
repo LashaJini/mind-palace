@@ -34,8 +34,8 @@ jobs:
     - name: Compile protocol buffers
       if: matrix.language == 'python'
       run: |
-          make clean-rpc
-          make rpc
+          make clean-rpc-py
+          make rpc-py
 
     - name: Run Python tests
       if: matrix.language == 'python'

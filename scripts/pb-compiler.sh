@@ -17,7 +17,6 @@ if ! which protoc-gen-go-grpc >/dev/null; then
 	exit 1
 fi
 
-mkdir pkg/rpc/server/gen -p
 mkdir pkg/rpc/client/gen -p
 
 protoc \
@@ -25,9 +24,4 @@ protoc \
 	--go-grpc_out=./pkg/rpc/client/gen --go-grpc_opt=paths=source_relative \
 	proto/*.proto
 
-python \
-	-m grpc_tools.protoc -Igen=./proto \
-	--python_out=./pkg/rpc/server \
-	--pyi_out=./pkg/rpc/server \
-	--grpc_python_out=./pkg/rpc/server \
-	proto/*.proto
+bash ./scripts/pb-compiler-py.sh
