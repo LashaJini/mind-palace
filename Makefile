@@ -23,8 +23,16 @@ rpc:
 	@bash ./scripts/pb-compiler.sh
 
 clean-rpc:
-	@echo "Removing '.proto' files..."
+	@echo "Removing compiled '.proto' files..."
 	@rm -rf ./pkg/rpc/client/gen ./pkg/rpc/server/gen
+
+rpc-py:
+	@echo "Compiling '.proto' files..."
+	@bash ./scripts/pb-compiler-py.sh
+
+clean-rpc-py:
+	@echo "Removing compiled '.proto' python files..."
+	@rm -rf ./pkg/rpc/server/gen
 
 db:
 	@bash scripts/postgres.sh $(ARGS)
