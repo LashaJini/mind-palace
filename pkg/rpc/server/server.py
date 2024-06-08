@@ -15,8 +15,8 @@ from pkg.rpc.server.prompts.factory import PromptsFactory
 from pkg.rpc.server.vdb import Milvus
 from pkg.rpc.server.llm import CustomLlamaCPP
 
-import gen.Palace_pb2 as pbPalace
-import gen.Palace_pb2_grpc as grpcPalace
+import pkg.rpc.server.gen.Palace_pb2 as pbPalace
+import pkg.rpc.server.gen.Palace_pb2_grpc as grpcPalace
 
 load_dotenv()
 

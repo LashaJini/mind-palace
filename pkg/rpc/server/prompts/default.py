@@ -12,7 +12,7 @@ class DefaultPrompts(Prompts):
     def standalone_template_token_count(self, llm: CustomLlamaCPP):
         return 0
 
-    def prompt(self, text: str, **kwargs):
+    def prompt(self, text: str, verbose=False, **kwargs):
         return ""
 
     def joinable_template(self, **kwargs) -> JoinableTemplate:

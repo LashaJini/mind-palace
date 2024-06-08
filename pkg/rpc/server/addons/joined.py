@@ -2,8 +2,7 @@ from typing import List
 from llama_index.core import PromptTemplate
 from llama_index.core.program import LLMTextCompletionProgram
 
-import gen.Palace_pb2 as pbPalace
-
+import pkg.rpc.server.gen.Palace_pb2 as pbPalace
 from pkg.rpc.server.addons.abstract import Addon
 from pkg.rpc.server.llm import CustomLlamaCPP
 from pkg.rpc.server.vdb import Milvus
@@ -25,9 +24,10 @@ class JoinedAddons(Addon):
         **kwargs,
     ):
         prompt = JoinedPrompts().prompt(text=input, verbose=verbose, **kwargs)
-        program = LLMTextCompletionProgram.from_defaults(
+        parser = JoinedParser(verbose=verbose, addons=self.addons)
+        program = LLMTextCompletionProgram(
             llm=llm,
-            output_parser=JoinedParser(verbose=verbose, addons=self.addons),
+            output_parser=parser,
             output_cls=Joined,  # type:ignore
             prompt=PromptTemplate(prompt),
             verbose=verbose,
@@ -39,8 +39,11 @@ class JoinedAddons(Addon):
 
         data = {}
         if results is not None:
-            for key, value in results.items():
-                data[key] = pbPalace.Strings(value=value)
+            for key, addon_result_info in results.items():
+                data[key] = pbPalace.AddonResultInfo(
+                    value=addon_result_info.get("value"),
+                    success=addon_result_info.get("success"),
+                )
 
         return pbPalace.AddonResult(
             id="",

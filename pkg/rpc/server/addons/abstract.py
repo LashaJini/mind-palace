@@ -1,14 +1,14 @@
 from abc import ABC, abstractmethod
 
-import gen.Palace_pb2 as pbPalace
+import pkg.rpc.server.gen.Palace_pb2 as pbPalace
 
 from pkg.rpc.server.llm import CustomLlamaCPP
 from pkg.rpc.server.vdb import Milvus
 
 addon_names = [
     "mind-palace-default",
-    "mind-palace-keywords",
-    "mind-palace-summary",
+    "mind-palace-resource-keywords",
+    "mind-palace-resource-summary",
 ]
 
 

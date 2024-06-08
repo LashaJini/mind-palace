@@ -1,3 +1,4 @@
+import re
 from typing import ClassVar, List
 from pydantic import ConfigDict
 
@@ -13,18 +14,22 @@ class Keywords(CustomBaseModel):
     value: List[str]
     name: ClassVar[str] = "keywords"
 
+    def get_value(self) -> List[str]:
+        return self.value
+
 
 class KeywordsParser(OutputParser):
     def __init__(self, verbose: bool = False):
         format_start = KeywordsPrompts.format_start
         format_end = KeywordsPrompts.format_end
         group_name = "keywords"
+        pattern = rf"{format_start}\s*(?P<{group_name}>.*?)\s*{format_end}"
 
         super().__init__(
             format_start=format_start,
             format_end=format_end,
             group_name=group_name,
-            pattern=rf"{format_start}\s*(?P<{group_name}>.*?)\s*{format_end}",
+            pattern=pattern,
             verbose=verbose,
         )
 
@@ -32,10 +37,24 @@ class KeywordsParser(OutputParser):
         if self.verbose:
             print(f"> Raw output: {output}")
 
-        keywords_part = output.split(self.format_start, 1)[1]
-        keywords = keywords_part.split(self.format_end, 1)[0].strip()
+        self.success = False
+        keywords = []
+        match = re.search(self.pattern, output, re.DOTALL)
+        if match:
+            keywords = match.group(self.group_name)
+            keywords = [
+                keyword.strip().lower() for keyword in keywords.split(",") if keyword
+            ]
+            self.success = len(keywords) > 0
+
+        if not self.success:
+            e = (
+                f"Keywords output format should be: {self.format_start} <{self.group_name}> {self.format_end}\n",
+                f"Got: {output}",
+            )
+            raise ValueError(e)
+
         if self.verbose:
             print(f"> Extracted keywords: {keywords}")
-        keywords = [keyword.strip().lower() for keyword in keywords.split(",")]
 
         return Keywords(value=keywords)

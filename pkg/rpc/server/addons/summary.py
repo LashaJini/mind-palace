@@ -1,9 +1,7 @@
-import uuid
 from llama_index.core import PromptTemplate
 from llama_index.core.program import LLMTextCompletionProgram
 
-import gen.Palace_pb2 as pbPalace
-
+import pkg.rpc.server.gen.Palace_pb2 as pbPalace
 from pkg.rpc.server.addons.abstract import Addon
 from pkg.rpc.server.llm import CustomLlamaCPP
 from pkg.rpc.server.vdb import Milvus
@@ -23,19 +21,20 @@ class SummaryAddon(Addon):
     ):
         """input -> generate summary -> insert embeddings -> return summary"""
         prompt = SummaryPrompts().prompt(text=input, verbose=verbose, **kwargs)
-        program = LLMTextCompletionProgram.from_defaults(
+        parser = SummaryParser(verbose=verbose)
+        program = LLMTextCompletionProgram(
             llm=llm,
-            output_parser=SummaryParser(verbose=verbose),
+            output_parser=parser,
             output_cls=Summary,  # type:ignore
             prompt=PromptTemplate(prompt),
             verbose=verbose,
         )
 
-        result = program(context_str=input).dict().get("value")
-
-        id = str(uuid.uuid4())
-        client.insert({"id": id, "input": input})
+        value = program(context_str=input, verbose=verbose).dict().get("value")
 
         return pbPalace.AddonResult(
-            id=id, data={"output": pbPalace.Strings(value=result)}
+            id=id,
+            data={
+                "summary": pbPalace.AddonResultInfo(success=parser.success, value=value)
+            },
         )

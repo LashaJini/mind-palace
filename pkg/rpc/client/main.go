@@ -43,8 +43,8 @@ func (c *Client) Add(ctx context.Context, file string, id uuid.UUID, userCfg *co
 			}
 			addonResult, _ := c.client.ApplyAddon(ctx, tmp)
 
-			for _, value := range addonResult.Data {
-				fmt.Println(value)
+			if addonResult != nil {
+				fmt.Println(addonResult.Data)
 			}
 		}
 	}

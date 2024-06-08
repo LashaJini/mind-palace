@@ -1,3 +1,4 @@
+import re
 from typing import ClassVar, List
 from pydantic import ConfigDict
 
@@ -13,18 +14,22 @@ class Summary(CustomBaseModel):
     value: List[str]
     name: ClassVar[str] = "summary"
 
+    def get_value(self) -> str:
+        return self.value[0]
+
 
 class SummaryParser(OutputParser):
     def __init__(self, verbose: bool = False):
         format_start = SummaryPrompts.format_start
         format_end = SummaryPrompts.format_end
         group_name = "summary"
+        pattern = rf"{format_start}\s*(?P<{group_name}>.*?)\s*{format_end}"
 
         super().__init__(
             format_start=format_start,
             format_end=format_end,
             group_name=group_name,
-            pattern=rf"{format_start}\s*(?P<{group_name}>.*?)\s*{format_end}",
+            pattern=pattern,
             verbose=verbose,
         )
 
@@ -32,7 +37,21 @@ class SummaryParser(OutputParser):
         if self.verbose:
             print(f"> Raw output: {output}")
 
-        summary_part = output.split(self.format_start, 1)[1]
-        summary = summary_part.split(self.format_end, 1)[0].strip()
+        self.success = False
+        summary = ""
+        match = re.search(self.pattern, output, re.DOTALL)
+        if match:
+            summary = match.group(self.group_name)
+            self.success = len(summary) > 0
+
+        if not self.success:
+            e = (
+                f"Summary output format should be: {self.format_start} <{self.group_name}> {self.format_end}\n",
+                f"Got: {output}",
+            )
+            raise ValueError(e)
+
+        if self.verbose:
+            print(f"> Extracted summary: {summary}")
 
         return Summary(value=[summary])

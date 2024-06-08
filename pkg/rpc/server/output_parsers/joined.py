@@ -1,14 +1,25 @@
 import re
-from typing import List, Dict
+from typing import Any, List, Dict
+
+# pydantic.errors.PydanticUserError: Please use `typing_extensions.TypedDict` instead of `typing.TypedDict` on Python < 3.12.
+from typing_extensions import TypedDict
 
 from pkg.rpc.server.output_parsers.abstract import OutputParser, CustomBaseModel
 from pkg.rpc.server.output_parsers.factory import OutputParserFactory
 
 
+class PalaceAddonResultInfo(TypedDict):
+    value: Any
+    success: bool
+
+
 class Joined(CustomBaseModel):
     """Data model for joined data models"""
 
-    value: Dict[str, List[str]]
+    value: Dict[str, PalaceAddonResultInfo]
+
+    def get_value(self):
+        return self.value
 
 
 class JoinedParser(OutputParser):
@@ -38,8 +49,9 @@ class JoinedParser(OutputParser):
 
         match = re.search(pattern, output, re.DOTALL)
 
-        results: Dict[str, List[str]] = {}
+        results: Dict[str, PalaceAddonResultInfo] = {}
 
+        self.success = False
         if match:
             outputs = []
             for parser in parsers:
@@ -48,14 +60,15 @@ class JoinedParser(OutputParser):
 
             for i, output in enumerate(outputs):
                 parser = parsers[i]
-                result = parser.parse(
+                output_model = parser.parse(
                     f"{parser.format_start} {output} {parser.format_end}"
                 )
-                results[result.name] = result.value
 
-            if self.verbose:
-                print(f"> Output parser results {results}")
-        else:
-            print("Failed to parse output.")
+                results[output_model.name] = PalaceAddonResultInfo(
+                    value=output_model.value, success=parser.success
+                )
+
+        if not self.success:
+            pass
 
         return Joined(value=results)

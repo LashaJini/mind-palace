@@ -1,8 +1,7 @@
 from llama_index.core import PromptTemplate
 from llama_index.core.program import LLMTextCompletionProgram
 
-import gen.Palace_pb2 as pbPalace
-
+import pkg.rpc.server.gen.Palace_pb2 as pbPalace
 from pkg.rpc.server.prompts.keywords import KeywordsPrompts
 from pkg.rpc.server.addons.abstract import Addon
 from pkg.rpc.server.llm import CustomLlamaCPP
@@ -25,18 +24,24 @@ class KeywordsAddon(Addon):
             kwargs["max_keywords"] = KeywordsPrompts.default_max_keywords
 
         prompt = KeywordsPrompts().prompt(text=input, verbose=verbose, **kwargs)
-        program = LLMTextCompletionProgram.from_defaults(
+        parser = KeywordsParser(verbose=verbose)
+        program = LLMTextCompletionProgram(
             llm=llm,
-            output_parser=KeywordsParser(verbose=verbose),
+            output_parser=parser,
             output_cls=Keywords,  # type:ignore
             prompt=PromptTemplate(prompt),
             verbose=verbose,
         )
 
-        result = (
+        value = (
             program(context_str=input, verbose=verbose, **kwargs).dict().get("value")
         )
 
         return pbPalace.AddonResult(
-            id="", data={"output": pbPalace.Strings(value=result)}
+            id=id,
+            data={
+                "keywords": pbPalace.AddonResultInfo(
+                    success=parser.success, value=value
+                )
+            },
         )
