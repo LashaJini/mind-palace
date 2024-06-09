@@ -1,4 +1,4 @@
-.PHONY: all build deps dev-deps rpc clean-rpc rpc-py clean-rpc-py test-py test-go test db vdb godoc
+.PHONY: all build deps deps-go deps-py dev-deps rpc clean-rpc rpc-py clean-rpc-py test-py test-go test db vdb godoc
 
 BUILD_OUT_DIR=bin
 BINARY_NAME=mind-palace
@@ -11,9 +11,16 @@ build: deps rpc
 	@go mod tidy
 	@go build -o $(BUILD_OUT_DIR)/$(BINARY_NAME) $(SOURCE_DIR)
 
-deps:
+deps: deps-go deps-py
+
+deps-go:
+	@echo "Installing go dependencies..."
 	@go mod download
 	@go mod verify
+
+deps-py:
+	@echo "Installing python dependencies..."
+	@poetry install
 
 dev-deps:
 	@go install --tags 'postgres' github.com/golang-migrate/migrate/v4/cmd/migrate@latest
