@@ -1,15 +1,14 @@
 package cli
 
 import (
-	"bufio"
 	"context"
 	"fmt"
-	"io"
 	"os"
 	"path/filepath"
-	"unicode/utf8"
 
 	"github.com/google/uuid"
+	"github.com/lashajini/mind-palace/cli/common"
+	"github.com/lashajini/mind-palace/pkg/addons"
 	"github.com/lashajini/mind-palace/pkg/config"
 	"github.com/lashajini/mind-palace/pkg/models"
 	rpcclient "github.com/lashajini/mind-palace/pkg/rpc/client"
@@ -37,11 +36,123 @@ func init() {
 }
 
 func Add(cmd *cobra.Command, args []string) {
-	currentUser, err := config.CurrentUser()
-	if err != nil {
-		fmt.Println(err)
+	file, _ := cmd.Flags().GetString("file")
+
+	add(file)
+}
+
+func add(file string) {
+	currentUser := getCurrentUser()
+	validateFile(file)
+
+	resourceID := uuid.New()
+	fileExtension := filepath.Ext(file)
+	fileName := resourceID.String() + fileExtension
+	originalResourceFullPath := config.OriginalResourceFullPath(currentUser)
+	dst := filepath.Join(originalResourceFullPath, fileName)
+
+	copyFile(file, dst)
+
+	cfg := config.NewConfig()
+	rpcClient := rpcclient.NewClient(cfg)
+	db := database.InitDB(cfg)
+	memory := models.NewMemory()
+
+	defer revert(dst)
+
+	// TODO: ctx
+	ctx := context.Background()
+
+	tx := beginTransaction(ctx, db)
+	memoryID := insertMemory(tx, memory)
+	resourcePath := filepath.Join(config.OriginalResourceRelativePath(currentUser), fileName)
+	resource := models.NewResource(resourceID, memoryID, resourcePath)
+	insertResource(tx, resource)
+	commitTransaction(tx)
+
+	userCfg := userConfig(currentUser)
+
+	addonsResults, _ := rpcClient.Add(ctx, dst, memoryID, userCfg)
+	for addonResult := range addonsResults {
+		addons, err := addons.ToAddons(addonResult)
+		common.HandleError(err)
+
+		for _, addon := range addons {
+			addon.Action()
+		}
+	}
+}
+
+func revert(dst string) {
+	if r := recover(); r != nil {
+		fmt.Println("Error:", r)
+
+		fmt.Println("Reverting..")
+
+		err := os.Remove(dst)
+		common.HandleError(err)
+
+		fmt.Println("File removed", dst)
+	}
+}
+
+func copyFile(src, dst string) {
+	err := common.CopyFile(src, dst)
+	common.HandleError(err)
+}
+
+func userConfig(currentUser string) *config.UserConfig {
+	userCfg, err := config.ReadUserConfig(currentUser)
+	common.HandleError(err)
+	return userCfg
+}
+
+func commitTransaction(tx *database.MultiInstruction) {
+	err := tx.Commit()
+	common.Panic(err)
+}
+
+func insertResource(tx *database.MultiInstruction, resource *models.OriginalResource) {
+	err := models.InsertResourceTx(tx, resource)
+	common.Panic(err)
+}
+
+func insertMemory(tx *database.MultiInstruction, memory *models.Memory) uuid.UUID {
+	memoryID, err := models.InsertMemoryTx(tx, memory)
+	common.Panic(err)
+	return memoryID
+}
+
+func beginTransaction(ctx context.Context, db *database.MindPalaceDB) *database.MultiInstruction {
+	tx := database.NewMultiInstruction(ctx, db.DB())
+
+	err := tx.Begin()
+	common.Panic(err)
+
+	return tx
+}
+
+func validateFile(file string) {
+	exists, err := common.FileExists(file)
+	common.HandleError(err)
+
+	if !exists {
+		fmt.Printf("Error: File %s does not exist\n", file)
 		os.Exit(1)
 	}
+
+	isText, err := common.IsTextFile(file)
+	common.HandleError(err)
+
+	if !isText {
+		fmt.Printf("Error: File %s is not a text file\n", file)
+		os.Exit(1)
+	}
+}
+
+func getCurrentUser() string {
+	currentUser, err := config.CurrentUser()
+	common.HandleError(err)
 
 	if currentUser == "" {
 		fmt.Println("Error: There are no users available.")
@@ -49,138 +160,5 @@ func Add(cmd *cobra.Command, args []string) {
 		os.Exit(1)
 	}
 
-	file, _ := cmd.Flags().GetString("file")
-
-	exists, err := fileExists(file)
-	if err != nil {
-		fmt.Println("Error:", err)
-		os.Exit(1)
-	}
-
-	if !exists {
-		fmt.Printf("Error: File %s does not exist\n", file)
-		os.Exit(1)
-	}
-
-	isText, err := isTextFile(file)
-	if err != nil {
-		fmt.Println("Error:", err)
-		os.Exit(1)
-	}
-
-	if !isText {
-		fmt.Printf("Error: File %s is not a text file\n", file)
-		os.Exit(1)
-	}
-
-	resourceID := uuid.New()
-	fileExtension := filepath.Ext(file)
-	dst := filepath.Join(config.MindPalaceOriginalResourcePath(currentUser, true), resourceID.String()+fileExtension)
-	if err := copyFile(file, dst); err != nil {
-		fmt.Println(err)
-		os.Exit(1)
-	}
-
-	cfg := config.NewConfig()
-	// TODO: move to py
-	// vdatabase.InitVDB(cfg)
-
-	rpcClient := rpcclient.NewClient(cfg)
-	db := database.InitDB(cfg)
-	memory := models.NewMemory()
-
-	ctx := context.Background()
-	tx := database.NewMultiInstruction(ctx, db.DB())
-
-	tx.Begin()
-	memoryID, _ := models.InsertMemoryTx(tx, memory)
-	resource := models.NewResource(resourceID, memoryID, config.MindPalaceOriginalResourcePath(currentUser, false))
-	models.InsertResourceTx(tx, resource)
-	tx.Commit()
-
-	userCfg, _ := config.ReadUserConfig(currentUser)
-	fmt.Println(userCfg)
-
-	rpcClient.Add(ctx, dst, memoryID, userCfg)
-
-	add(args...)
-}
-
-func add(args ...string) {}
-
-func fileExists(path string) (bool, error) {
-	stat, err := os.Stat(path)
-	if err == nil {
-		return !stat.IsDir(), nil // File or dir
-	}
-	if os.IsNotExist(err) {
-		return false, nil
-	}
-
-	return false, err
-}
-
-func copyFile(src, dst string) error {
-	srcFile, err := os.Open(src)
-	if err != nil {
-		return fmt.Errorf("failed to open source file: %w", err)
-	}
-	defer srcFile.Close()
-
-	dstFile, err := os.Create(dst)
-	if err != nil {
-		return fmt.Errorf("failed to create destination file: %w", err)
-	}
-	defer dstFile.Close()
-
-	_, err = io.Copy(dstFile, srcFile)
-	if err != nil {
-		return fmt.Errorf("failed to copy file: %w", err)
-	}
-
-	err = dstFile.Sync()
-	if err != nil {
-		return fmt.Errorf("failed to sync destination file: %w", err)
-	}
-
-	return nil
-}
-
-func isTextFile(filename string) (bool, error) {
-	file, err := os.Open(filename)
-	if err != nil {
-		return false, err
-	}
-	defer file.Close()
-
-	reader := bufio.NewReader(file)
-	buf := make([]byte, 4096)
-	for {
-		n, err := reader.Read(buf)
-		if err != nil && err != io.EOF {
-			return false, err
-		}
-
-		if !isText(buf[:n]) {
-			return false, nil
-		}
-
-		if err == io.EOF {
-			break
-		}
-	}
-
-	return true, nil
-}
-
-func isText(data []byte) bool {
-	for len(data) > 0 {
-		r, size := utf8.DecodeRune(data)
-		if r == utf8.RuneError && size == 1 {
-			return false
-		}
-
-		data = data[size:]
-	}
-	return true
+	return currentUser
 }

@@ -3,20 +3,47 @@ package addons
 import (
 	"fmt"
 	"strings"
+
+	pb "github.com/lashajini/mind-palace/pkg/rpc/client/gen/proto"
 )
 
 type Addon struct {
 	Name        string
 	Description string
-	Input       Types
-	Output      Types
+	InputTypes  Types
+	OutputTypes Types
+	Output      any
+	Action      func() (bool, error)
+}
+
+func (a *Addon) Empty() bool {
+	return a == nil || a.Name == ""
 }
 
 func (a Addon) String() string {
-	return fmt.Sprintf(`Name: %s
+	return fmt.Sprintf(`
+Name: %s
 Description: %s
-Input: %s
-Output: %s`, a.Name, a.Description, a.Input, a.Output)
+Input types: %s
+Output types: %s
+Last output: %s
+`, a.Name, a.Description, a.InputTypes, a.OutputTypes, a.Output)
+}
+
+func ToAddons(addonResult *pb.AddonResult) ([]Addon, error) {
+	var addons []Addon
+	if addonResult != nil {
+		for key, value := range addonResult.Data {
+			addon := Find(key)
+			if !addon.Empty() && value.Success {
+				addon.Output = strings.Join(value.Value, ", ")
+
+				addons = append(addons, addon)
+			}
+		}
+	}
+
+	return addons, nil
 }
 
 type Type string
@@ -43,9 +70,27 @@ var (
 )
 
 var List = []Addon{
-	{Name: Default, Description: "Default", Input: []Type{Text}, Output: []Type{Text}},
-	{Name: ResourceSummary, Description: "Summarizes a resource", Input: []Type{Text}, Output: []Type{Text}},
-	{Name: ResourceKeywords, Description: "Captures keywords from a resource", Input: []Type{Text}, Output: []Type{Text}},
+	{
+		Name:        Default,
+		Description: "Default",
+		InputTypes:  []Type{Text},
+		OutputTypes: []Type{Text},
+		Action:      func() (bool, error) { return true, nil },
+	},
+	{
+		Name:        ResourceSummary,
+		Description: "Summarizes a resource",
+		InputTypes:  []Type{Text},
+		OutputTypes: []Type{Text},
+		Action:      func() (bool, error) { return true, nil },
+	},
+	{
+		Name:        ResourceKeywords,
+		Description: "Extracts keywords from a resource",
+		InputTypes:  []Type{Text},
+		OutputTypes: []Type{Text},
+		Action:      func() (bool, error) { return true, nil },
+	},
 }
 
 func Find(name string) Addon {

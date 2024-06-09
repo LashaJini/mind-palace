@@ -40,7 +40,7 @@ class KeywordsAddon(Addon):
         return pbPalace.AddonResult(
             id=id,
             data={
-                "keywords": pbPalace.AddonResultInfo(
+                Keywords.name: pbPalace.AddonResultInfo(
                     success=parser.success, value=value
                 )
             },

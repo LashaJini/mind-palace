@@ -26,28 +26,32 @@ func NewClient(cfg *config.Config) *Client {
 	return &Client{client}
 }
 
-func (c *Client) Add(ctx context.Context, file string, id uuid.UUID, userCfg *config.UserConfig) (*pb.AddonResult, error) {
-	resource := &pb.Resource{
-		File:  file,
-		Id:    id.String(),
-		Steps: userCfg.Steps(),
-	}
-	joinedAddons, _ := c.client.JoinAddons(ctx, resource)
+func (c *Client) Add(ctx context.Context, file string, id uuid.UUID, userCfg *config.UserConfig) (<-chan *pb.AddonResult, error) {
+	addonResultC := make(chan *pb.AddonResult)
+	go func() {
+		resource := &pb.Resource{
+			File:  file,
+			Id:    id.String(),
+			Steps: userCfg.Steps(),
+		}
+		joinedAddons, _ := c.client.JoinAddons(ctx, resource)
 
-	if joinedAddons != nil {
-		for _, joinedAddon := range joinedAddons.Addons {
-			tmp := &pb.JoinedAddons{
-				File:   file,
-				Id:     id.String(),
-				Addons: joinedAddon,
-			}
-			addonResult, _ := c.client.ApplyAddon(ctx, tmp)
+		if joinedAddons != nil {
+			for _, joinedAddon := range joinedAddons.Addons {
+				tmp := &pb.JoinedAddons{
+					File:   file,
+					Id:     id.String(),
+					Addons: joinedAddon,
+				}
+				// server may decide that it's more efficient to join multiple addons together
+				addonResult, _ := c.client.ApplyAddon(ctx, tmp)
 
-			if addonResult != nil {
-				fmt.Println(addonResult.Data)
+				addonResultC <- addonResult
 			}
 		}
-	}
 
-	return nil, nil
+		close(addonResultC)
+	}()
+
+	return addonResultC, nil
 }

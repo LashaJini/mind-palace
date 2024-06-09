@@ -12,7 +12,7 @@ class Keywords(CustomBaseModel):
     model_config = ConfigDict(from_attributes=True)
 
     value: List[str]
-    name: ClassVar[str] = "keywords"
+    name: ClassVar[str] = "mind-palace-resource-keywords"
 
     def get_value(self) -> List[str]:
         return self.value

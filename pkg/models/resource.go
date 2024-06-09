@@ -50,7 +50,7 @@ func InsertResource(ctx context.Context, db *sql.DB, resource *OriginalResource)
 
 func InsertResourceTx(tx *database.MultiInstruction, resource *OriginalResource) error {
 	q := fmt.Sprintf(`
-INSERT INTO resource (
+INSERT INTO original_resource (
 	id,
 	memory_id,
 	file_path,

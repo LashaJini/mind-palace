@@ -35,6 +35,8 @@ class SummaryAddon(Addon):
         return pbPalace.AddonResult(
             id=id,
             data={
-                "summary": pbPalace.AddonResultInfo(success=parser.success, value=value)
+                Summary.name: pbPalace.AddonResultInfo(
+                    success=parser.success, value=value
+                )
             },
         )

@@ -7,6 +7,7 @@ import (
 	"strconv"
 
 	"github.com/joho/godotenv"
+	"github.com/lashajini/mind-palace/cli/common"
 	"github.com/lashajini/mind-palace/pkg/constants"
 )
 
@@ -29,16 +30,10 @@ type Config struct {
 
 func NewConfig() *Config {
 	err := godotenv.Load()
-	if err != nil {
-		fmt.Println("Error loading .env file")
-		os.Exit(1)
-	}
+	common.HandleError(err)
 
 	mindPalaceUser, err := CurrentUser()
-	if err != nil {
-		fmt.Println(err)
-		os.Exit(1)
-	}
+	common.HandleError(err)
 
 	grpcServerPort, _ := strconv.Atoi(os.Getenv("PYTHON_GRPC_SERVER_PORT"))
 
@@ -83,22 +78,32 @@ func MindPalacePath(homePrefix bool) string {
 	return mindPalaceRoot
 }
 
-func MindPalaceUserPath(user string, homePrefix bool) string {
+func UserPath(user string, homePrefix bool) string {
 	return filepath.Join(MindPalacePath(homePrefix), user)
 }
 
-func MindPalaceInfoPath(homePrefix bool) string {
+func InfoPath(homePrefix bool) string {
 	return filepath.Join(MindPalacePath(homePrefix), constants.MIND_PALACE_INFO)
 }
 
-func MindPalaceOriginalResourcePath(user string, homePrefix bool) string {
-	return filepath.Join(MindPalaceUserPath(user, homePrefix), constants.MIND_PALACE_RESOURCES, constants.MIND_PALACE_ORIGINAL)
+func OriginalResourcePath(user string, homePrefix bool) string {
+	return filepath.Join(UserPath(user, homePrefix), constants.MIND_PALACE_RESOURCES, constants.MIND_PALACE_ORIGINAL)
 }
 
-func MindPalaceMemoryPath(user string, homePrefix bool) string {
-	return filepath.Join(MindPalaceUserPath(user, homePrefix), constants.MIND_PALACE_MEMORIES)
+// relative to user home dir
+func OriginalResourceRelativePath(user string) string {
+	return filepath.Join(UserPath(user, false), constants.MIND_PALACE_RESOURCES, constants.MIND_PALACE_ORIGINAL)
 }
 
-func MindPalaceUserConfigPath(user string, homePrefix bool) string {
-	return filepath.Join(MindPalaceUserPath(user, homePrefix), constants.MIND_PALACE_CONFIG)
+// including user home dir
+func OriginalResourceFullPath(user string) string {
+	return filepath.Join(UserPath(user, true), constants.MIND_PALACE_RESOURCES, constants.MIND_PALACE_ORIGINAL)
+}
+
+func MemoryPath(user string, homePrefix bool) string {
+	return filepath.Join(UserPath(user, homePrefix), constants.MIND_PALACE_MEMORIES)
+}
+
+func UserConfigPath(user string, homePrefix bool) string {
+	return filepath.Join(UserPath(user, homePrefix), constants.MIND_PALACE_CONFIG)
 }

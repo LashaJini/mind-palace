@@ -19,7 +19,7 @@ func (u *UserConfig) Steps() []string {
 }
 
 func (u *UserConfig) EnableAddon(addon addons.Addon) error {
-	inputTypes := addon.Input
+	inputTypes := addon.InputTypes
 	var needsUpdate bool
 
 	for _, inputType := range inputTypes {
@@ -50,7 +50,7 @@ func (u *UserConfig) EnableAddon(addon addons.Addon) error {
 }
 
 func (u *UserConfig) DisableAddon(addon addons.Addon) error {
-	inputTypes := addon.Input
+	inputTypes := addon.InputTypes
 	var needsUpdate bool
 
 	for _, inputType := range inputTypes {
@@ -80,7 +80,7 @@ func (u *UserConfig) Update() error {
 		return err
 	}
 
-	return os.WriteFile(MindPalaceUserConfigPath(u.Config.User, true), d, 0777)
+	return os.WriteFile(UserConfigPath(u.Config.User, true), d, 0777)
 }
 
 func NewUserConfig(user string) *UserConfig {
@@ -98,7 +98,7 @@ func NewUserConfig(user string) *UserConfig {
 }
 
 func ReadUserConfig(user string) (*UserConfig, error) {
-	d, err := os.ReadFile(MindPalaceUserConfigPath(user, true))
+	d, err := os.ReadFile(UserConfigPath(user, true))
 	if err != nil {
 		return &UserConfig{}, err
 	}

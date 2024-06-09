@@ -8,8 +8,6 @@ from pkg.rpc.server.output_parsers.abstract import OutputParser, CustomBaseModel
 from pkg.rpc.server.output_parsers.factory import OutputParserFactory
 from pkg.rpc.server.output_parsers.keywords import KeywordsParser
 from pkg.rpc.server.output_parsers.summary import SummaryParser
-from pkg.rpc.server.prompts.keywords import KeywordsPrompts
-from pkg.rpc.server.prompts.summary import SummaryPrompts
 
 
 class PalaceAddonResultInfo(TypedDict):

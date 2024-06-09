@@ -12,7 +12,7 @@ class Summary(CustomBaseModel):
     model_config = ConfigDict(from_attributes=True)
 
     value: List[str]
-    name: ClassVar[str] = "summary"
+    name: ClassVar[str] = "mind-palace-resource-summary"
 
     def get_value(self) -> str:
         return self.value[0]

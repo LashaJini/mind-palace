@@ -15,11 +15,11 @@ func UpdateMindPalaceInfo(info MindPalaceInfo) error {
 		return err
 	}
 
-	return os.WriteFile(MindPalaceInfoPath(true), d, 0777)
+	return os.WriteFile(InfoPath(true), d, 0777)
 }
 
 func CurrentUser() (string, error) {
-	d, err := os.ReadFile(MindPalaceInfoPath(true))
+	d, err := os.ReadFile(InfoPath(true))
 	if err != nil {
 		return "", err
 	}
