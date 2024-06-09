@@ -7,13 +7,13 @@ fi
 
 if ! which protoc-gen-go >/dev/null; then
 	echo -e "Please install protoc-gen-go:\n"
-	echo "go install google.golang.org/protobuf/cmd/protoc-gen-go@v1.28"
+	echo "go install google.golang.org/protobuf/cmd/protoc-gen-go@v1.28.0"
 	exit 1
 fi
 
 if ! which protoc-gen-go-grpc >/dev/null; then
 	echo -e "Please install protoc-gen-go-grpc:\n"
-	echo "go install google.golang.org/protobuf/cmd/protoc-gen-go-grpc@v1.2"
+	echo "go install google.golang.org/grpc/cmd/protoc-gen-go-grpc@v1.2.0"
 	exit 1
 fi
 

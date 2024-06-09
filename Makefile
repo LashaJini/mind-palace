@@ -23,6 +23,8 @@ deps-py:
 	@poetry install
 
 dev-deps:
+	@go install google.golang.org/protobuf/cmd/protoc-gen-go@v1.28.0
+	@go install google.golang.org/grpc/cmd/protoc-gen-go-grpc@v1.2.0
 	@go install --tags 'postgres' github.com/golang-migrate/migrate/v4/cmd/migrate@latest
 
 rpc:
