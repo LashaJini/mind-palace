@@ -2,6 +2,7 @@ import re
 from typing import ClassVar, List
 from pydantic import ConfigDict
 
+from pkg.rpc.server import addon_names
 from pkg.rpc.server.output_parsers.abstract import OutputParser, CustomBaseModel
 from pkg.rpc.server.prompts.summary import SummaryPrompts
 
@@ -12,7 +13,7 @@ class Summary(CustomBaseModel):
     model_config = ConfigDict(from_attributes=True)
 
     value: List[str]
-    name: ClassVar[str] = "mind-palace-resource-summary"
+    name: ClassVar[str] = addon_names.summary
 
     def get_value(self) -> str:
         return self.value[0]

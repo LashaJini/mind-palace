@@ -1,4 +1,4 @@
-.PHONY: all build deps dev-deps rpc clean-rpc db vdb godoc
+.PHONY: all build deps dev-deps rpc clean-rpc rpc-py clean-rpc-py test-py test-go test db vdb godoc
 
 BUILD_OUT_DIR=bin
 BINARY_NAME=mind-palace
@@ -33,6 +33,15 @@ rpc-py:
 clean-rpc-py:
 	@echo "Removing compiled '.proto' python files..."
 	@rm -rf ./pkg/rpc/server/gen
+
+test-py:
+	@poetry run pytest
+
+test-go:
+	@go test -v ./cli/...
+
+test: test-go test-py
+	@echo "Done"
 
 db:
 	@bash scripts/postgres.sh $(ARGS)

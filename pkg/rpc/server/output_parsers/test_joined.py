@@ -1,5 +1,6 @@
 import pytest
 
+from pkg.rpc.server import addon_names
 from pkg.rpc.server.output_parsers.joined import JoinedParser
 from pkg.rpc.server.output_parsers.keywords import KeywordsParser
 from pkg.rpc.server.output_parsers.summary import SummaryParser
@@ -13,7 +14,7 @@ def validate_keywords(parser, output, expected_keywords, expected_success=True):
     keywords = []
 
     parser_result = parser.parse(output).get_value()
-    keywords_result = parser_result.get("keywords")
+    keywords_result = parser_result.get(addon_names.keywords)
 
     if keywords_result is not None:
         keywords = keywords_result.get("value")
@@ -29,7 +30,7 @@ def validate_summary(parser, output, expected_summary, expected_success=True):
     summary = ""
 
     parser_result = parser.parse(output).get_value()
-    summary_result = parser_result.get("summary")
+    summary_result = parser_result.get(addon_names.summary)
 
     if summary_result is not None:
         summary = summary_result.get("value")[0]
@@ -68,14 +69,14 @@ class TestJoinedParser:
     def test_valid_output_returns_joined(
         self, input_keywords, small_summary, summary_with_new_lines
     ):
-        parser = JoinedParser(verbose=verbose, addons=["mind-palace-resource-keywords"])
+        parser = JoinedParser(verbose=verbose, addons=[addon_names.keywords])
         validate_keywords(
             parser=parser,
             output=KeywordsParser.construct_output(input=input_keywords),
             expected_keywords=input_keywords,
         )
 
-        parser = JoinedParser(verbose=verbose, addons=["mind-palace-resource-summary"])
+        parser = JoinedParser(verbose=verbose, addons=[addon_names.summary])
         validate_summary(
             parser=parser,
             output=SummaryParser.construct_output(input=small_summary),
@@ -90,7 +91,7 @@ class TestJoinedParser:
 
         parser = JoinedParser(
             verbose=verbose,
-            addons=["mind-palace-resource-summary", "mind-palace-resource-keywords"],
+            addons=[addon_names.summary, addon_names.keywords],
         )
         validate_everything(
             parser=parser,

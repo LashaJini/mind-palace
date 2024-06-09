@@ -12,6 +12,7 @@ from pkg.rpc.server.prompts.summary import SummaryPrompts
 from pkg.rpc.server.addons.default import DefaultAddon
 from pkg.rpc.server.addons.summary import SummaryAddon
 from pkg.rpc.server.addons.keywords import KeywordsAddon
+from pkg.rpc.server.addon_names import default, summary, keywords
 
 
 class AddonScheme(TypedDict):
@@ -22,19 +23,19 @@ class AddonScheme(TypedDict):
 
 
 addons: Dict[str, AddonScheme] = {
-    "mind-palace-default": {
+    default: {
         "addon": DefaultAddon,
         "prompts": DefaultPrompts,
         "parser": DefaultParser,
         "skip": True,
     },
-    "mind-palace-resource-summary": {
+    summary: {
         "addon": SummaryAddon,
         "prompts": SummaryPrompts,
         "parser": SummaryParser,
         "skip": False,
     },
-    "mind-palace-resource-keywords": {
+    keywords: {
         "addon": KeywordsAddon,
         "prompts": KeywordsPrompts,
         "parser": KeywordsParser,
