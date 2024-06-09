@@ -40,6 +40,12 @@ jobs:
         make dev-deps
         make deps-go
 
+    - name: Install protoc
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y protobuf-compiler
+        protoc --version  # Check the installed version
+
     - name: Compile protocol buffers
       run: |
         make clean-rpc
