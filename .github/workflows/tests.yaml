@@ -37,6 +37,7 @@ jobs:
 
     - name: Install Go project dependencies
       run: |
+        make dev-deps
         make deps-go
 
     - name: Compile protocol buffers
