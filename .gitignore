@@ -7,3 +7,5 @@ __pycache__/
 volumes/
 embedEtcd.yaml
 _milvus/
+coverage/
+.coverage
