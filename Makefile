@@ -1,4 +1,4 @@
-.PHONY: all build deps deps-go deps-py dev-deps rpc clean-rpc rpc-py clean-rpc-py test-py test-go test db vdb godoc
+.PHONY: all build deps deps-go deps-py dev-deps rpc clean-rpc rpc-py clean-rpc-py test-py test-go test cover db vdb godoc
 
 BUILD_OUT_DIR=bin
 BINARY_NAME=mind-palace
@@ -23,9 +23,11 @@ deps-py:
 	@poetry install
 
 dev-deps:
+	@go get golang.org/x/tools/cmd/cover
 	@go install google.golang.org/protobuf/cmd/protoc-gen-go@v1.28.0
 	@go install google.golang.org/grpc/cmd/protoc-gen-go-grpc@v1.2.0
 	@go install --tags 'postgres' github.com/golang-migrate/migrate/v4/cmd/migrate@latest
+	@poetry add pytest-cov
 
 rpc:
 	@echo "Compiling '.proto' files..."
@@ -51,6 +53,9 @@ test-go:
 
 test: test-go test-py
 	@echo "Done"
+
+cover: dev-deps
+	@bash scripts/cover.sh $(ARGS)
 
 db:
 	@bash scripts/postgres.sh $(ARGS)
