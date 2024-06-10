@@ -9,3 +9,4 @@ embedEtcd.yaml
 _milvus/
 coverage/
 .coverage
+godepgraph.png
