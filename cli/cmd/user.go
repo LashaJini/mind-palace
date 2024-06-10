@@ -6,6 +6,7 @@ import (
 	"os"
 
 	"github.com/lashajini/mind-palace/pkg/config"
+	"github.com/lashajini/mind-palace/pkg/mpuser"
 	"github.com/spf13/cobra"
 )
 
@@ -95,7 +96,7 @@ func createMindPalace(user string) error {
 			return fmt.Errorf("Error: Could not create resource hierarchy.")
 		}
 
-		userConfig := config.NewUserConfig(user)
+		userConfig := mpuser.NewUserConfig(user)
 		d, err := json.Marshal(userConfig)
 		if err != nil {
 			return fmt.Errorf("Error: Could not encode user config.")

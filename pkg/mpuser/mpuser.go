@@ -1,4 +1,4 @@
-package config
+package mpuser
 
 import (
 	"encoding/json"
@@ -6,20 +6,19 @@ import (
 	"os"
 
 	"github.com/lashajini/mind-palace/pkg/addons"
+	"github.com/lashajini/mind-palace/pkg/config"
 )
 
-type Type addons.Type
-
-type UserConfig struct {
+type Config struct {
 	Config UserConfigRoot `json:"config"`
 }
 
-func (u *UserConfig) Steps() []string {
+func (u *Config) Steps() []string {
 	return u.Config.Text.Steps
 }
 
-func (u *UserConfig) EnableAddon(addon addons.Addon) error {
-	inputTypes := addon.InputTypes
+func (u *Config) EnableAddon(addon addons.IAddon) error {
+	inputTypes := addon.GetInputTypes()
 	var needsUpdate bool
 
 	for _, inputType := range inputTypes {
@@ -28,15 +27,15 @@ func (u *UserConfig) EnableAddon(addon addons.Addon) error {
 
 			canAppend := true
 			for _, step := range steps {
-				if step == addon.Name {
+				if step == addon.GetName() {
 					canAppend = false
-					fmt.Printf("Addon '%s' is already enabled for '%s'.\n", addon.Name, addons.Text)
+					fmt.Printf("Addon '%s' is already enabled for '%s'.\n", addon.GetName(), addons.Text)
 					break
 				}
 			}
 
 			if canAppend {
-				u.Config.Text.Steps = append(steps, addon.Name)
+				u.Config.Text.Steps = append(steps, addon.GetName())
 				needsUpdate = true
 			}
 		}
@@ -49,8 +48,8 @@ func (u *UserConfig) EnableAddon(addon addons.Addon) error {
 	return nil
 }
 
-func (u *UserConfig) DisableAddon(addon addons.Addon) error {
-	inputTypes := addon.InputTypes
+func (u *Config) DisableAddon(addon addons.IAddon) error {
+	inputTypes := addon.GetInputTypes()
 	var needsUpdate bool
 
 	for _, inputType := range inputTypes {
@@ -58,7 +57,7 @@ func (u *UserConfig) DisableAddon(addon addons.Addon) error {
 			steps := u.Config.Text.Steps
 
 			for index, step := range steps {
-				if step == addon.Name {
+				if step == addon.GetName() {
 					u.Config.Text.Steps = append(steps[:index], steps[index+1:]...)
 					needsUpdate = true
 					break
@@ -74,18 +73,18 @@ func (u *UserConfig) DisableAddon(addon addons.Addon) error {
 	return nil
 }
 
-func (u *UserConfig) Update() error {
+func (u *Config) Update() error {
 	d, err := json.Marshal(u)
 	if err != nil {
 		return err
 	}
 
-	return os.WriteFile(UserConfigPath(u.Config.User, true), d, 0777)
+	return os.WriteFile(config.UserConfigPath(u.Config.User, true), d, 0777)
 }
 
-func NewUserConfig(user string) *UserConfig {
+func NewUserConfig(user string) *Config {
 
-	return &UserConfig{
+	return &Config{
 		Config: UserConfigRoot{
 			User: user,
 			Text: Input{
@@ -97,13 +96,13 @@ func NewUserConfig(user string) *UserConfig {
 	}
 }
 
-func ReadUserConfig(user string) (*UserConfig, error) {
-	d, err := os.ReadFile(UserConfigPath(user, true))
+func ReadUserConfig(user string) (*Config, error) {
+	d, err := os.ReadFile(config.UserConfigPath(user, true))
 	if err != nil {
-		return &UserConfig{}, err
+		return &Config{}, err
 	}
 
-	var userCfg UserConfig
+	var userCfg Config
 	err = json.Unmarshal(d, &userCfg)
 
 	return &userCfg, err

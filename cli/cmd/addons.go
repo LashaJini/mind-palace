@@ -5,6 +5,7 @@ import (
 
 	"github.com/lashajini/mind-palace/pkg/addons"
 	"github.com/lashajini/mind-palace/pkg/config"
+	"github.com/lashajini/mind-palace/pkg/mpuser"
 	"github.com/spf13/cobra"
 )
 
@@ -41,7 +42,7 @@ func Addons(cmd *cobra.Command, args []string) {
 	if ENABLE != "" {
 		addon := addons.Find(ENABLE)
 		user, _ := config.CurrentUser()
-		userCfg, _ := config.ReadUserConfig(user)
+		userCfg, _ := mpuser.ReadUserConfig(user)
 		_ = userCfg.EnableAddon(addon)
 
 		return
@@ -50,7 +51,7 @@ func Addons(cmd *cobra.Command, args []string) {
 	if DISABLE != "" {
 		addon := addons.Find(DISABLE)
 		user, _ := config.CurrentUser()
-		userCfg, _ := config.ReadUserConfig(user)
+		userCfg, _ := mpuser.ReadUserConfig(user)
 		_ = userCfg.DisableAddon(addon)
 
 		return

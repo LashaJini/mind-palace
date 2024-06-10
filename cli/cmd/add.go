@@ -11,6 +11,7 @@ import (
 	"github.com/lashajini/mind-palace/pkg/addons"
 	"github.com/lashajini/mind-palace/pkg/config"
 	"github.com/lashajini/mind-palace/pkg/models"
+	"github.com/lashajini/mind-palace/pkg/mpuser"
 	rpcclient "github.com/lashajini/mind-palace/pkg/rpc/client"
 	"github.com/lashajini/mind-palace/pkg/storage/database"
 	"github.com/spf13/cobra"
@@ -78,7 +79,7 @@ func add(file string) {
 		common.HandleError(err)
 
 		for _, addon := range addons {
-			addon.Action()
+			addon.Action(db)
 		}
 	}
 }
@@ -101,8 +102,8 @@ func copyFile(src, dst string) {
 	common.HandleError(err)
 }
 
-func userConfig(currentUser string) *config.UserConfig {
-	userCfg, err := config.ReadUserConfig(currentUser)
+func userConfig(currentUser string) *mpuser.Config {
+	userCfg, err := mpuser.ReadUserConfig(currentUser)
 	common.HandleError(err)
 	return userCfg
 }
