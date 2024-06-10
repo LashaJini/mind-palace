@@ -4,13 +4,14 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/google/uuid"
 	pb "github.com/lashajini/mind-palace/pkg/rpc/client/gen/proto"
 	"github.com/lashajini/mind-palace/pkg/storage/database"
 )
 
 type IAddon interface {
 	Empty() bool
-	Action(db *database.MindPalaceDB) (bool, error)
+	Action(db *database.MindPalaceDB, memoryID uuid.UUID, args ...any) (bool, error)
 	String() string
 
 	GetName() string
@@ -58,7 +59,7 @@ func (a *Addon) Empty() bool {
 	return a == nil || a.Name == ""
 }
 
-func (a Addon) Action(db *database.MindPalaceDB) (bool, error) {
+func (a Addon) Action(db *database.MindPalaceDB, memoryID uuid.UUID, args ...any) (bool, error) {
 	return true, nil
 }
 

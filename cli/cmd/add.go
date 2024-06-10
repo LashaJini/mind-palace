@@ -59,12 +59,12 @@ func add(file string) {
 	db := database.InitDB(cfg)
 	memory := models.NewMemory()
 
-	defer revert(dst)
-
 	// TODO: ctx
 	ctx := context.Background()
+	tx := database.NewMultiInstruction(ctx, db.DB())
+	defer revert(dst, tx)
 
-	tx := beginTransaction(ctx, db)
+	beginTransaction(ctx, tx)
 	memoryID := insertMemory(tx, memory)
 	resourcePath := filepath.Join(config.OriginalResourceRelativePath(currentUser), fileName)
 	resource := models.NewResource(resourceID, memoryID, resourcePath)
@@ -79,20 +79,23 @@ func add(file string) {
 		common.HandleError(err)
 
 		for _, addon := range addons {
-			addon.Action(db)
+			addon.Action(db, memoryID)
 		}
 	}
 }
 
-func revert(dst string) {
+func revert(dst string, tx *database.MultiInstruction) {
 	if r := recover(); r != nil {
 		fmt.Println("Error:", r)
 
 		fmt.Println("Reverting..")
 
-		err := os.Remove(dst)
+		err := tx.Rollback()
 		common.HandleError(err)
+		fmt.Println("Database rollbacked")
 
+		err = os.Remove(dst)
+		common.HandleError(err)
 		fmt.Println("File removed", dst)
 	}
 }
@@ -124,9 +127,7 @@ func insertMemory(tx *database.MultiInstruction, memory *models.Memory) uuid.UUI
 	return memoryID
 }
 
-func beginTransaction(ctx context.Context, db *database.MindPalaceDB) *database.MultiInstruction {
-	tx := database.NewMultiInstruction(ctx, db.DB())
-
+func beginTransaction(ctx context.Context, tx *database.MultiInstruction) *database.MultiInstruction {
 	err := tx.Begin()
 	common.Panic(err)
 
