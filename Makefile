@@ -1,4 +1,4 @@
-.PHONY: all build deps deps-go deps-py dev-deps rpc clean-rpc rpc-py clean-rpc-py test-py test-go test cover db vdb godoc
+.PHONY: all build deps deps-go deps-py dev-deps rpc clean-rpc rpc-py clean-rpc-py test-py test-go test cover db vdb graph godoc
 
 BUILD_OUT_DIR=bin
 BINARY_NAME=mind-palace
@@ -23,7 +23,8 @@ deps-py:
 	@poetry install
 
 dev-deps:
-	@go get golang.org/x/tools/cmd/cover
+	@go install github.com/kisielk/godepgraph@latest
+	@go install golang.org/x/tools/cmd/cover@latest
 	@go install google.golang.org/protobuf/cmd/protoc-gen-go@v1.28.0
 	@go install google.golang.org/grpc/cmd/protoc-gen-go-grpc@v1.2.0
 	@go install --tags 'postgres' github.com/golang-migrate/migrate/v4/cmd/migrate@latest
@@ -62,6 +63,10 @@ db:
 
 vdb:
 	@bash scripts/standalone_embed.sh $(ARGS)
+
+graph: dev-deps
+	@godepgraph -s . | dot -Tpng -o godepgraph.png
+	@eog godepgraph.png
 
 godoc:
 	@echo "Generating godoc..."
