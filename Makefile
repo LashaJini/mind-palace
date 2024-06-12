@@ -4,6 +4,10 @@ BUILD_OUT_DIR=bin
 BINARY_NAME=mind-palace
 SOURCE_DIR=.
 
+.EXPORT_ALL_VARIABLES:
+PROJECT_ROOT=$(shell pwd)
+ENV=$(MP_ENV) # prod,test,dev
+
 all: build
 
 build: deps rpc
@@ -50,7 +54,7 @@ test-py:
 	@poetry run pytest
 
 test-go:
-	@go test -v ./cli/...
+	@go test -v ./cli/common/... ./pkg/models/... $(ARGS)
 
 test: test-go test-py
 	@echo "Done"

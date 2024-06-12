@@ -4,6 +4,8 @@ gen/
 __pycache__/
 
 .env
+.env.test
+
 volumes/
 embedEtcd.yaml
 _milvus/

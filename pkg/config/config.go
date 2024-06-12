@@ -17,10 +17,11 @@ type Config struct {
 	GRPC_SERVER_PORT int
 
 	// database
-	DB_USER string
-	DB_PASS string
-	DB_NAME string
-	DB_PORT int
+	DB_USER    string
+	DB_PASS    string
+	DB_NAME    string
+	DB_PORT    int
+	DB_VERSION string
 
 	// vector database
 	VDB_HOST string
@@ -29,7 +30,16 @@ type Config struct {
 }
 
 func NewConfig() *Config {
-	err := godotenv.Load()
+	projectRoot := os.Getenv("PROJECT_ROOT")
+	env := os.Getenv("MP_ENV")
+	if !constants.ENVS[env] {
+		fmt.Printf("ENV `%s` not in `%v`. Using `%s`\n", env, constants.ENVS, constants.DEV_ENV)
+		env = constants.DEV_ENV
+	}
+
+	envFile := filepath.Join(projectRoot, fmt.Sprintf(".env.%s", env))
+
+	err := godotenv.Load(envFile)
 	errors.Handle(err)
 
 	mindPalaceUser, err := CurrentUser()
@@ -41,6 +51,7 @@ func NewConfig() *Config {
 	dbPass := os.Getenv("DB_PASS")
 	dbName := mindPalaceUser + os.Getenv("DB_NAME")
 	dbPort, _ := strconv.Atoi(os.Getenv("DB_PORT"))
+	dbVersion := os.Getenv("DB_VERSION")
 
 	vdbHost := os.Getenv("VDB_HOST")
 	vdbName := mindPalaceUser + os.Getenv("VDB_NAME")
@@ -49,10 +60,11 @@ func NewConfig() *Config {
 	return &Config{
 		GRPC_SERVER_PORT: grpcServerPort,
 
-		DB_USER: dbUser,
-		DB_PASS: dbPass,
-		DB_NAME: dbName,
-		DB_PORT: dbPort,
+		DB_USER:    dbUser,
+		DB_PASS:    dbPass,
+		DB_NAME:    dbName,
+		DB_PORT:    dbPort,
+		DB_VERSION: dbVersion,
 
 		VDB_HOST: vdbHost,
 		VDB_NAME: vdbName,

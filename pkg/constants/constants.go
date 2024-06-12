@@ -8,3 +8,8 @@ var MIND_PALACE_CONFIG = "config.json"
 var MIND_PALACE_INFO = ".info.json"
 
 var VDB_ORIGINAL_RESOURCE_COLLECTION_NAME = "original"
+
+var PROD_ENV = "prod"
+var DEV_ENV = "dev"
+var TEST_ENV = "test"
+var ENVS = map[string]bool{PROD_ENV: true, DEV_ENV: true, TEST_ENV: true}
