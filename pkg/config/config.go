@@ -7,7 +7,7 @@ import (
 	"strconv"
 
 	"github.com/joho/godotenv"
-	"github.com/lashajini/mind-palace/cli/common"
+	"github.com/lashajini/mind-palace/cli/errors"
 	"github.com/lashajini/mind-palace/pkg/constants"
 )
 
@@ -30,10 +30,10 @@ type Config struct {
 
 func NewConfig() *Config {
 	err := godotenv.Load()
-	common.HandleError(err)
+	errors.Handle(err)
 
 	mindPalaceUser, err := CurrentUser()
-	common.HandleError(err)
+	errors.Handle(err)
 
 	grpcServerPort, _ := strconv.Atoi(os.Getenv("PYTHON_GRPC_SERVER_PORT"))
 

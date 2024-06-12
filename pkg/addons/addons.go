@@ -11,7 +11,7 @@ import (
 
 type IAddon interface {
 	Empty() bool
-	Action(db *database.MindPalaceDB, memoryID uuid.UUID, args ...any) (bool, error)
+	Action(db *database.MindPalaceDB, memoryID uuid.UUID, args ...any) error
 	String() string
 
 	GetName() string
@@ -59,8 +59,8 @@ func (a *Addon) Empty() bool {
 	return a == nil || a.Name == ""
 }
 
-func (a Addon) Action(db *database.MindPalaceDB, memoryID uuid.UUID, args ...any) (bool, error) {
-	return true, nil
+func (a Addon) Action(db *database.MindPalaceDB, memoryID uuid.UUID, args ...any) error {
+	return nil
 }
 
 func (a Addon) String() string {
