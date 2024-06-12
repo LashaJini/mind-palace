@@ -13,19 +13,43 @@ type KeywordsAddon struct {
 	Addon
 }
 
-func (k *KeywordsAddon) Action(db *database.MindPalaceDB, memoryID uuid.UUID, args ...any) (bool, error) {
+func (k *KeywordsAddon) Action(db *database.MindPalaceDB, memoryID uuid.UUID, args ...any) (err error) {
 	keywords := k.Output.([]string)
 
 	ctx := context.Background()
 	tx := database.NewMultiInstruction(ctx, db.DB())
-	_ = tx.Begin()
-	keywordIDs, _ := models.InsertManyKeywordsTx(tx, keywords)
-	memoryKeywordID, _ := models.InsertManyMemoryKeywordsTx(tx, keywordIDs, memoryID)
-	fmt.Println(memoryKeywordID)
-	_ = tx.Commit()
 
-	// TODO: rollback
-	return true, nil
+	defer func() {
+		if err != nil {
+			fmt.Println(err)
+
+			if err := tx.Rollback(); err != nil {
+				panic(fmt.Errorf("Failed to rollback: %w", err))
+			}
+		}
+	}()
+
+	err = tx.Begin()
+	if err != nil {
+		return fmt.Errorf("Failed to start transaction: %w", err)
+	}
+
+	keywordIDs, err := models.InsertManyKeywordsTx(tx, keywords)
+	if err != nil {
+		return fmt.Errorf("Failed to insert keywords: %w", err)
+	}
+
+	err = models.InsertManyMemoryKeywordsTx(tx, keywordIDs, memoryID)
+	if err != nil {
+		return fmt.Errorf("Failed to insert memory keyword pairs: %w", err)
+	}
+
+	err = tx.Commit()
+	if err != nil {
+		return fmt.Errorf("Failed to commit transaction: %w", err)
+	}
+
+	return nil
 }
 
 func (k *KeywordsAddon) SetOutput(output any) {
