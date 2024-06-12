@@ -51,14 +51,14 @@ func placeholdersString(numRows int, numColumns int) string {
 }
 
 func insertF(table, columns, values, additional string) string {
-	q := fmt.Sprintf(`
+	q := strings.TrimSpace(fmt.Sprintf(`
 INSERT INTO %s (
 %s
 )
 VALUES
 %s
 %s
-`, table, columns, values, additional)
+`, table, columns, values, additional))
 
 	return q
 }
