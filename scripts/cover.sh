@@ -10,7 +10,7 @@ mkdir -p "$GO_COVER_DIR"
 mkdir -p "$PY_COVER_DIR"
 
 cover:go() {
-	go test -v -coverprofile "$GO_COVER_DIR/$COVER_GO.out" ./cli/...
+	go test -v -coverprofile "$GO_COVER_DIR/$COVER_GO.out" ./cli/... ./pkg/models/...
 	go tool cover -html "$GO_COVER_DIR/$COVER_GO.out" -o "$GO_COVER_DIR/$COVER_GO.html"
 
 	if [ "$1" = "open" ]; then

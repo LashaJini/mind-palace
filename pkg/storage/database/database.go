@@ -9,11 +9,13 @@ import (
 )
 
 type MindPalaceDB struct {
-	db *sql.DB
+	db               *sql.DB
+	ConnectionString string
 }
 
 func InitDB(cfg *config.Config) *MindPalaceDB {
-	db, err := sql.Open("postgres", cfg.DBAddr())
+	connStr := cfg.DBAddr()
+	db, err := sql.Open("postgres", connStr)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -22,7 +24,7 @@ func InitDB(cfg *config.Config) *MindPalaceDB {
 		log.Fatal(err)
 	}
 
-	return &MindPalaceDB{db}
+	return &MindPalaceDB{db: db, ConnectionString: connStr}
 }
 
 func (m *MindPalaceDB) DB() *sql.DB {
