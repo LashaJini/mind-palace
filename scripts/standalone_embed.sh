@@ -16,7 +16,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-source ./.env
+source ./scripts/env.sh
 
 NETWORK=mind_palace_milvus_network
 ROOT_DIR=_milvus
