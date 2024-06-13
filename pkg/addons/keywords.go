@@ -7,6 +7,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/lashajini/mind-palace/pkg/models"
 	"github.com/lashajini/mind-palace/pkg/storage/database"
+	"github.com/lashajini/mind-palace/pkg/types"
 )
 
 type KeywordsAddon struct {
@@ -58,9 +59,9 @@ func (k *KeywordsAddon) SetOutput(output any) {
 
 var KeywordsAddonInstance = KeywordsAddon{
 	Addon: Addon{
-		Name:        ResourceKeywords,
+		Name:        types.AddonResourceKeywords,
 		Description: "Extracts keywords from a resource",
-		InputTypes:  []Type{Text},
-		OutputTypes: []Type{Text},
+		InputTypes:  []types.IOType{types.Text},
+		OutputTypes: []types.IOType{types.Text},
 	},
 }

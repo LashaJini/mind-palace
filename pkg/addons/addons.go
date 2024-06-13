@@ -2,32 +2,18 @@ package addons
 
 import (
 	"fmt"
-	"strings"
 
 	"github.com/google/uuid"
 	pb "github.com/lashajini/mind-palace/pkg/rpc/client/gen/proto"
 	"github.com/lashajini/mind-palace/pkg/storage/database"
+	"github.com/lashajini/mind-palace/pkg/types"
 )
-
-type IAddon interface {
-	Empty() bool
-	Action(db *database.MindPalaceDB, memoryID uuid.UUID, args ...any) error
-	String() string
-
-	GetName() string
-	GetDescription() string
-	GetInputTypes() Types
-	GetOutputTypes() Types
-	GetOutput() any
-
-	SetOutput(output any)
-}
 
 type Addon struct {
 	Name        string
 	Description string
-	InputTypes  Types
-	OutputTypes Types
+	InputTypes  types.IOTypes
+	OutputTypes types.IOTypes
 	Output      any
 }
 
@@ -39,11 +25,11 @@ func (a *Addon) GetDescription() string {
 	return a.Description
 }
 
-func (a *Addon) GetInputTypes() Types {
+func (a *Addon) GetInputTypes() types.IOTypes {
 	return a.InputTypes
 }
 
-func (a *Addon) GetOutputTypes() Types {
+func (a *Addon) GetOutputTypes() types.IOTypes {
 	return a.OutputTypes
 }
 
@@ -73,8 +59,8 @@ Last output: %s
 `, a.Name, a.Description, a.InputTypes, a.OutputTypes, a.Output)
 }
 
-func ToAddons(addonResult *pb.AddonResult) ([]IAddon, error) {
-	var addons []IAddon
+func ToAddons(addonResult *pb.AddonResult) ([]types.IAddon, error) {
+	var addons []types.IAddon
 	if addonResult != nil {
 		for key, value := range addonResult.Data {
 			addon := Find(key)
@@ -89,50 +75,27 @@ func ToAddons(addonResult *pb.AddonResult) ([]IAddon, error) {
 	return addons, nil
 }
 
-type Type string
-type Types []Type
-
-const (
-	Text Type = "text"
-)
-
-func (t Types) String() string {
-	var result []string
-
-	for _, ts := range t {
-		result = append(result, string(ts))
-	}
-
-	return strings.Join(result, ", ")
-}
-
-var (
-	Default          = "mind-palace-default"
-	ResourceSummary  = "mind-palace-resource-summary"
-	ResourceKeywords = "mind-palace-resource-keywords"
-)
-
 var DefaultAddonInstance = Addon{
-	Name:        Default,
+	Name:        types.AddonDefault,
 	Description: "Default",
-	InputTypes:  []Type{Text},
-	OutputTypes: []Type{Text},
+	InputTypes:  []types.IOType{types.Text},
+	OutputTypes: []types.IOType{types.Text},
 }
 
 var SummaryAddonInstance = Addon{
-	Name:        ResourceSummary,
+	Name:        types.AddonResourceSummary,
 	Description: "Summarizes a resource",
-	InputTypes:  []Type{Text},
-	OutputTypes: []Type{Text},
+	InputTypes:  []types.IOType{types.Text},
+	OutputTypes: []types.IOType{types.Text},
 }
 
-var List = []IAddon{
+var List = []types.IAddon{
 	&DefaultAddonInstance,
 	&SummaryAddonInstance,
 	&KeywordsAddonInstance,
 }
 
-func Find(name string) IAddon {
+func Find(name string) types.IAddon {
 	for _, a := range List {
 		if a.GetName() == name {
 			return a
