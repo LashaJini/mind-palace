@@ -6,7 +6,6 @@ import (
 	"log"
 
 	"github.com/lashajini/mind-palace/pkg/config"
-	"github.com/lashajini/mind-palace/pkg/constants"
 	"github.com/milvus-io/milvus-sdk-go/v2/client"
 	"github.com/milvus-io/milvus-sdk-go/v2/entity"
 )
@@ -19,7 +18,7 @@ type MindPalaceVDB struct {
 }
 
 func InitVDB(cfg *config.Config) *MindPalaceVDB {
-	collectionName := constants.VDB_ORIGINAL_RESOURCE_COLLECTION_NAME
+	collectionName := config.VDB_ORIGINAL_RESOURCE_COLLECTION_NAME
 	ctx := context.Background()
 	cli, err := client.NewGrpcClient(ctx, cfg.VDBAddr())
 	if err != nil {

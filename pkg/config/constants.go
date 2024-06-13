@@ -1,4 +1,4 @@
-package constants
+package config
 
 var MIND_PALACE_ROOT = ".mind-palace"
 var MIND_PALACE_MEMORIES = "memories"

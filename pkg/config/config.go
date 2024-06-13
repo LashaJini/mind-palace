@@ -7,7 +7,6 @@ import (
 	"strconv"
 
 	"github.com/joho/godotenv"
-	"github.com/lashajini/mind-palace/pkg/constants"
 	"github.com/lashajini/mind-palace/pkg/errors"
 )
 
@@ -33,9 +32,9 @@ type Config struct {
 func NewConfig() *Config {
 	projectRoot := os.Getenv("PROJECT_ROOT")
 	env := os.Getenv("MP_ENV")
-	if !constants.ENVS[env] {
-		fmt.Printf("ENV `%s` not in `%v`. Using `%s`\n", env, constants.ENVS, constants.DEV_ENV)
-		env = constants.DEV_ENV
+	if !ENVS[env] {
+		fmt.Printf("ENV `%s` not in `%v`. Using `%s`\n", env, ENVS, DEV_ENV)
+		env = DEV_ENV
 	}
 
 	envFile := filepath.Join(projectRoot, fmt.Sprintf(".env.%s", env))
@@ -88,7 +87,7 @@ func MindPalacePath(homePrefix bool) string {
 	if homePrefix {
 		userHome, _ = os.UserHomeDir()
 	}
-	mindPalaceRoot := filepath.Join(userHome, constants.MIND_PALACE_ROOT)
+	mindPalaceRoot := filepath.Join(userHome, MIND_PALACE_ROOT)
 
 	return mindPalaceRoot
 }
@@ -98,27 +97,27 @@ func UserPath(user string, homePrefix bool) string {
 }
 
 func InfoPath(homePrefix bool) string {
-	return filepath.Join(MindPalacePath(homePrefix), constants.MIND_PALACE_INFO)
+	return filepath.Join(MindPalacePath(homePrefix), MIND_PALACE_INFO)
 }
 
 func OriginalResourcePath(user string, homePrefix bool) string {
-	return filepath.Join(UserPath(user, homePrefix), constants.MIND_PALACE_RESOURCES, constants.MIND_PALACE_ORIGINAL)
+	return filepath.Join(UserPath(user, homePrefix), MIND_PALACE_RESOURCES, MIND_PALACE_ORIGINAL)
 }
 
 // relative to user home dir
 func OriginalResourceRelativePath(user string) string {
-	return filepath.Join(UserPath(user, false), constants.MIND_PALACE_RESOURCES, constants.MIND_PALACE_ORIGINAL)
+	return filepath.Join(UserPath(user, false), MIND_PALACE_RESOURCES, MIND_PALACE_ORIGINAL)
 }
 
 // including user home dir
 func OriginalResourceFullPath(user string) string {
-	return filepath.Join(UserPath(user, true), constants.MIND_PALACE_RESOURCES, constants.MIND_PALACE_ORIGINAL)
+	return filepath.Join(UserPath(user, true), MIND_PALACE_RESOURCES, MIND_PALACE_ORIGINAL)
 }
 
 func MemoryPath(user string, homePrefix bool) string {
-	return filepath.Join(UserPath(user, homePrefix), constants.MIND_PALACE_MEMORIES)
+	return filepath.Join(UserPath(user, homePrefix), MIND_PALACE_MEMORIES)
 }
 
 func UserConfigPath(user string, homePrefix bool) string {
-	return filepath.Join(UserPath(user, homePrefix), constants.MIND_PALACE_CONFIG)
+	return filepath.Join(UserPath(user, homePrefix), MIND_PALACE_CONFIG)
 }
