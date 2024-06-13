@@ -82,7 +82,6 @@ class MindPalaceService:
                 names.append(name)
 
             result = JoinedAddons(names).apply(
-                id=request.id,
                 input=input,
                 llm=llm,
                 client=client,
@@ -94,7 +93,6 @@ class MindPalaceService:
             name = addons.names[0]
             addon = AddonFactory.construct(name)
             result = addon.apply(
-                id=request.id,
                 input=input,
                 llm=llm,
                 client=client,

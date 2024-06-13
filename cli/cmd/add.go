@@ -58,28 +58,30 @@ func add(file string) {
 	cfg := config.NewConfig()
 	rpcClient := rpcclient.NewClient(cfg)
 	db := database.InitDB(cfg)
-	memory := models.NewMemory()
 
 	// TODO: ctx
 	ctx := context.Background()
 	tx := database.NewMultiInstruction(ctx, db.DB())
 	defer revert(dst, tx)
 
-	beginTransaction(tx)
-	memoryID := insertMemory(tx, memory)
-	resourcePath := filepath.Join(config.OriginalResourceRelativePath(currentUser), fileName)
-	resource := models.NewResource(resourceID, memoryID, resourcePath)
-	insertResource(tx, resource)
-	commitTransaction(tx)
+	// memory := models.NewMemory()
+	// beginTransaction(tx)
+	// memoryID := insertMemory(tx, memory)
+	// resourcePath := filepath.Join(config.OriginalResourceRelativePath(currentUser), fileName)
+	// resource := models.NewResource(resourceID, memoryID, resourcePath)
+	// insertResource(tx, resource)
+	// commitTransaction(tx)
 
 	userCfg := userConfig(currentUser)
 
-	addonsResults, _ := rpcClient.Add(ctx, dst, memoryID, userCfg)
+	addonsResults, _ := rpcClient.Add(ctx, dst, userCfg)
+	memoryID := uuid.New()
 	for addonResult := range addonsResults {
 		addons, err := addons.ToAddons(addonResult)
 		errors.Handle(err)
 
 		for _, addon := range addons {
+			fmt.Println("OI", addon.GetName())
 			addon.Action(db, memoryID)
 		}
 	}

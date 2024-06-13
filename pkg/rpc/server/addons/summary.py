@@ -12,7 +12,6 @@ from pkg.rpc.server.output_parsers.summary import Summary, SummaryParser
 class SummaryAddon(Addon):
     def apply(
         self,
-        id: str,
         input: str,
         llm: CustomLlamaCPP,
         client: Milvus,
@@ -33,7 +32,6 @@ class SummaryAddon(Addon):
         value = program(context_str=input, verbose=verbose).dict().get("value")
 
         return pbPalace.AddonResult(
-            id=id,
             data={
                 Summary.name: pbPalace.AddonResultInfo(
                     success=parser.success, value=value

@@ -16,7 +16,6 @@ class JoinedAddons(Addon):
 
     def apply(
         self,
-        id: str,
         input: str,
         llm: CustomLlamaCPP,
         client: Milvus,
@@ -46,6 +45,5 @@ class JoinedAddons(Addon):
                 )
 
         return pbPalace.AddonResult(
-            id="",
             data=data,
         )

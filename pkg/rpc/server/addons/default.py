@@ -8,7 +8,6 @@ from pkg.rpc.server.vdb import Milvus
 class DefaultAddon(Addon):
     def apply(
         self,
-        id: str,
         input: str,
         llm: CustomLlamaCPP,
         client: Milvus,
@@ -17,5 +16,5 @@ class DefaultAddon(Addon):
     ):
         """default, identity addon"""
         return pbPalace.AddonResult(
-            id=id, data={Default.name: pbPalace.AddonResultInfo(success=True, value=[])}
+            data={Default.name: pbPalace.AddonResultInfo(success=True, value=[])}
         )

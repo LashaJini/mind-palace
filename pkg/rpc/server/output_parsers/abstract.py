@@ -1,5 +1,5 @@
 from abc import ABC, abstractmethod
-from typing import Any, ClassVar, List
+from typing import Any, ClassVar
 from llama_index.core.output_parsers.base import ChainableOutputParser
 from pydantic import BaseModel
 

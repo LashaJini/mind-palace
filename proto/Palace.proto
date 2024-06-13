@@ -8,14 +8,12 @@ service Palace {
 }
 
 message AddonResult {
-  string id = 1;
-  map<string, AddonResultInfo> data = 2;
+  map<string, AddonResultInfo> data = 1;
 }
 
 message JoinedAddons {
   string file = 1;
-  string id = 2;
-  JoinedAddon addons = 3;
+  JoinedAddon addons = 2;
 }
 
 
@@ -35,6 +33,5 @@ message AddonResultInfo {
 
 message Resource {
   string file = 1;
-  string id = 2;
-  repeated string steps = 3;
+  repeated string steps = 2;
 }
