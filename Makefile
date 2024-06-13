@@ -4,6 +4,10 @@ BUILD_OUT_DIR=bin
 BINARY_NAME=mind-palace
 SOURCE_DIR=.
 
+.EXPORT_ALL_VARIABLES:
+PROJECT_ROOT=$(shell pwd)
+MP_ENV ?= dev# prod,test,dev
+
 all: build
 
 build: deps rpc
@@ -50,7 +54,7 @@ test-py:
 	@poetry run pytest
 
 test-go:
-	@go test -v ./cli/...
+	MP_ENV=test go test -v ./pkg/models/... $(ARGS)
 
 test: test-go test-py
 	@echo "Done"
@@ -64,8 +68,11 @@ db:
 vdb:
 	@bash scripts/standalone_embed.sh $(ARGS)
 
-graph: dev-deps
-	@godepgraph -s . | dot -Tpng -o godepgraph.png
+graph:
+	@godepgraph -p \
+		google,github.com/google,github.com/lib,github.com/joho,github.com/spf13 \
+		-stoponerror=false \
+		-s . | dot -Tpng -o godepgraph.png
 	@eog godepgraph.png
 
 godoc:

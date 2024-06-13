@@ -7,10 +7,12 @@ import (
 	"path/filepath"
 
 	"github.com/google/uuid"
-	"github.com/lashajini/mind-palace/cli/common"
 	"github.com/lashajini/mind-palace/pkg/addons"
+	"github.com/lashajini/mind-palace/pkg/common"
 	"github.com/lashajini/mind-palace/pkg/config"
+	"github.com/lashajini/mind-palace/pkg/errors"
 	"github.com/lashajini/mind-palace/pkg/models"
+	"github.com/lashajini/mind-palace/pkg/mpuser"
 	rpcclient "github.com/lashajini/mind-palace/pkg/rpc/client"
 	"github.com/lashajini/mind-palace/pkg/storage/database"
 	"github.com/spf13/cobra"
@@ -58,12 +60,12 @@ func add(file string) {
 	db := database.InitDB(cfg)
 	memory := models.NewMemory()
 
-	defer revert(dst)
-
 	// TODO: ctx
 	ctx := context.Background()
+	tx := database.NewMultiInstruction(ctx, db.DB())
+	defer revert(dst, tx)
 
-	tx := beginTransaction(ctx, db)
+	beginTransaction(tx)
 	memoryID := insertMemory(tx, memory)
 	resourcePath := filepath.Join(config.OriginalResourceRelativePath(currentUser), fileName)
 	resource := models.NewResource(resourceID, memoryID, resourcePath)
@@ -75,66 +77,66 @@ func add(file string) {
 	addonsResults, _ := rpcClient.Add(ctx, dst, memoryID, userCfg)
 	for addonResult := range addonsResults {
 		addons, err := addons.ToAddons(addonResult)
-		common.HandleError(err)
+		errors.Handle(err)
 
 		for _, addon := range addons {
-			addon.Action()
+			addon.Action(db, memoryID)
 		}
 	}
 }
 
-func revert(dst string) {
+func revert(dst string, tx *database.MultiInstruction) {
 	if r := recover(); r != nil {
 		fmt.Println("Error:", r)
 
 		fmt.Println("Reverting..")
 
 		err := os.Remove(dst)
-		common.HandleError(err)
+		errors.Handle(err)
 
+		err = os.Remove(dst)
+		errors.Handle(err)
 		fmt.Println("File removed", dst)
 	}
 }
 
 func copyFile(src, dst string) {
 	err := common.CopyFile(src, dst)
-	common.HandleError(err)
+	errors.Handle(err)
 }
 
-func userConfig(currentUser string) *config.UserConfig {
-	userCfg, err := config.ReadUserConfig(currentUser)
-	common.HandleError(err)
+func userConfig(currentUser string) *mpuser.Config {
+	userCfg, err := mpuser.ReadConfig(currentUser)
+	errors.Handle(err)
 	return userCfg
 }
 
 func commitTransaction(tx *database.MultiInstruction) {
 	err := tx.Commit()
-	common.Panic(err)
+	errors.Panic(err)
 }
 
 func insertResource(tx *database.MultiInstruction, resource *models.OriginalResource) {
 	err := models.InsertResourceTx(tx, resource)
-	common.Panic(err)
+	errors.Panic(err)
 }
 
 func insertMemory(tx *database.MultiInstruction, memory *models.Memory) uuid.UUID {
 	memoryID, err := models.InsertMemoryTx(tx, memory)
-	common.Panic(err)
+	errors.Panic(err)
 	return memoryID
 }
 
-func beginTransaction(ctx context.Context, db *database.MindPalaceDB) *database.MultiInstruction {
-	tx := database.NewMultiInstruction(ctx, db.DB())
-
+func beginTransaction(tx *database.MultiInstruction) *database.MultiInstruction {
 	err := tx.Begin()
-	common.Panic(err)
+	errors.Panic(err)
 
 	return tx
 }
 
 func validateFile(file string) {
 	exists, err := common.FileExists(file)
-	common.HandleError(err)
+	errors.Handle(err)
 
 	if !exists {
 		fmt.Printf("Error: File %s does not exist\n", file)
@@ -142,7 +144,7 @@ func validateFile(file string) {
 	}
 
 	isText, err := common.IsTextFile(file)
-	common.HandleError(err)
+	errors.Handle(err)
 
 	if !isText {
 		fmt.Printf("Error: File %s is not a text file\n", file)
@@ -152,7 +154,7 @@ func validateFile(file string) {
 
 func getCurrentUser() string {
 	currentUser, err := config.CurrentUser()
-	common.HandleError(err)
+	errors.Handle(err)
 
 	if currentUser == "" {
 		fmt.Println("Error: There are no users available.")

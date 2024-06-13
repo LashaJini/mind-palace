@@ -6,6 +6,7 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/lashajini/mind-palace/pkg/config"
+	"github.com/lashajini/mind-palace/pkg/mpuser"
 	pb "github.com/lashajini/mind-palace/pkg/rpc/client/gen/proto"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
@@ -26,7 +27,7 @@ func NewClient(cfg *config.Config) *Client {
 	return &Client{client}
 }
 
-func (c *Client) Add(ctx context.Context, file string, id uuid.UUID, userCfg *config.UserConfig) (<-chan *pb.AddonResult, error) {
+func (c *Client) Add(ctx context.Context, file string, id uuid.UUID, userCfg *mpuser.Config) (<-chan *pb.AddonResult, error) {
 	addonResultC := make(chan *pb.AddonResult)
 	go func() {
 		resource := &pb.Resource{

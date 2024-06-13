@@ -2,8 +2,11 @@ bin/
 .venv/
 gen/
 __pycache__/
+.pytest_cache/
 
-.env
+.env.prod
+.env.dev
+
 volumes/
 embedEtcd.yaml
 _milvus/

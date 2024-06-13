@@ -1,42 +1,41 @@
-package config
+package mpuser
 
 import (
 	"encoding/json"
 	"fmt"
 	"os"
 
-	"github.com/lashajini/mind-palace/pkg/addons"
+	"github.com/lashajini/mind-palace/pkg/config"
+	"github.com/lashajini/mind-palace/pkg/types"
 )
 
-type Type addons.Type
-
-type UserConfig struct {
+type Config struct {
 	Config UserConfigRoot `json:"config"`
 }
 
-func (u *UserConfig) Steps() []string {
+func (u *Config) Steps() []string {
 	return u.Config.Text.Steps
 }
 
-func (u *UserConfig) EnableAddon(addon addons.Addon) error {
-	inputTypes := addon.InputTypes
+func (u *Config) EnableAddon(addon types.IAddon) error {
+	inputTypes := addon.GetInputTypes()
 	var needsUpdate bool
 
 	for _, inputType := range inputTypes {
-		if inputType == addons.Text {
+		if inputType == types.Text {
 			steps := u.Config.Text.Steps
 
 			canAppend := true
 			for _, step := range steps {
-				if step == addon.Name {
+				if step == addon.GetName() {
 					canAppend = false
-					fmt.Printf("Addon '%s' is already enabled for '%s'.\n", addon.Name, addons.Text)
+					fmt.Printf("Addon '%s' is already enabled for '%s'.\n", addon.GetName(), types.Text)
 					break
 				}
 			}
 
 			if canAppend {
-				u.Config.Text.Steps = append(steps, addon.Name)
+				u.Config.Text.Steps = append(steps, addon.GetName())
 				needsUpdate = true
 			}
 		}
@@ -49,16 +48,16 @@ func (u *UserConfig) EnableAddon(addon addons.Addon) error {
 	return nil
 }
 
-func (u *UserConfig) DisableAddon(addon addons.Addon) error {
-	inputTypes := addon.InputTypes
+func (u *Config) DisableAddon(addon types.IAddon) error {
+	inputTypes := addon.GetInputTypes()
 	var needsUpdate bool
 
 	for _, inputType := range inputTypes {
-		if inputType == addons.Text {
+		if inputType == types.Text {
 			steps := u.Config.Text.Steps
 
 			for index, step := range steps {
-				if step == addon.Name {
+				if step == addon.GetName() {
 					u.Config.Text.Steps = append(steps[:index], steps[index+1:]...)
 					needsUpdate = true
 					break
@@ -74,36 +73,36 @@ func (u *UserConfig) DisableAddon(addon addons.Addon) error {
 	return nil
 }
 
-func (u *UserConfig) Update() error {
+func (u *Config) Update() error {
 	d, err := json.Marshal(u)
 	if err != nil {
 		return err
 	}
 
-	return os.WriteFile(UserConfigPath(u.Config.User, true), d, 0777)
+	return os.WriteFile(config.UserConfigPath(u.Config.User, true), d, 0777)
 }
 
-func NewUserConfig(user string) *UserConfig {
+func NewUserConfig(user string) *Config {
 
-	return &UserConfig{
+	return &Config{
 		Config: UserConfigRoot{
 			User: user,
 			Text: Input{
 				Steps: []string{
-					addons.Default,
+					types.AddonDefault,
 				},
 			},
 		},
 	}
 }
 
-func ReadUserConfig(user string) (*UserConfig, error) {
-	d, err := os.ReadFile(UserConfigPath(user, true))
+func ReadConfig(user string) (*Config, error) {
+	d, err := os.ReadFile(config.UserConfigPath(user, true))
 	if err != nil {
-		return &UserConfig{}, err
+		return &Config{}, err
 	}
 
-	var userCfg UserConfig
+	var userCfg Config
 	err = json.Unmarshal(d, &userCfg)
 
 	return &userCfg, err

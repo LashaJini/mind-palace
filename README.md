@@ -10,3 +10,12 @@
 - `protoc` >= 3.21
 - `protoc-gen-go` 1.28
 - `protoc-gen-go-grpc` 1.2
+
+## Helpful
+
+```bash
+# disable test cache
+make test-go ARGS="-count=1"
+# run test names containing TestSuite
+make test-go ARGS="-run TestSuite"
+```
