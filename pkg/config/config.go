@@ -87,7 +87,15 @@ func MindPalacePath(homePrefix bool) string {
 	if homePrefix {
 		userHome, _ = os.UserHomeDir()
 	}
-	mindPalaceRoot := filepath.Join(userHome, MIND_PALACE_ROOT)
+
+	var root string
+	env := os.Getenv("MP_ENV")
+	if ENVS[env] {
+		root = _MIND_PALACE_TEST_PATH
+	}
+	root = filepath.Join(MIND_PALACE_ROOT, root)
+
+	mindPalaceRoot := filepath.Join(userHome, root)
 
 	return mindPalaceRoot
 }

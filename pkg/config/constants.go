@@ -13,3 +13,5 @@ var PROD_ENV = "prod"
 var DEV_ENV = "dev"
 var TEST_ENV = "test"
 var ENVS = map[string]bool{PROD_ENV: true, DEV_ENV: true, TEST_ENV: true}
+
+var _MIND_PALACE_TEST_PATH = ".tests"
