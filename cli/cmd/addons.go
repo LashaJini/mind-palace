@@ -42,7 +42,7 @@ func Addons(cmd *cobra.Command, args []string) {
 	if ENABLE != "" {
 		addon := addons.Find(ENABLE)
 		user, _ := config.CurrentUser()
-		userCfg, _ := mpuser.ReadUserConfig(user)
+		userCfg, _ := mpuser.ReadConfig(user)
 		_ = userCfg.EnableAddon(addon)
 
 		return
@@ -51,7 +51,7 @@ func Addons(cmd *cobra.Command, args []string) {
 	if DISABLE != "" {
 		addon := addons.Find(DISABLE)
 		user, _ := config.CurrentUser()
-		userCfg, _ := mpuser.ReadUserConfig(user)
+		userCfg, _ := mpuser.ReadConfig(user)
 		_ = userCfg.DisableAddon(addon)
 
 		return

@@ -2,6 +2,7 @@ bin/
 .venv/
 gen/
 __pycache__/
+.pytest_cache/
 
 .env.prod
 .env.dev

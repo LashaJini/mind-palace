@@ -7,8 +7,8 @@ import (
 	"strconv"
 
 	"github.com/joho/godotenv"
-	"github.com/lashajini/mind-palace/cli/errors"
 	"github.com/lashajini/mind-palace/pkg/constants"
+	"github.com/lashajini/mind-palace/pkg/errors"
 )
 
 // developer config

@@ -5,8 +5,8 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/lashajini/mind-palace/pkg/addons"
 	"github.com/lashajini/mind-palace/pkg/config"
+	"github.com/lashajini/mind-palace/pkg/types"
 )
 
 type Config struct {
@@ -17,19 +17,19 @@ func (u *Config) Steps() []string {
 	return u.Config.Text.Steps
 }
 
-func (u *Config) EnableAddon(addon addons.IAddon) error {
+func (u *Config) EnableAddon(addon types.IAddon) error {
 	inputTypes := addon.GetInputTypes()
 	var needsUpdate bool
 
 	for _, inputType := range inputTypes {
-		if inputType == addons.Text {
+		if inputType == types.Text {
 			steps := u.Config.Text.Steps
 
 			canAppend := true
 			for _, step := range steps {
 				if step == addon.GetName() {
 					canAppend = false
-					fmt.Printf("Addon '%s' is already enabled for '%s'.\n", addon.GetName(), addons.Text)
+					fmt.Printf("Addon '%s' is already enabled for '%s'.\n", addon.GetName(), types.Text)
 					break
 				}
 			}
@@ -48,12 +48,12 @@ func (u *Config) EnableAddon(addon addons.IAddon) error {
 	return nil
 }
 
-func (u *Config) DisableAddon(addon addons.IAddon) error {
+func (u *Config) DisableAddon(addon types.IAddon) error {
 	inputTypes := addon.GetInputTypes()
 	var needsUpdate bool
 
 	for _, inputType := range inputTypes {
-		if inputType == addons.Text {
+		if inputType == types.Text {
 			steps := u.Config.Text.Steps
 
 			for index, step := range steps {
@@ -89,14 +89,14 @@ func NewUserConfig(user string) *Config {
 			User: user,
 			Text: Input{
 				Steps: []string{
-					addons.Default,
+					types.AddonDefault,
 				},
 			},
 		},
 	}
 }
 
-func ReadUserConfig(user string) (*Config, error) {
+func ReadConfig(user string) (*Config, error) {
 	d, err := os.ReadFile(config.UserConfigPath(user, true))
 	if err != nil {
 		return &Config{}, err

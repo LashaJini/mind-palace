@@ -7,10 +7,10 @@ import (
 	"path/filepath"
 
 	"github.com/google/uuid"
-	"github.com/lashajini/mind-palace/cli/common"
-	"github.com/lashajini/mind-palace/cli/errors"
 	"github.com/lashajini/mind-palace/pkg/addons"
+	"github.com/lashajini/mind-palace/pkg/common"
 	"github.com/lashajini/mind-palace/pkg/config"
+	"github.com/lashajini/mind-palace/pkg/errors"
 	"github.com/lashajini/mind-palace/pkg/models"
 	"github.com/lashajini/mind-palace/pkg/mpuser"
 	rpcclient "github.com/lashajini/mind-palace/pkg/rpc/client"
@@ -91,9 +91,8 @@ func revert(dst string, tx *database.MultiInstruction) {
 
 		fmt.Println("Reverting..")
 
-		err := tx.Rollback()
+		err := os.Remove(dst)
 		errors.Handle(err)
-		fmt.Println("Database rollbacked")
 
 		err = os.Remove(dst)
 		errors.Handle(err)
@@ -107,7 +106,7 @@ func copyFile(src, dst string) {
 }
 
 func userConfig(currentUser string) *mpuser.Config {
-	userCfg, err := mpuser.ReadUserConfig(currentUser)
+	userCfg, err := mpuser.ReadConfig(currentUser)
 	errors.Handle(err)
 	return userCfg
 }
