@@ -9,7 +9,7 @@ import (
 
 type IAddon interface {
 	Empty() bool
-	Action(db *database.MindPalaceDB, memoryID uuid.UUID, args ...any) error
+	Action(db *database.MindPalaceDB, memoryIDC chan uuid.UUID, args ...any) error
 	String() string
 
 	GetName() string

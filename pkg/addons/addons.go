@@ -45,7 +45,7 @@ func (a *Addon) Empty() bool {
 	return a == nil || a.Name == ""
 }
 
-func (a Addon) Action(db *database.MindPalaceDB, memoryID uuid.UUID, args ...any) error {
+func (a Addon) Action(db *database.MindPalaceDB, memoryIDC chan uuid.UUID, args ...any) error {
 	return nil
 }
 
@@ -73,13 +73,6 @@ func ToAddons(addonResult *pb.AddonResult) ([]types.IAddon, error) {
 	}
 
 	return addons, nil
-}
-
-var DefaultAddonInstance = Addon{
-	Name:        types.AddonDefault,
-	Description: "Default",
-	InputTypes:  []types.IOType{types.Text},
-	OutputTypes: []types.IOType{types.Text},
 }
 
 var SummaryAddonInstance = Addon{

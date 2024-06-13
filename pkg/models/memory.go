@@ -1,9 +1,6 @@
 package models
 
 import (
-	"context"
-	"database/sql"
-	"fmt"
 	"time"
 
 	"github.com/google/uuid"
@@ -25,38 +22,22 @@ func NewMemory() *Memory {
 	}
 }
 
-func InsertMemory(ctx context.Context, db *sql.DB, memory *Memory) (uuid.UUID, error) {
-	tx := database.NewMultiInstruction(ctx, db)
-	if err := tx.Begin(); err != nil {
-		return uuid.Nil, err
-	}
-
-	id, err := InsertMemoryTx(tx, memory)
-	if err != nil {
-		tx.Rollback()
-		return uuid.Nil, err
-	}
-
-	if err := tx.Commit(); err != nil {
-		return uuid.Nil, err
-	}
-
-	return id, nil
+var memoryColumns = []string{
+	"id",
+	"created_at",
+	"updated_at",
 }
 
 func InsertMemoryTx(tx *database.MultiInstruction, memory *Memory) (uuid.UUID, error) {
-	q := fmt.Sprintf(`
-INSERT INTO memory (
-	created_at,
-	updated_at
-)
-VALUES (
-	$1, $2
-) 
-RETURNING id`)
+	createdAt := memory.CreatedAt
+	updatedAt := memory.UpdatedAt
+
+	joinedColumns, numColumns := joinColumns(memoryColumns, "id")
+	placeholders := placeholdersString(1, numColumns)
+	q := insertF(database.Table.Memory, joinedColumns, placeholders, "RETURNING id")
 
 	var id string
-	err := tx.QueryRow(q, memory.CreatedAt, memory.UpdatedAt).Scan(&id)
+	err := tx.QueryRow(q, createdAt, updatedAt).Scan(&id)
 	if err != nil {
 		return uuid.Nil, err
 	}
