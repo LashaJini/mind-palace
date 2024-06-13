@@ -12,7 +12,7 @@ from pkg.rpc.server.addons.joined import JoinedAddons
 from pkg.rpc.server.prompts.joined import JoinedPrompts
 from pkg.rpc.server.prompts.abstract import Prompts
 from pkg.rpc.server.prompts.factory import PromptsFactory
-from pkg.rpc.server.vdb import Milvus
+from pkg.rpc.server.vdb import Milvus, MilvusInsertData
 from pkg.rpc.server.llm import CustomLlamaCPP
 
 import pkg.rpc.server.gen.Palace_pb2 as pbPalace
@@ -155,6 +155,10 @@ class MindPalaceService:
         joinedAddons = pbPalace.JoinedAddonsResponse(addons=addons)
 
         return joinedAddons
+
+    def VDBInsert(self, request, context):
+        client.insert(MilvusInsertData(id=request.id, input=request.input))
+        return pbPalace.Empty()
 
 
 def server():

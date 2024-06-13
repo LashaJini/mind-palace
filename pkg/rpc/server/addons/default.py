@@ -16,5 +16,5 @@ class DefaultAddon(Addon):
     ):
         """default, identity addon"""
         return pbPalace.AddonResult(
-            data={Default.name: pbPalace.AddonResultInfo(success=True, value=[])}
+            data={Default.name: pbPalace.AddonResultInfo(success=True, value=[input])}
         )

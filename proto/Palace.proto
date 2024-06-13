@@ -5,6 +5,15 @@ option go_package = "github.com/lashajini/mind-palace/proto";
 service Palace {
   rpc ApplyAddon(JoinedAddons) returns (AddonResult) {}
   rpc JoinAddons(Resource) returns (JoinedAddonsResponse) {}
+
+  rpc VDBInsert(VDBRow) returns (Empty) {}
+}
+
+message Empty{}
+
+message VDBRow {
+  string id = 1;
+  string input = 2;
 }
 
 message AddonResult {
@@ -15,7 +24,6 @@ message JoinedAddons {
   string file = 1;
   JoinedAddon addons = 2;
 }
-
 
 message JoinedAddonsResponse {
   repeated JoinedAddon addons = 1;

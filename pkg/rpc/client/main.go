@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/google/uuid"
 	"github.com/lashajini/mind-palace/pkg/config"
 	"github.com/lashajini/mind-palace/pkg/mpuser"
 	pb "github.com/lashajini/mind-palace/pkg/rpc/client/gen/proto"
@@ -52,4 +53,15 @@ func (c *Client) Add(ctx context.Context, file string, userCfg *mpuser.Config) (
 	}()
 
 	return addonResultC, nil
+}
+
+func (c *Client) VDBInsert(ctx context.Context, memoryID uuid.UUID, output string) error {
+	vdbRow := &pb.VDBRow{
+		Id:    memoryID.String(),
+		Input: output,
+	}
+
+	_, err := c.client.VDBInsert(ctx, vdbRow)
+
+	return err
 }

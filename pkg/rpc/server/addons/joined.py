@@ -23,7 +23,7 @@ class JoinedAddons(Addon):
         **kwargs,
     ):
         prompt = JoinedPrompts().prompt(text=input, verbose=verbose, **kwargs)
-        parser = JoinedParser(verbose=verbose, addons=self.addons)
+        parser = JoinedParser(verbose=verbose, addons=self.addons, input=input)
         program = LLMTextCompletionProgram(
             llm=llm,
             output_parser=parser,

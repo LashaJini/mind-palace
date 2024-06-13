@@ -6,6 +6,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/lashajini/mind-palace/pkg/errors"
 	"github.com/lashajini/mind-palace/pkg/models"
+	rpcclient "github.com/lashajini/mind-palace/pkg/rpc/client"
 	"github.com/lashajini/mind-palace/pkg/storage/database"
 	"github.com/lashajini/mind-palace/pkg/types"
 )
@@ -15,9 +16,10 @@ type DefaultAddon struct {
 }
 
 func (d *DefaultAddon) Action(db *database.MindPalaceDB, memoryIDC chan uuid.UUID, args ...any) (err error) {
-	maxBufSize := args[0].(int)
-	resourceID := args[1].(uuid.UUID)
-	resourcePath := args[2].(string)
+	rpcClient := args[0].(*rpcclient.Client)
+	maxBufSize := args[1].(int)
+	resourceID := args[2].(uuid.UUID)
+	resourcePath := args[3].(string)
 
 	ctx := context.Background()
 	tx := database.NewMultiInstruction(ctx, db.DB())
@@ -40,6 +42,9 @@ func (d *DefaultAddon) Action(db *database.MindPalaceDB, memoryIDC chan uuid.UUI
 	for range maxBufSize {
 		memoryIDC <- memoryID
 	}
+
+	err = rpcClient.VDBInsert(ctx, memoryID, d.Output.([]string)[0])
+	errors.Panic(err)
 
 	return nil
 }
