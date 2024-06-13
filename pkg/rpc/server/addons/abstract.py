@@ -10,7 +10,6 @@ class Addon(ABC):
     @abstractmethod
     def apply(
         self,
-        id: str,
         input: str,
         llm: CustomLlamaCPP,
         client: Milvus,

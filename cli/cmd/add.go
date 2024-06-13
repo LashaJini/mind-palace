@@ -5,13 +5,13 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"sync"
 
 	"github.com/google/uuid"
 	"github.com/lashajini/mind-palace/pkg/addons"
 	"github.com/lashajini/mind-palace/pkg/common"
 	"github.com/lashajini/mind-palace/pkg/config"
 	"github.com/lashajini/mind-palace/pkg/errors"
-	"github.com/lashajini/mind-palace/pkg/models"
 	"github.com/lashajini/mind-palace/pkg/mpuser"
 	rpcclient "github.com/lashajini/mind-palace/pkg/rpc/client"
 	"github.com/lashajini/mind-palace/pkg/storage/database"
@@ -52,40 +52,48 @@ func add(file string) {
 	fileName := resourceID.String() + fileExtension
 	originalResourceFullPath := config.OriginalResourceFullPath(currentUser)
 	dst := filepath.Join(originalResourceFullPath, fileName)
+	resourcePath := filepath.Join(config.OriginalResourceRelativePath(currentUser), fileName)
 
 	copyFile(file, dst)
 
 	cfg := config.NewConfig()
 	rpcClient := rpcclient.NewClient(cfg)
 	db := database.InitDB(cfg)
-	memory := models.NewMemory()
 
 	// TODO: ctx
 	ctx := context.Background()
-	tx := database.NewMultiInstruction(ctx, db.DB())
-	defer revert(dst, tx)
+	defer revert(dst)
 
-	beginTransaction(tx)
-	memoryID := insertMemory(tx, memory)
-	resourcePath := filepath.Join(config.OriginalResourceRelativePath(currentUser), fileName)
-	resource := models.NewResource(resourceID, memoryID, resourcePath)
-	insertResource(tx, resource)
-	commitTransaction(tx)
+	maxBufSize := len(addons.List) - 1 // all addons - default
+	memoryIDC := make(chan uuid.UUID, maxBufSize)
+
+	var wg sync.WaitGroup
 
 	userCfg := userConfig(currentUser)
-
-	addonsResults, _ := rpcClient.Add(ctx, dst, memoryID, userCfg)
-	for addonResult := range addonsResults {
+	addonResultC, _ := rpcClient.Add(ctx, dst, userCfg)
+	for addonResult := range addonResultC {
 		addons, err := addons.ToAddons(addonResult)
 		errors.Handle(err)
 
 		for _, addon := range addons {
-			addon.Action(db, memoryID)
+			wg.Add(1)
+
+			go func() {
+				defer wg.Done()
+				addon.Action(db, memoryIDC, rpcClient, maxBufSize, resourceID, resourcePath)
+			}()
 		}
+	}
+
+	wg.Wait()
+
+	// clear channel
+	for range len(memoryIDC) {
+		<-memoryIDC
 	}
 }
 
-func revert(dst string, tx *database.MultiInstruction) {
+func revert(dst string) {
 	if r := recover(); r != nil {
 		fmt.Println("Error:", r)
 
@@ -109,29 +117,6 @@ func userConfig(currentUser string) *mpuser.Config {
 	userCfg, err := mpuser.ReadConfig(currentUser)
 	errors.Handle(err)
 	return userCfg
-}
-
-func commitTransaction(tx *database.MultiInstruction) {
-	err := tx.Commit()
-	errors.Panic(err)
-}
-
-func insertResource(tx *database.MultiInstruction, resource *models.OriginalResource) {
-	err := models.InsertResourceTx(tx, resource)
-	errors.Panic(err)
-}
-
-func insertMemory(tx *database.MultiInstruction, memory *models.Memory) uuid.UUID {
-	memoryID, err := models.InsertMemoryTx(tx, memory)
-	errors.Panic(err)
-	return memoryID
-}
-
-func beginTransaction(tx *database.MultiInstruction) *database.MultiInstruction {
-	err := tx.Begin()
-	errors.Panic(err)
-
-	return tx
 }
 
 func validateFile(file string) {

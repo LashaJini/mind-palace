@@ -27,12 +27,11 @@ func NewClient(cfg *config.Config) *Client {
 	return &Client{client}
 }
 
-func (c *Client) Add(ctx context.Context, file string, id uuid.UUID, userCfg *mpuser.Config) (<-chan *pb.AddonResult, error) {
+func (c *Client) Add(ctx context.Context, file string, userCfg *mpuser.Config) (<-chan *pb.AddonResult, error) {
 	addonResultC := make(chan *pb.AddonResult)
 	go func() {
 		resource := &pb.Resource{
 			File:  file,
-			Id:    id.String(),
 			Steps: userCfg.Steps(),
 		}
 		joinedAddons, _ := c.client.JoinAddons(ctx, resource)
@@ -41,7 +40,6 @@ func (c *Client) Add(ctx context.Context, file string, id uuid.UUID, userCfg *mp
 			for _, joinedAddon := range joinedAddons.Addons {
 				tmp := &pb.JoinedAddons{
 					File:   file,
-					Id:     id.String(),
 					Addons: joinedAddon,
 				}
 				// server may decide that it's more efficient to join multiple addons together
@@ -55,4 +53,15 @@ func (c *Client) Add(ctx context.Context, file string, id uuid.UUID, userCfg *mp
 	}()
 
 	return addonResultC, nil
+}
+
+func (c *Client) VDBInsert(ctx context.Context, memoryID uuid.UUID, output string) error {
+	vdbRow := &pb.VDBRow{
+		Id:    memoryID.String(),
+		Input: output,
+	}
+
+	_, err := c.client.VDBInsert(ctx, vdbRow)
+
+	return err
 }

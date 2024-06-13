@@ -12,7 +12,6 @@ from pkg.rpc.server.output_parsers.keywords import Keywords, KeywordsParser
 class KeywordsAddon(Addon):
     def apply(
         self,
-        id: str,
         input: str,
         llm: CustomLlamaCPP,
         client: Milvus,
@@ -38,7 +37,6 @@ class KeywordsAddon(Addon):
         )
 
         return pbPalace.AddonResult(
-            id=id,
             data={
                 Keywords.name: pbPalace.AddonResultInfo(
                     success=parser.success, value=value

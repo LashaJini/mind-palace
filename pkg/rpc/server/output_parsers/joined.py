@@ -25,9 +25,10 @@ class Joined(CustomBaseModel):
 
 
 class JoinedParser(OutputParser):
-    def __init__(self, addons: List[str], verbose=False):
+    def __init__(self, addons: List[str], input: Any, verbose=False):
         self.verbose = verbose
         self.addons = addons
+        self.input = input
 
     def parse(self, output: str) -> Joined:
         if self.verbose:
@@ -55,7 +56,8 @@ class JoinedParser(OutputParser):
         if match:
             outputs = []
             for parser in parsers:
-                output = ""
+                # when parser does not care about the format pass the whole user input
+                output = self.input
                 if not parser.skip:
                     output = match.group(parser.group_name)
 

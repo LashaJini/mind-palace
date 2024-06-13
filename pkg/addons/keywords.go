@@ -14,7 +14,7 @@ type KeywordsAddon struct {
 	Addon
 }
 
-func (k *KeywordsAddon) Action(db *database.MindPalaceDB, memoryID uuid.UUID, args ...any) (err error) {
+func (k *KeywordsAddon) Action(db *database.MindPalaceDB, memoryIDC chan uuid.UUID, args ...any) (err error) {
 	keywords := k.Output.([]string)
 
 	ctx := context.Background()
@@ -40,6 +40,7 @@ func (k *KeywordsAddon) Action(db *database.MindPalaceDB, memoryID uuid.UUID, ar
 		return fmt.Errorf("Failed to insert keywords: %w", err)
 	}
 
+	memoryID := <-memoryIDC
 	err = models.InsertManyMemoryKeywordsTx(tx, keywordIDs, memoryID)
 	if err != nil {
 		return fmt.Errorf("Failed to insert memory keyword pairs: %w", err)

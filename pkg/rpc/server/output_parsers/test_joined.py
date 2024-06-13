@@ -69,14 +69,14 @@ class TestJoinedParser:
     def test_valid_output_returns_joined(
         self, input_keywords, small_summary, summary_with_new_lines
     ):
-        parser = JoinedParser(verbose=verbose, addons=[addon_names.keywords])
+        parser = JoinedParser(verbose=verbose, addons=[addon_names.keywords], input="")
         validate_keywords(
             parser=parser,
             output=KeywordsParser.construct_output(input=input_keywords),
             expected_keywords=input_keywords,
         )
 
-        parser = JoinedParser(verbose=verbose, addons=[addon_names.summary])
+        parser = JoinedParser(verbose=verbose, addons=[addon_names.summary], input="")
         validate_summary(
             parser=parser,
             output=SummaryParser.construct_output(input=small_summary),
@@ -92,6 +92,7 @@ class TestJoinedParser:
         parser = JoinedParser(
             verbose=verbose,
             addons=[addon_names.summary, addon_names.keywords],
+            input="",
         )
         validate_everything(
             parser=parser,
