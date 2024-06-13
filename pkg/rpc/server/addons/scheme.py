@@ -19,7 +19,6 @@ class AddonScheme(TypedDict):
     addon: Type[Addon]
     prompts: Type[Prompts]
     parser: Type[OutputParser]
-    skip: bool
 
 
 addons: Dict[str, AddonScheme] = {
@@ -27,18 +26,15 @@ addons: Dict[str, AddonScheme] = {
         "addon": DefaultAddon,
         "prompts": DefaultPrompts,
         "parser": DefaultParser,
-        "skip": True,
     },
     summary: {
         "addon": SummaryAddon,
         "prompts": SummaryPrompts,
         "parser": SummaryParser,
-        "skip": False,
     },
     keywords: {
         "addon": KeywordsAddon,
         "prompts": KeywordsPrompts,
         "parser": KeywordsParser,
-        "skip": False,
     },
 }

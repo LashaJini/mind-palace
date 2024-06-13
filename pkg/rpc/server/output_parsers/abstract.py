@@ -23,9 +23,11 @@ class OutputParser(ChainableOutputParser, ABC):
         format_end: str,
         group_name: str,
         pattern: str,
+        skip: bool = False,
         verbose: bool = False,
     ):
         self.success = False
+        self.skip = skip
         self.verbose = verbose
         self.format_start = format_start
         self.format_end = format_end

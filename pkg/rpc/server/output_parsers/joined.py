@@ -36,15 +36,13 @@ class JoinedParser(OutputParser):
         patterns = []
         parsers: List[OutputParser] = []
         for addon_name in self.addons:
-            parser, skip = OutputParserFactory.construct(addon_name)
-            if parser is None or skip:
-                continue
+            parser = OutputParserFactory.construct(addon_name)
 
             parser_instance: OutputParser = parser(verbose=self.verbose)  # type: ignore
             parsers.append(parser_instance)
             patterns.append(parser_instance.pattern)
 
-        pattern = ".*".join(patterns)
+        pattern = ".*".join(p for p in patterns if p)
 
         if self.verbose:
             print(f"> Output parser pattern: {pattern}")
@@ -57,7 +55,10 @@ class JoinedParser(OutputParser):
         if match:
             outputs = []
             for parser in parsers:
-                output = match.group(parser.group_name)
+                output = ""
+                if not parser.skip:
+                    output = match.group(parser.group_name)
+
                 outputs.append(output)
 
             for i, output in enumerate(outputs):
