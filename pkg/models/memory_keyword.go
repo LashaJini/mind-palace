@@ -2,6 +2,7 @@ package models
 
 import (
 	"github.com/google/uuid"
+	"github.com/lashajini/mind-palace/pkg/common"
 	"github.com/lashajini/mind-palace/pkg/storage/database"
 )
 
@@ -16,21 +17,23 @@ var memoryKeywordColumns = []string{
 }
 
 func InsertManyMemoryKeywordsTx(tx *database.MultiInstruction, keywords map[string]int, memoryID uuid.UUID) error {
-	joinedColumns, numColumns := joinColumns(memoryKeywordColumns)
-	placeholders := placeholdersString(len(keywords), numColumns)
+	joinedColumns, _ := joinColumns(memoryKeywordColumns)
 
-	values := []any{}
+	var valueTuples [][]any
 	for _, keywordID := range keywords {
-		values = append(
-			values,
-			keywordID,
-			memoryID,
+		tuple := []any{keywordID, memoryID}
+		valueTuples = append(
+			valueTuples,
+			tuple,
 		)
 	}
 
-	q := insertF("memory_keyword", joinedColumns, placeholders, "")
+	values := valuesString(valueTuples)
 
-	err := tx.Exec(q, values...)
+	q := insertF(database.Table.MemoryKeyword, joinedColumns, values, "")
+	common.Log.DBInfo(tx.ID, q)
+
+	err := tx.Exec(q)
 	if err != nil {
 		return err
 	}

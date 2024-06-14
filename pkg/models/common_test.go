@@ -42,12 +42,12 @@ func Test_joinColumns(t *testing.T) {
 		{
 			numRows:    3,
 			numColumns: 2,
-			expected:   "\t($1, $2),\n\t($3, $4),\n\t($5, $6)",
+			expected:   "($1, $2),($3, $4),($5, $6)",
 		},
 		{
 			numRows:    2,
 			numColumns: 3,
-			expected:   "\t($1, $2, $3),\n\t($4, $5, $6)",
+			expected:   "($1, $2, $3),($4, $5, $6)",
 		},
 	}
 
@@ -75,27 +75,14 @@ func Test_insertF(t *testing.T) {
 			columns:    "name, age",
 			values:     "'Alice', 30",
 			additional: "",
-			expected: strings.TrimSpace(`
-INSERT INTO users (
-name, age
-)
-VALUES
-'Alice', 30
-`),
+			expected:   strings.TrimSpace(`INSERT INTO users (name, age) VALUES 'Alice', 30`),
 		},
 		{
 			table:      "products",
 			columns:    "name, price",
 			values:     "'Apple', 1.5",
 			additional: "RETURNING id",
-			expected: strings.TrimSpace(`
-INSERT INTO products (
-name, price
-)
-VALUES
-'Apple', 1.5
-RETURNING id
-`),
+			expected:   strings.TrimSpace(`INSERT INTO products (name, price) VALUES 'Apple', 1.5 RETURNING id`),
 		},
 	}
 

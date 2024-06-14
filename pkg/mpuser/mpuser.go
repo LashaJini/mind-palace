@@ -2,10 +2,9 @@ package mpuser
 
 import (
 	"encoding/json"
-	"fmt"
 	"os"
 
-	"github.com/lashajini/mind-palace/pkg/config"
+	"github.com/lashajini/mind-palace/pkg/common"
 	"github.com/lashajini/mind-palace/pkg/types"
 )
 
@@ -29,7 +28,7 @@ func (u *Config) EnableAddon(addon types.IAddon) error {
 			for _, step := range steps {
 				if step == addon.GetName() {
 					canAppend = false
-					fmt.Printf("Addon '%s' is already enabled for '%s'.\n", addon.GetName(), types.Text)
+					common.Log.Info().Msgf("addon '%s' is already enabled for '%s'.\n", addon.GetName(), types.Text)
 					break
 				}
 			}
@@ -79,7 +78,7 @@ func (u *Config) Update() error {
 		return err
 	}
 
-	return os.WriteFile(config.UserConfigPath(u.Config.User, true), d, 0777)
+	return os.WriteFile(common.UserConfigPath(u.Config.User, true), d, 0777)
 }
 
 func NewUserConfig(user string) *Config {
@@ -97,7 +96,7 @@ func NewUserConfig(user string) *Config {
 }
 
 func ReadConfig(user string) (*Config, error) {
-	d, err := os.ReadFile(config.UserConfigPath(user, true))
+	d, err := os.ReadFile(common.UserConfigPath(user, true))
 	if err != nil {
 		return &Config{}, err
 	}

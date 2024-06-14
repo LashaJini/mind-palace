@@ -2,7 +2,6 @@ package cli
 
 import (
 	"context"
-	"fmt"
 	"os"
 	"path/filepath"
 	"sync"
@@ -10,7 +9,6 @@ import (
 	"github.com/google/uuid"
 	"github.com/lashajini/mind-palace/pkg/addons"
 	"github.com/lashajini/mind-palace/pkg/common"
-	"github.com/lashajini/mind-palace/pkg/config"
 	"github.com/lashajini/mind-palace/pkg/errors"
 	"github.com/lashajini/mind-palace/pkg/mpuser"
 	rpcclient "github.com/lashajini/mind-palace/pkg/rpc/client"
@@ -44,19 +42,19 @@ func Add(cmd *cobra.Command, args []string) {
 }
 
 func add(file string) {
+	cfg := common.NewConfig()
 	currentUser := getCurrentUser()
 	validateFile(file)
 
 	resourceID := uuid.New()
 	fileExtension := filepath.Ext(file)
 	fileName := resourceID.String() + fileExtension
-	originalResourceFullPath := config.OriginalResourceFullPath(currentUser)
+	originalResourceFullPath := common.OriginalResourceFullPath(currentUser)
 	dst := filepath.Join(originalResourceFullPath, fileName)
-	resourcePath := filepath.Join(config.OriginalResourceRelativePath(currentUser), fileName)
+	resourcePath := filepath.Join(common.OriginalResourceRelativePath(currentUser), fileName)
 
 	copyFile(file, dst)
 
-	cfg := config.NewConfig()
 	rpcClient := rpcclient.NewClient(cfg)
 	db := database.InitDB(cfg)
 
@@ -73,14 +71,15 @@ func add(file string) {
 	addonResultC, _ := rpcClient.Add(ctx, dst, userCfg)
 	for addonResult := range addonResultC {
 		addons, err := addons.ToAddons(addonResult)
-		errors.Handle(err)
+		errors.On(err).Exit()
 
 		for _, addon := range addons {
 			wg.Add(1)
 
 			go func() {
 				defer wg.Done()
-				addon.Action(db, memoryIDC, rpcClient, maxBufSize, resourceID, resourcePath)
+				err := addon.Action(db, memoryIDC, rpcClient, maxBufSize, resourceID, resourcePath)
+				errors.On(err).Warn()
 			}()
 		}
 	}
@@ -95,57 +94,54 @@ func add(file string) {
 
 func revert(dst string) {
 	if r := recover(); r != nil {
-		fmt.Println("Error:", r)
-
-		fmt.Println("Reverting..")
+		common.Log.Info().Msg("Reverting...")
 
 		err := os.Remove(dst)
-		errors.Handle(err)
+		errors.On(err).Exit()
 
 		err = os.Remove(dst)
-		errors.Handle(err)
-		fmt.Println("File removed", dst)
+		errors.On(err).Exit()
+
+		common.Log.Info().Msgf("File removed %s", dst)
 	}
 }
 
 func copyFile(src, dst string) {
 	err := common.CopyFile(src, dst)
-	errors.Handle(err)
+	errors.On(err).Exit()
 }
 
 func userConfig(currentUser string) *mpuser.Config {
 	userCfg, err := mpuser.ReadConfig(currentUser)
-	errors.Handle(err)
+	errors.On(err).Exit()
 	return userCfg
 }
 
 func validateFile(file string) {
 	exists, err := common.FileExists(file)
-	errors.Handle(err)
+	errors.On(err).Exit()
 
 	if !exists {
-		fmt.Printf("Error: File %s does not exist\n", file)
-		os.Exit(1)
+		errors.ExitWithMsgf("File %s does not exist", file)
 	}
 
 	isText, err := common.IsTextFile(file)
-	errors.Handle(err)
+	errors.On(err).Exit()
 
 	if !isText {
-		fmt.Printf("Error: File %s is not a text file\n", file)
-		os.Exit(1)
+		errors.ExitWithMsgf("File %s is not a text file\n", file)
 	}
 }
 
 func getCurrentUser() string {
-	currentUser, err := config.CurrentUser()
-	errors.Handle(err)
+	currentUser, err := common.CurrentUser()
+	errors.On(err).Exit()
 
 	if currentUser == "" {
-		fmt.Println("Error: There are no users available.")
-		fmt.Printf("\nCreate one by using: mind-palace user --new <name>\n\n")
-		os.Exit(1)
+		msg := "there are no users available. Create one by using: mind-palace user --new <name>"
+		errors.ExitWithMsg(msg)
 	}
 
+	common.Log.Info().Msgf("current user %s", currentUser)
 	return currentUser
 }

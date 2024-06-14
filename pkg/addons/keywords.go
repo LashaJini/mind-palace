@@ -5,6 +5,7 @@ import (
 	"fmt"
 
 	"github.com/google/uuid"
+	"github.com/lashajini/mind-palace/pkg/errors"
 	"github.com/lashajini/mind-palace/pkg/models"
 	"github.com/lashajini/mind-palace/pkg/storage/database"
 	"github.com/lashajini/mind-palace/pkg/types"
@@ -22,33 +23,30 @@ func (k *KeywordsAddon) Action(db *database.MindPalaceDB, memoryIDC chan uuid.UU
 
 	defer func() {
 		if err != nil {
-			fmt.Println(err)
-
-			if err := tx.Rollback(); err != nil {
-				panic(fmt.Errorf("Failed to rollback: %w", err))
-			}
+			err := tx.Rollback()
+			errors.On(err).PanicWithMsg("failed to rollback")
 		}
 	}()
 
 	err = tx.Begin()
 	if err != nil {
-		return fmt.Errorf("Failed to start transaction: %w", err)
+		return fmt.Errorf("failed to start transaction: %w", err)
 	}
 
 	keywordIDs, err := models.InsertManyKeywordsTx(tx, keywords)
 	if err != nil {
-		return fmt.Errorf("Failed to insert keywords: %w", err)
+		return fmt.Errorf("failed to insert keywords: %w", err)
 	}
 
 	memoryID := <-memoryIDC
 	err = models.InsertManyMemoryKeywordsTx(tx, keywordIDs, memoryID)
 	if err != nil {
-		return fmt.Errorf("Failed to insert memory keyword pairs: %w", err)
+		return fmt.Errorf("failed to insert memory keyword pairs: %w", err)
 	}
 
 	err = tx.Commit()
 	if err != nil {
-		return fmt.Errorf("Failed to commit transaction: %w", err)
+		return fmt.Errorf("failed to commit transaction: %w", err)
 	}
 
 	return nil

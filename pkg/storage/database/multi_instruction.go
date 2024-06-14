@@ -3,11 +3,15 @@ package database
 import (
 	"context"
 	"database/sql"
+
+	"github.com/google/uuid"
+	"github.com/lashajini/mind-palace/pkg/common"
 )
 
 type MultiInstruction struct {
 	db  *sql.DB
 	tx  *sql.Tx
+	ID  uuid.UUID
 	ctx context.Context
 }
 
@@ -15,11 +19,13 @@ func NewMultiInstruction(ctx context.Context, db *sql.DB) *MultiInstruction {
 	return &MultiInstruction{
 		db:  db,
 		ctx: ctx,
+		ID:  uuid.New(),
 		tx:  nil,
 	}
 }
 
 func (t *MultiInstruction) Begin() error {
+	common.Log.TXInfo(t.ID, "BEGIN Transaction")
 	tx, err := t.db.BeginTx(t.ctx, nil)
 	if err != nil {
 		return err
@@ -29,10 +35,12 @@ func (t *MultiInstruction) Begin() error {
 }
 
 func (t *MultiInstruction) Commit() error {
+	common.Log.TXInfo(t.ID, "COMMIT Transaction")
 	return t.tx.Commit()
 }
 
 func (t *MultiInstruction) Rollback() error {
+	common.Log.TXInfo(t.ID, "ROLLBACK Transaction")
 	return t.tx.Rollback()
 }
 

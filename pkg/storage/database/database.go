@@ -2,9 +2,9 @@ package database
 
 import (
 	"database/sql"
-	"log"
 
-	"github.com/lashajini/mind-palace/pkg/config"
+	"github.com/lashajini/mind-palace/pkg/common"
+	"github.com/lashajini/mind-palace/pkg/errors"
 	_ "github.com/lib/pq"
 )
 
@@ -13,16 +13,13 @@ type MindPalaceDB struct {
 	ConnectionString string
 }
 
-func InitDB(cfg *config.Config) *MindPalaceDB {
+func InitDB(cfg *common.Config) *MindPalaceDB {
 	connStr := cfg.DBAddr()
 	db, err := sql.Open("postgres", connStr)
-	if err != nil {
-		log.Fatal(err)
-	}
+	errors.On(err).Exit()
 
-	if err := db.Ping(); err != nil {
-		log.Fatal(err)
-	}
+	err = db.Ping()
+	errors.On(err).Exit()
 
 	return &MindPalaceDB{db: db, ConnectionString: connStr}
 }

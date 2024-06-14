@@ -4,6 +4,7 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+	"github.com/lashajini/mind-palace/pkg/common"
 	"github.com/lashajini/mind-palace/pkg/storage/database"
 )
 
@@ -20,9 +21,14 @@ func InsertSummaryTx(tx *database.MultiInstruction, memoryID, summaryID uuid.UUI
 	createdAt := now
 	updatedAt := now
 
-	joinedColumns, numColumns := joinColumns(summaryColumns)
-	placeholders := placeholdersString(1, numColumns)
-	q := insertF(database.Table.Summary, joinedColumns, placeholders, "")
+	var valueTuples [][]any
+	valueTuple := []any{summaryID, memoryID, summary, createdAt, updatedAt}
+	valueTuples = append(valueTuples, valueTuple)
 
-	return tx.Exec(q, summaryID, memoryID, summary, createdAt, updatedAt)
+	joinedColumns, _ := joinColumns(summaryColumns)
+	values := valuesString(valueTuples)
+	q := insertF(database.Table.Summary, joinedColumns, values, "")
+	common.Log.DBInfo(tx.ID, q)
+
+	return tx.Exec(q)
 }

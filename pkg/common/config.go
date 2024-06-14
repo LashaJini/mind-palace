@@ -1,4 +1,4 @@
-package config
+package common
 
 import (
 	"fmt"
@@ -7,16 +7,12 @@ import (
 	"strconv"
 
 	"github.com/joho/godotenv"
-	"github.com/lashajini/mind-palace/pkg/errors"
 )
 
-var VERBOSE = false
+var Log = NewLoggger()
 
 // developer config
 type Config struct {
-	// misc
-	VERBOSE bool
-
 	// grpc server
 	GRPC_SERVER_PORT int
 
@@ -35,23 +31,28 @@ type Config struct {
 }
 
 func NewConfig() *Config {
-	projectRoot := os.Getenv("PROJECT_ROOT")
-	env := os.Getenv("MP_ENV")
+	projectRoot := os.Getenv(PROJECT_ROOT)
+	env := os.Getenv(MP_ENV)
 	if !ENVS[env] {
-		fmt.Printf("ENV `%s` not in `%v`. Using `%s`\n", env, ENVS, DEV_ENV)
+		Log.Info().Msgf("ENV `%s` not in `%v`. Using `%s`", env, ENVS, DEV_ENV)
 		env = DEV_ENV
 	}
 
 	envFile := filepath.Join(projectRoot, fmt.Sprintf(".env.%s", env))
 
 	err := godotenv.Load(envFile)
-	errors.Handle(err)
+	if err != nil {
+		Log.Error().Stack().Err(err).Msg("")
+		os.Exit(1)
+	}
 
 	mindPalaceUser, err := CurrentUser()
-	errors.Handle(err)
+	if err != nil {
+		Log.Error().Stack().Err(err).Msg("")
+		os.Exit(1)
+	}
 
-	verbose, _ := strconv.ParseBool(os.Getenv("VERBOSE"))
-	VERBOSE = verbose
+	Log.Info().Msgf("using env file %s", envFile)
 
 	grpcServerPort, _ := strconv.Atoi(os.Getenv("PYTHON_GRPC_SERVER_PORT"))
 
@@ -67,8 +68,6 @@ func NewConfig() *Config {
 	vdbPort, _ := strconv.Atoi(os.Getenv("VDB_PORT"))
 
 	return &Config{
-		VERBOSE: verbose,
-
 		GRPC_SERVER_PORT: grpcServerPort,
 
 		DB_USER:        dbUser,

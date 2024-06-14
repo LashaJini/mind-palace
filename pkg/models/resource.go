@@ -1,12 +1,10 @@
 package models
 
 import (
-	"context"
-	"database/sql"
-	"fmt"
 	"time"
 
 	"github.com/google/uuid"
+	"github.com/lashajini/mind-palace/pkg/common"
 	"github.com/lashajini/mind-palace/pkg/storage/database"
 )
 
@@ -30,42 +28,31 @@ func NewResource(id uuid.UUID, memoryID uuid.UUID, filepath string) *OriginalRes
 	}
 }
 
-func InsertResource(ctx context.Context, db *sql.DB, resource *OriginalResource) error {
-	tx := database.NewMultiInstruction(ctx, db)
-	if err := tx.Begin(); err != nil {
-		return err
-	}
-
-	if err := InsertResourceTx(tx, resource); err != nil {
-		tx.Rollback()
-		return err
-	}
-
-	if err := tx.Commit(); err != nil {
-		return err
-	}
-
-	return nil
+var originalResourceColumns = []string{
+	"id",
+	"memory_id",
+	"file_path",
+	"created_at",
+	"updated_at",
 }
 
 func InsertResourceTx(tx *database.MultiInstruction, resource *OriginalResource) error {
-	q := fmt.Sprintf(`
-INSERT INTO original_resource (
-	id,
-	memory_id,
-	file_path,
-	created_at,
-	updated_at
-)
-VALUES (
-	$1, $2, $3, $4, $5
-)`)
+	joinedColumns, _ := joinColumns(originalResourceColumns)
 
-	return tx.Exec(q,
+	var valueTuples [][]any
+	valueTuple := []any{
 		resource.ID,
 		resource.MemoryID,
 		resource.FilePath,
 		resource.CreatedAt,
 		resource.UpdatedAt,
-	)
+	}
+	valueTuples = append(valueTuples, valueTuple)
+
+	values := valuesString(valueTuples)
+
+	q := insertF(database.Table.OriginalResource, joinedColumns, values, "")
+	common.Log.DBInfo(tx.ID, q)
+
+	return tx.Exec(q)
 }
