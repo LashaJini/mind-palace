@@ -21,7 +21,10 @@ const (
 
 var ENVS = map[string]bool{PROD_ENV: true, DEV_ENV: true, TEST_ENV: true}
 
-const _MIND_PALACE_TEST_PATH = ".tests"
+const (
+	_MIND_PALACE_TEST_PATH = ".tests"
+	TEST_USER              = "mindpalace_test_user"
+)
 
 const (
 	LOG_LEVEL   = "LOG_LEVEL"

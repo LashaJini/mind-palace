@@ -52,7 +52,7 @@ func CreatePostgresContainer(ctx context.Context, cfg *common.Config) (*postgres
 }
 
 func (suite *ModelsTestSuite) SetupSuite() {
-	suite.mpuser = "mindpalace_test_user"
+	suite.mpuser = common.TEST_USER
 	err := mpuser.CreateMindPalace(suite.mpuser)
 	if err != nil {
 		log.Fatal(err)

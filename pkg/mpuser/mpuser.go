@@ -56,7 +56,8 @@ func (u *Config) DisableAddon(addon types.IAddon) error {
 			steps := u.Config.Text.Steps
 
 			for index, step := range steps {
-				if step == addon.GetName() {
+				addonName := addon.GetName()
+				if step == addonName && addonName != types.AddonDefault {
 					u.Config.Text.Steps = append(steps[:index], steps[index+1:]...)
 					needsUpdate = true
 					break
@@ -82,7 +83,6 @@ func (u *Config) Update() error {
 }
 
 func NewUserConfig(user string) *Config {
-
 	return &Config{
 		Config: UserConfigRoot{
 			User: user,

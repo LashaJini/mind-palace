@@ -54,13 +54,13 @@ test-py:
 	@poetry run pytest
 
 test-go:
-	MP_ENV=test LOG_LEVEL=5 go test -v ./pkg/models/... $(ARGS)
+	MP_ENV=test LOG_LEVEL=5 go test -v $(shell go list ./...) $(ARGS)
 
 test: test-go test-py
 	@echo "Done"
 
 cover: dev-deps
-	@bash scripts/cover.sh $(ARGS)
+	MP_ENV=test LOG_LEVEL=5 bash scripts/cover.sh $(ARGS)
 
 db:
 	@bash scripts/postgres.sh $(ARGS)
