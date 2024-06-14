@@ -11,7 +11,7 @@ import (
 	"time"
 
 	"github.com/lashajini/mind-palace/pkg/common"
-	"github.com/lashajini/mind-palace/pkg/config"
+	"github.com/lashajini/mind-palace/pkg/mpuser"
 	"github.com/lashajini/mind-palace/pkg/storage/database"
 	"github.com/stretchr/testify/suite"
 	"github.com/testcontainers/testcontainers-go"
@@ -25,11 +25,11 @@ type ModelsTestSuite struct {
 	pgContainer *postgres.PostgresContainer
 	mpuser      string
 	db          *database.MindPalaceDB
-	cfg         *config.Config
+	cfg         *common.Config
 	ctx         context.Context
 }
 
-func CreatePostgresContainer(ctx context.Context, cfg *config.Config) (*postgres.PostgresContainer, error) {
+func CreatePostgresContainer(ctx context.Context, cfg *common.Config) (*postgres.PostgresContainer, error) {
 	pattern := filepath.Join(cfg.MIGRATIONS_DIR, "*.up.sql")
 	migrationFiles, _ := filepath.Glob(pattern)
 
@@ -53,16 +53,16 @@ func CreatePostgresContainer(ctx context.Context, cfg *config.Config) (*postgres
 
 func (suite *ModelsTestSuite) SetupSuite() {
 	suite.mpuser = "mindpalace_test_user"
-	err := common.CreateMindPalace(suite.mpuser)
+	err := mpuser.CreateMindPalace(suite.mpuser)
 	if err != nil {
 		log.Fatal(err)
 	}
-	err = config.UpdateMindPalaceInfo(config.MindPalaceInfo{CurrentUser: suite.mpuser})
+	err = common.UpdateMindPalaceInfo(common.MindPalaceInfo{CurrentUser: suite.mpuser})
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	suite.cfg = config.NewConfig()
+	suite.cfg = common.NewConfig()
 	suite.ctx = context.Background()
 
 	pgContainer, err := CreatePostgresContainer(suite.ctx, suite.cfg)
@@ -93,12 +93,12 @@ func (suite *ModelsTestSuite) TearDownSuite() {
 		log.Fatalf("failed to terminate pgContainer: %s", err)
 	}
 
-	err := os.RemoveAll(config.UserPath(suite.mpuser, true))
+	err := os.RemoveAll(common.UserPath(suite.mpuser, true))
 	if err != nil {
 		log.Fatalf("failed to remove user mind palace: %s", err)
 	}
 
-	err = config.UpdateMindPalaceInfo(config.MindPalaceInfo{CurrentUser: ""})
+	err = common.UpdateMindPalaceInfo(common.MindPalaceInfo{CurrentUser: ""})
 	if err != nil {
 		log.Fatalf("failed to update config: %s", err)
 	}

@@ -5,7 +5,7 @@ import (
 	"os"
 
 	"github.com/lashajini/mind-palace/pkg/common"
-	"github.com/lashajini/mind-palace/pkg/config"
+	"github.com/lashajini/mind-palace/pkg/mpuser"
 	"github.com/spf13/cobra"
 )
 
@@ -47,12 +47,12 @@ func User(cmd *cobra.Command, args []string) {
 	if newUser != "" {
 		CURRENT_USER = newUser
 
-		if err := common.CreateMindPalace(newUser); err != nil {
+		if err := mpuser.CreateMindPalace(newUser); err != nil {
 			fmt.Println(err)
 			os.Exit(1)
 		}
 	} else if switchUser != "" {
-		mindPalaceUserPath := config.UserPath(switchUser, true)
+		mindPalaceUserPath := common.UserPath(switchUser, true)
 
 		exists, err := common.DirExists(mindPalaceUserPath)
 		if err != nil {
@@ -69,7 +69,7 @@ func User(cmd *cobra.Command, args []string) {
 		CURRENT_USER = switchUser
 	}
 
-	config.UpdateMindPalaceInfo(config.MindPalaceInfo{CurrentUser: CURRENT_USER})
+	common.UpdateMindPalaceInfo(common.MindPalaceInfo{CurrentUser: CURRENT_USER})
 	user(args...)
 }
 

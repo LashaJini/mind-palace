@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/lashajini/mind-palace/pkg/config"
+	"github.com/lashajini/mind-palace/pkg/common"
 	"github.com/lashajini/mind-palace/pkg/types"
 )
 
@@ -79,7 +79,7 @@ func (u *Config) Update() error {
 		return err
 	}
 
-	return os.WriteFile(config.UserConfigPath(u.Config.User, true), d, 0777)
+	return os.WriteFile(common.UserConfigPath(u.Config.User, true), d, 0777)
 }
 
 func NewUserConfig(user string) *Config {
@@ -97,7 +97,7 @@ func NewUserConfig(user string) *Config {
 }
 
 func ReadConfig(user string) (*Config, error) {
-	d, err := os.ReadFile(config.UserConfigPath(user, true))
+	d, err := os.ReadFile(common.UserConfigPath(user, true))
 	if err != nil {
 		return &Config{}, err
 	}

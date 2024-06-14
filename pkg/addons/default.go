@@ -26,25 +26,25 @@ func (d *DefaultAddon) Action(db *database.MindPalaceDB, memoryIDC chan uuid.UUI
 
 	memory := models.NewMemory()
 	err = tx.Begin()
-	errors.Panic(err)
+	errors.On(err).Panic()
 
 	memoryID, err := models.InsertMemoryTx(tx, memory)
-	errors.Panic(err)
+	errors.On(err).Panic()
 
 	resource := models.NewResource(resourceID, memoryID, resourcePath)
 
 	err = models.InsertResourceTx(tx, resource)
-	errors.Panic(err)
+	errors.On(err).Panic()
 
 	err = tx.Commit()
-	errors.Panic(err)
+	errors.On(err).Panic()
 
 	for range maxBufSize {
 		memoryIDC <- memoryID
 	}
 
 	err = rpcClient.VDBInsert(ctx, memoryID, d.Output.([]string)[0])
-	errors.Panic(err)
+	errors.On(err).Panic()
 
 	return nil
 }

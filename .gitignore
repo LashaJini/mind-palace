@@ -13,3 +13,4 @@ _milvus/
 coverage/
 .coverage
 godepgraph.png
+logs/

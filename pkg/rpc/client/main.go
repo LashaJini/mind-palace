@@ -5,7 +5,7 @@ import (
 	"fmt"
 
 	"github.com/google/uuid"
-	"github.com/lashajini/mind-palace/pkg/config"
+	"github.com/lashajini/mind-palace/pkg/common"
 	"github.com/lashajini/mind-palace/pkg/mpuser"
 	pb "github.com/lashajini/mind-palace/pkg/rpc/client/gen/proto"
 	"google.golang.org/grpc"
@@ -16,7 +16,7 @@ type Client struct {
 	client pb.PalaceClient
 }
 
-func NewClient(cfg *config.Config) *Client {
+func NewClient(cfg *common.Config) *Client {
 	addr := fmt.Sprintf("localhost:%d", cfg.GRPC_SERVER_PORT)
 	var opts []grpc.DialOption
 	opts = append(opts, grpc.WithTransportCredentials(insecure.NewCredentials()))
