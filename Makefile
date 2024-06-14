@@ -70,7 +70,7 @@ vdb:
 
 graph:
 	@godepgraph -p \
-		google,github.com/google,github.com/lib,github.com/joho,github.com/spf13 \
+		google,github.com/google,github.com/lib,github.com/joho,github.com/spf13,github.com/rs/zerolog,gopkg \
 		-stoponerror=false \
 		-s . | dot -Tpng -o godepgraph.png
 	@eog godepgraph.png
