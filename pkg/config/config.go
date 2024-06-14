@@ -10,8 +10,13 @@ import (
 	"github.com/lashajini/mind-palace/pkg/errors"
 )
 
+var VERBOSE = false
+
 // developer config
 type Config struct {
+	// misc
+	VERBOSE bool
+
 	// grpc server
 	GRPC_SERVER_PORT int
 
@@ -45,6 +50,9 @@ func NewConfig() *Config {
 	mindPalaceUser, err := CurrentUser()
 	errors.Handle(err)
 
+	verbose, _ := strconv.ParseBool(os.Getenv("VERBOSE"))
+	VERBOSE = verbose
+
 	grpcServerPort, _ := strconv.Atoi(os.Getenv("PYTHON_GRPC_SERVER_PORT"))
 
 	dbUser := os.Getenv("DB_USER")
@@ -59,6 +67,8 @@ func NewConfig() *Config {
 	vdbPort, _ := strconv.Atoi(os.Getenv("VDB_PORT"))
 
 	return &Config{
+		VERBOSE: verbose,
+
 		GRPC_SERVER_PORT: grpcServerPort,
 
 		DB_USER:        dbUser,
