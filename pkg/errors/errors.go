@@ -1,6 +1,7 @@
 package errors
 
 import (
+	"fmt"
 	"os"
 
 	"github.com/lashajini/mind-palace/pkg/common"
@@ -11,6 +12,12 @@ type _err struct {
 }
 
 func On(err error) *_err { return &_err{err} }
+
+func (e *_err) Warn() {
+	if e.error != nil {
+		common.Log.Warn().Stack().Err(e.error).Send()
+	}
+}
 
 func (e *_err) ExitWithMsgf(format string, a ...any) {
 	if e.error != nil {
@@ -40,6 +47,12 @@ func (e *_err) Exit() {
 	if e.error != nil {
 		common.Log.Error().Stack().Err(e.error).Send()
 		os.Exit(1)
+	}
+}
+
+func (e *_err) PanicWithMsg(msg string) {
+	if e.error != nil {
+		panic(fmt.Errorf("%s %w", msg, e.error))
 	}
 }
 

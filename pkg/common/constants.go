@@ -32,4 +32,7 @@ const (
 	LEVEL_INFO  = 1
 	LEVEL_DEBUG = 0
 	LEVEL_TRACE = -1
+
+	COLOR_RESET  = "\033[0m"
+	COLOR_YELLOW = "\033[33m"
 )

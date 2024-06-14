@@ -2,7 +2,6 @@ package mpuser
 
 import (
 	"encoding/json"
-	"fmt"
 	"os"
 
 	"github.com/lashajini/mind-palace/pkg/common"
@@ -29,7 +28,7 @@ func (u *Config) EnableAddon(addon types.IAddon) error {
 			for _, step := range steps {
 				if step == addon.GetName() {
 					canAppend = false
-					fmt.Printf("Addon '%s' is already enabled for '%s'.\n", addon.GetName(), types.Text)
+					common.Log.Info().Msgf("addon '%s' is already enabled for '%s'.\n", addon.GetName(), types.Text)
 					break
 				}
 			}

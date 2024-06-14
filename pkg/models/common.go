@@ -26,9 +26,9 @@ func joinColumns(columns []string, excluded ...string) (string, int) {
 	joinedColumns := ""
 	remainingColumns := excludeColumns(columns, excluded...)
 	for _, column := range remainingColumns {
-		joinedColumns += fmt.Sprintf("\t%s,\n", column)
+		joinedColumns += fmt.Sprintf("%s,", column)
 	}
-	joinedColumns = strings.TrimSuffix(joinedColumns, ",\n")
+	joinedColumns = strings.TrimSuffix(joinedColumns, ",")
 	return joinedColumns, len(remainingColumns)
 }
 
@@ -36,29 +36,49 @@ func placeholdersString(numRows int, numColumns int) string {
 	placeholders := ""
 	i := 1
 	for range numRows {
-		placeholders += "\t("
+		placeholders += "("
 		for j := i; j < i+numColumns; j++ {
 			placeholders += fmt.Sprintf("$%d, ", j)
 		}
 		placeholders = strings.TrimSuffix(placeholders, ", ")
-		placeholders += "),\n"
+		placeholders += "),"
 
 		i += numColumns
 	}
-	placeholders = strings.TrimSuffix(placeholders, ",\n")
+	placeholders = strings.TrimSuffix(placeholders, ",")
 
 	return placeholders
 }
 
+// not sanitized :)
+func valuesString(tuples [][]any) string {
+	values := ""
+	for _, value := range tuples {
+		values += "("
+		for _, v := range value {
+			s := v
+			if _, ok := v.(string); ok {
+				s = strings.ReplaceAll(s.(string), "'", "''")
+			}
+			values += fmt.Sprintf("'%v',", s)
+		}
+		values = strings.TrimSuffix(values, ",")
+		values += "),"
+	}
+	values = strings.TrimSuffix(values, ",")
+
+	return values
+}
+
 func insertF(table, columns, values, additional string) string {
-	q := strings.TrimSpace(fmt.Sprintf(`
-INSERT INTO %s (
-%s
-)
-VALUES
-%s
-%s
-`, table, columns, values, additional))
+	q := strings.TrimSpace(
+		fmt.Sprintf(`INSERT INTO %s (%s) VALUES %s %s`,
+			table,
+			columns,
+			values,
+			additional,
+		),
+	)
 
 	return q
 }

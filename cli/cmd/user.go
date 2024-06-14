@@ -5,6 +5,7 @@ import (
 	"os"
 
 	"github.com/lashajini/mind-palace/pkg/common"
+	"github.com/lashajini/mind-palace/pkg/errors"
 	"github.com/lashajini/mind-palace/pkg/mpuser"
 	"github.com/spf13/cobra"
 )
@@ -33,13 +34,13 @@ func User(cmd *cobra.Command, args []string) {
 	switchUser, _ := cmd.Flags().GetString("switch")
 
 	if newUser == "" && switchUser == "" {
-		fmt.Println("Error: Either --new or --switch must be provided")
+		fmt.Println("either --new or --switch must be provided")
 		cmd.Usage()
 		os.Exit(1)
 	}
 
 	if newUser != "" && switchUser != "" {
-		fmt.Println("Error: Only one of --new or --switch can be provided")
+		fmt.Println("only one of --new or --switch can be provided")
 		cmd.Usage()
 		os.Exit(1)
 	}
@@ -48,20 +49,16 @@ func User(cmd *cobra.Command, args []string) {
 		CURRENT_USER = newUser
 
 		if err := mpuser.CreateMindPalace(newUser); err != nil {
-			fmt.Println(err)
-			os.Exit(1)
+			errors.On(err).Exit()
 		}
 	} else if switchUser != "" {
 		mindPalaceUserPath := common.UserPath(switchUser, true)
 
 		exists, err := common.DirExists(mindPalaceUserPath)
-		if err != nil {
-			fmt.Println(err)
-			os.Exit(1)
-		}
+		errors.On(err).Exit()
 
 		if !exists {
-			fmt.Printf("Error: User '%s' does not exist.\n", switchUser)
+			fmt.Printf("user '%s' does not exist\n", switchUser)
 			cmd.Usage()
 			os.Exit(1)
 		}

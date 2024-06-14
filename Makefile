@@ -54,7 +54,7 @@ test-py:
 	@poetry run pytest
 
 test-go:
-	MP_ENV=test go test -v ./pkg/models/... $(ARGS)
+	MP_ENV=test LOG_LEVEL=5 go test -v ./pkg/models/... $(ARGS)
 
 test: test-go test-py
 	@echo "Done"

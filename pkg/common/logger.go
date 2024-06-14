@@ -8,6 +8,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/google/uuid"
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/pkgerrors"
 	"gopkg.in/natefinch/lumberjack.v2"
@@ -20,10 +21,17 @@ type Logger struct {
 	zerolog.Logger
 }
 
+func (l *Logger) DBInfo(id uuid.UUID, msg string) {
+	l.Info().Msgf("%s%s (tx=%s)%s", COLOR_YELLOW, msg, id.String(), COLOR_RESET)
+}
+
+func (l *Logger) TXInfo(id uuid.UUID, msg string) {
+	l.Info().Msgf("%s%s --- (tx=%s)%s", COLOR_YELLOW, msg, id.String(), COLOR_RESET)
+}
+
 func NewLoggger() Logger {
 	once.Do(func() {
 		zerolog.ErrorStackMarshaler = pkgerrors.MarshalStack
-		zerolog.TimeFieldFormat = time.RFC3339Nano
 
 		logLevel, err := strconv.Atoi(os.Getenv(LOG_LEVEL))
 		if err != nil {
@@ -32,7 +40,7 @@ func NewLoggger() Logger {
 
 		var output io.Writer = zerolog.ConsoleWriter{
 			Out:        os.Stdout,
-			TimeFormat: time.RFC3339,
+			TimeFormat: time.TimeOnly,
 		}
 
 		env := os.Getenv(MP_ENV)
@@ -49,7 +57,7 @@ func NewLoggger() Logger {
 				}).
 				With().
 				Timestamp().
-				Caller().
+				// CallerWithSkipFrameCount(3). // messes with layout
 				Logger(),
 		}
 	})

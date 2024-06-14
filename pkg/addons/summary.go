@@ -5,6 +5,7 @@ import (
 	"fmt"
 
 	"github.com/google/uuid"
+	"github.com/lashajini/mind-palace/pkg/errors"
 	"github.com/lashajini/mind-palace/pkg/models"
 	rpcclient "github.com/lashajini/mind-palace/pkg/rpc/client"
 	"github.com/lashajini/mind-palace/pkg/storage/database"
@@ -24,34 +25,31 @@ func (s *SummaryAddon) Action(db *database.MindPalaceDB, memoryIDC chan uuid.UUI
 
 	defer func() {
 		if err != nil {
-			fmt.Println(err)
-
-			if err := tx.Rollback(); err != nil {
-				panic(fmt.Errorf("Failed to rollback: %w", err))
-			}
+			err := tx.Rollback()
+			errors.On(err).PanicWithMsg("failed to rollback")
 		}
 	}()
 
 	err = tx.Begin()
 	if err != nil {
-		return fmt.Errorf("Failed to start transaction: %w", err)
+		return fmt.Errorf("failed to start transaction: %w", err)
 	}
 
 	summaryID := uuid.New()
 	memoryID := <-memoryIDC
 	err = models.InsertSummaryTx(tx, memoryID, summaryID, summary)
 	if err != nil {
-		return fmt.Errorf("Failed to insert summary: %w", err)
+		return fmt.Errorf("failed to insert summary: %w", err)
 	}
 
 	err = tx.Commit()
 	if err != nil {
-		return fmt.Errorf("Failed to commit transaction: %w", err)
+		return fmt.Errorf("failed to commit transaction: %w", err)
 	}
 
 	err = rpcClient.VDBInsert(ctx, memoryID, summary)
 	if err != nil {
-		return fmt.Errorf("Failed to insert in vdb: %w", err)
+		return fmt.Errorf("failed to insert in vdb: %w", err)
 	}
 
 	return nil

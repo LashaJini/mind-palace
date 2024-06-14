@@ -78,7 +78,8 @@ func add(file string) {
 
 			go func() {
 				defer wg.Done()
-				addon.Action(db, memoryIDC, rpcClient, maxBufSize, resourceID, resourcePath)
+				err := addon.Action(db, memoryIDC, rpcClient, maxBufSize, resourceID, resourcePath)
+				errors.On(err).Warn()
 			}()
 		}
 	}

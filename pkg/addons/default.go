@@ -23,6 +23,7 @@ func (d *DefaultAddon) Action(db *database.MindPalaceDB, memoryIDC chan uuid.UUI
 
 	ctx := context.Background()
 	tx := database.NewMultiInstruction(ctx, db.DB())
+	defer revert(tx)
 
 	memory := models.NewMemory()
 	err = tx.Begin()
@@ -47,6 +48,15 @@ func (d *DefaultAddon) Action(db *database.MindPalaceDB, memoryIDC chan uuid.UUI
 	errors.On(err).Panic()
 
 	return nil
+}
+
+func revert(tx *database.MultiInstruction) {
+	if r := recover(); r != nil {
+		err := tx.Rollback()
+		errors.On(err).PanicWithMsg("failed to rollback")
+
+		panic(r)
+	}
 }
 
 var DefaultAddonInstance = DefaultAddon{

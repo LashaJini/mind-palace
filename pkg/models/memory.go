@@ -4,6 +4,7 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+	"github.com/lashajini/mind-palace/pkg/common"
 	"github.com/lashajini/mind-palace/pkg/storage/database"
 )
 
@@ -32,12 +33,19 @@ func InsertMemoryTx(tx *database.MultiInstruction, memory *Memory) (uuid.UUID, e
 	createdAt := memory.CreatedAt
 	updatedAt := memory.UpdatedAt
 
-	joinedColumns, numColumns := joinColumns(memoryColumns, "id")
-	placeholders := placeholdersString(1, numColumns)
-	q := insertF(database.Table.Memory, joinedColumns, placeholders, "RETURNING id")
+	joinedColumns, _ := joinColumns(memoryColumns, "id")
+
+	var valueTuples [][]any
+	valueTuple := []any{createdAt, updatedAt}
+	valueTuples = append(valueTuples, valueTuple)
+
+	values := valuesString(valueTuples)
+
+	q := insertF(database.Table.Memory, joinedColumns, values, "RETURNING id")
+	common.Log.DBInfo(tx.ID, q)
 
 	var id string
-	err := tx.QueryRow(q, createdAt, updatedAt).Scan(&id)
+	err := tx.QueryRow(q).Scan(&id)
 	if err != nil {
 		return uuid.Nil, err
 	}

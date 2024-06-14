@@ -3,6 +3,7 @@ package models
 import (
 	"time"
 
+	"github.com/lashajini/mind-palace/pkg/common"
 	"github.com/lashajini/mind-palace/pkg/storage/database"
 )
 
@@ -21,27 +22,27 @@ var keywordColumns = []string{
 }
 
 func InsertManyKeywordsTx(tx *database.MultiInstruction, keywords []string) (map[string]int, error) {
-	joinedColumns, numColumns := joinColumns(keywordColumns, "id")
+	joinedColumns, _ := joinColumns(keywordColumns, "id")
 
 	now := time.Now().UTC().Unix()
 	createdAt := now
 	updatedAt := now
 
-	placeholders := placeholdersString(len(keywords), numColumns)
-
-	values := []any{}
+	var valueTuples [][]any
 	for _, keyword := range keywords {
-		values = append(
-			values,
-			keyword,
-			createdAt,
-			updatedAt,
+		tuple := []any{keyword, createdAt, updatedAt}
+		valueTuples = append(
+			valueTuples,
+			tuple,
 		)
 	}
 
-	q := insertF(database.Table.Keyword, joinedColumns, placeholders, "RETURNING id")
+	values := valuesString(valueTuples)
 
-	rows, err := tx.Query(q, values...)
+	q := insertF(database.Table.Keyword, joinedColumns, values, "RETURNING id")
+	common.Log.DBInfo(tx.ID, q)
+
+	rows, err := tx.Query(q)
 	if err != nil {
 		return nil, err
 	}

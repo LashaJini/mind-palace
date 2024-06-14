@@ -21,27 +21,26 @@ func CreateMindPalace(user string) error {
 		resourceHierarchy := common.OriginalResourcePath(user, true)
 
 		if err := os.MkdirAll(memoryHierarchy, os.ModePerm); err != nil {
-			return fmt.Errorf("Error: Could not create memory hierarchy.")
+			return fmt.Errorf("could not create memory hierarchy %w", err)
 		}
 
 		if err := os.MkdirAll(resourceHierarchy, os.ModePerm); err != nil {
-			return fmt.Errorf("Error: Could not create resource hierarchy.")
+			return fmt.Errorf("could not create resource hierarchy %w", err)
 		}
 
 		userConfig := NewUserConfig(user)
 		d, err := json.Marshal(userConfig)
 		if err != nil {
-			return fmt.Errorf("Error: Could not encode user config.")
+			return fmt.Errorf("could not encode user config %w", err)
 		}
 
 		if err := os.WriteFile(common.UserConfigPath(user, true), d, 0777); err != nil {
-			fmt.Println(err)
-			return fmt.Errorf("Error: Could not create user config.")
+			return fmt.Errorf("could not create user config %w", err)
 		}
 
 		return nil
 	}
 
-	fmt.Println("User already exists. No actions taken.")
+	common.Log.Info().Msgf("user %s already exists. No actions taken", user)
 	return nil
 }
