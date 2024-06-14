@@ -75,13 +75,6 @@ func ToAddons(addonResult *pb.AddonResult) ([]types.IAddon, error) {
 	return addons, nil
 }
 
-var SummaryAddonInstance = Addon{
-	Name:        types.AddonResourceSummary,
-	Description: "Summarizes a resource",
-	InputTypes:  []types.IOType{types.Text},
-	OutputTypes: []types.IOType{types.Text},
-}
-
 var List = []types.IAddon{
 	&DefaultAddonInstance,
 	&SummaryAddonInstance,
