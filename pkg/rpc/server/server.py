@@ -1,19 +1,13 @@
 import grpc
 import time
-import os
-from dotenv import load_dotenv
 from concurrent import futures
 
+from pkg.rpc.server import config
 from pkg.rpc.server.llm import CustomLlamaCPP
 from pkg.rpc.server.services.mindpalace import MindPalaceService
 from pkg.rpc.server.vdb import Milvus
 
 import pkg.rpc.server.gen.Palace_pb2_grpc as grpcPalace
-
-load_dotenv()
-
-PYTHON_GRPC_SERVER_PORT = os.getenv("PYTHON_GRPC_SERVER_PORT", 50051)
-_ONE_DAY_IN_SECONDS = 60 * 60 * 24
 
 verbose = True
 llm = CustomLlamaCPP(
@@ -30,11 +24,9 @@ llm = CustomLlamaCPP(
     },
 )
 
-host = "localhost"
-port = 19530
 client = Milvus(
-    host=host,
-    port=port,
+    host=config.VDB_HOST,
+    port=config.VDB_PORT,
 )
 
 
@@ -43,13 +35,13 @@ def server():
     grpcPalace.add_PalaceServicer_to_server(
         MindPalaceService(llm=llm, client=client, verbose=verbose), server
     )
-    server.add_insecure_port(f"[::]:{PYTHON_GRPC_SERVER_PORT}")
+    server.add_insecure_port(f"[::]:{config.PYTHON_GRPC_SERVER_PORT}")
     server.start()
-    print("Server started. Listen on port:", PYTHON_GRPC_SERVER_PORT)
+    print("Server started. Listen on port:", config.PYTHON_GRPC_SERVER_PORT)
     # server.wait_for_termination()
     try:
         while True:
-            time.sleep(_ONE_DAY_IN_SECONDS)
+            time.sleep(config.ONE_DAY_IN_SECONDS)
     except KeyboardInterrupt:
         server.stop(0)
 

@@ -1,4 +1,4 @@
-.PHONY: all build deps deps-go deps-py dev-deps rpc clean-rpc rpc-py clean-rpc-py test-py test-go test cover db vdb graph godoc
+.PHONY: all build start-grpc-server deps deps-go deps-py dev-deps rpc clean-rpc rpc-py clean-rpc-py test-py test-go test cover db vdb graph godoc
 
 BUILD_OUT_DIR=bin
 BINARY_NAME=mind-palace
@@ -14,6 +14,9 @@ build: deps rpc
 	@echo "Building the binary..."
 	@go mod tidy
 	@go build -o $(BUILD_OUT_DIR)/$(BINARY_NAME) $(SOURCE_DIR)
+
+start-grpc-server:
+	@poetry run python pkg/rpc/server/server.py
 
 deps: deps-go deps-py
 
