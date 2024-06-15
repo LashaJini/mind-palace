@@ -14,9 +14,11 @@ import (
 
 type Client struct {
 	client pb.PalaceClient
+
+	userCfg *mpuser.Config
 }
 
-func NewClient(cfg *common.Config) *Client {
+func NewClient(cfg *common.Config, userCfg *mpuser.Config) *Client {
 	addr := fmt.Sprintf("localhost:%d", cfg.GRPC_SERVER_PORT)
 	var opts []grpc.DialOption
 	opts = append(opts, grpc.WithTransportCredentials(insecure.NewCredentials()))
@@ -24,15 +26,15 @@ func NewClient(cfg *common.Config) *Client {
 	conn, _ := grpc.NewClient(addr, opts...)
 	client := pb.NewPalaceClient(conn)
 
-	return &Client{client}
+	return &Client{client, userCfg}
 }
 
-func (c *Client) Add(ctx context.Context, file string, userCfg *mpuser.Config) (<-chan *pb.AddonResult, error) {
+func (c *Client) Add(ctx context.Context, file string) (<-chan *pb.AddonResult, error) {
 	addonResultC := make(chan *pb.AddonResult)
 	go func() {
 		resource := &pb.Resource{
 			File:  file,
-			Steps: userCfg.Steps(),
+			Steps: c.userCfg.Steps(),
 		}
 		joinedAddons, _ := c.client.JoinAddons(ctx, resource)
 
@@ -57,6 +59,7 @@ func (c *Client) Add(ctx context.Context, file string, userCfg *mpuser.Config) (
 
 func (c *Client) VDBInsert(ctx context.Context, memoryID uuid.UUID, output string) error {
 	vdbRow := &pb.VDBRow{
+		User:  c.userCfg.Config.User,
 		Id:    memoryID.String(),
 		Input: output,
 	}

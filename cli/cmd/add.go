@@ -55,7 +55,8 @@ func add(file string) {
 
 	copyFile(file, dst)
 
-	rpcClient := rpcclient.NewClient(cfg)
+	userCfg := userConfig(currentUser)
+	rpcClient := rpcclient.NewClient(cfg, userCfg)
 	db := database.InitDB(cfg)
 
 	// TODO: ctx
@@ -67,8 +68,7 @@ func add(file string) {
 
 	var wg sync.WaitGroup
 
-	userCfg := userConfig(currentUser)
-	addonResultC, _ := rpcClient.Add(ctx, dst, userCfg)
+	addonResultC, _ := rpcClient.Add(ctx, dst)
 	for addonResult := range addonResultC {
 		addons, err := addons.ToAddons(addonResult)
 		errors.On(err).Exit()

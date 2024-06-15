@@ -12,8 +12,9 @@ service Palace {
 message Empty{}
 
 message VDBRow {
-  string id = 1;
-  string input = 2;
+  string user = 1;
+  string id = 2;
+  string input = 3;
 }
 
 message AddonResult {
