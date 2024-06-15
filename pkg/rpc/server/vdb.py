@@ -1,5 +1,5 @@
 from typing import List, TypedDict
-from pymilvus import MilvusClient, connections, DataType
+from pymilvus import MilvusClient, connections, DataType, db
 
 from pkg.rpc.server.llm import EmbeddingModel
 
@@ -10,20 +10,26 @@ class MilvusInsertData(TypedDict):
 
 
 class Milvus:
-    def __init__(self, host: str, port: int, db_name: str, collection_name: str):
+    db_name = "mindpalace_vdb"
+
+    def __init__(self, host: str, port: int):
         self.host = host
         self.port = port
-        self.db_name = db_name
-        self.collection_name = collection_name
+        self.db_name = Milvus.db_name
         self.embedding_model = EmbeddingModel()
 
         connections.connect(host=self.host, port=self.port)
+        if Milvus.db_name not in db.list_database():
+            print(f"Database {Milvus.db_name} not found. Creating...")
+            db.create_database(Milvus.db_name)
 
         self.client = MilvusClient(
             uri=f"http://{self.host}:{self.port}",
             db_name=self.db_name,
         )
 
+    def _create_collection(self, user: str):
+        collection_name = f"{user}_collection"
         if not self.client.has_collection(collection_name):
             schema = self.client.create_schema(
                 auto_id=False,
@@ -57,10 +63,12 @@ class Milvus:
                 schema=schema,
                 index_params=index_params,
             )
+        return collection_name
 
-    def insert(self, data: MilvusInsertData):
+    def insert(self, user: str, data: MilvusInsertData):
         embedded_data = self._get_text_embedding([data])
-        self.client.insert(collection_name=self.collection_name, data=embedded_data)
+        collection_name = self._create_collection(user)
+        self.client.insert(collection_name=collection_name, data=embedded_data)
 
     def _get_text_embedding(self, data: List[MilvusInsertData]):
         embedded_data = []

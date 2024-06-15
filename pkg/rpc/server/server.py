@@ -6,6 +6,7 @@ from concurrent import futures
 
 from pkg.rpc.server.llm import CustomLlamaCPP
 from pkg.rpc.server.services.mindpalace import MindPalaceService
+from pkg.rpc.server.vdb import Milvus
 
 import pkg.rpc.server.gen.Palace_pb2_grpc as grpcPalace
 
@@ -29,11 +30,18 @@ llm = CustomLlamaCPP(
     },
 )
 
+host = "localhost"
+port = 19530
+client = Milvus(
+    host=host,
+    port=port,
+)
+
 
 def server():
     server = grpc.server(futures.ThreadPoolExecutor(max_workers=10))
     grpcPalace.add_PalaceServicer_to_server(
-        MindPalaceService(llm=llm, verbose=verbose), server
+        MindPalaceService(llm=llm, client=client, verbose=verbose), server
     )
     server.add_insecure_port(f"[::]:{PYTHON_GRPC_SERVER_PORT}")
     server.start()

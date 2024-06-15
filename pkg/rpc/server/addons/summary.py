@@ -4,7 +4,6 @@ from llama_index.core.program import LLMTextCompletionProgram
 import pkg.rpc.server.gen.Palace_pb2 as pbPalace
 from pkg.rpc.server.addons.abstract import Addon
 from pkg.rpc.server.llm import CustomLlamaCPP
-from pkg.rpc.server.vdb import Milvus
 from pkg.rpc.server.prompts.summary import SummaryPrompts
 from pkg.rpc.server.output_parsers.summary import Summary, SummaryParser
 
@@ -14,7 +13,6 @@ class SummaryAddon(Addon):
         self,
         input: str,
         llm: CustomLlamaCPP,
-        client: Milvus,
         verbose=False,
         **kwargs,
     ):

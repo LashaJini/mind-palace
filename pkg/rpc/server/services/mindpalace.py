@@ -12,22 +12,13 @@ from pkg.rpc.server.llm import CustomLlamaCPP
 
 import pkg.rpc.server.gen.Palace_pb2 as pbPalace
 
-host = "localhost"
-port = 19530
-db_name = "user1_mind_palace"
-collection_name = "llamatest"
-client = Milvus(
-    host=host,
-    port=port,
-    db_name=db_name,
-    collection_name=collection_name,
-)
-
 
 class MindPalaceService:
-    def __init__(self, llm: CustomLlamaCPP, verbose=False):
+    def __init__(self, llm: CustomLlamaCPP, client: Milvus, verbose=False):
         self.llm = llm
         self.verbose = verbose
+
+        self.client = client
 
     def ApplyAddon(self, request: pbPalace.JoinedAddons, context):
         file = request.file
@@ -54,7 +45,6 @@ class MindPalaceService:
             return JoinedAddons(names).apply(
                 input=input,
                 llm=self.llm,
-                client=client,
                 instructions=", ".join([s for s in instructions if s]),
                 format="\n".join([s for s in formats if s]),
                 verbose=self.verbose,
@@ -65,7 +55,6 @@ class MindPalaceService:
         return addon.apply(
             input=input,
             llm=self.llm,
-            client=client,
             verbose=self.verbose,
             max_keywords=10,
         )
@@ -127,5 +116,7 @@ class MindPalaceService:
         return joinedAddons
 
     def VDBInsert(self, request, context):
-        client.insert(MilvusInsertData(id=request.id, input=request.input))
+        self.client.insert(
+            user=request.user, data=MilvusInsertData(id=request.id, input=request.input)
+        )
         return pbPalace.Empty()
