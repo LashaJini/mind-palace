@@ -22,6 +22,7 @@ type Config struct {
 	DB_NAME        string
 	DB_PORT        int
 	DB_VERSION     string
+	DB_DRIVER      string
 	MIGRATIONS_DIR string
 
 	// vector database
@@ -34,7 +35,6 @@ func NewConfig() *Config {
 	projectRoot := os.Getenv(PROJECT_ROOT)
 	env := os.Getenv(MP_ENV)
 	if !ENVS[env] {
-		Log.Info().Msgf("ENV `%s` not in `%v`. Using `%s`", env, ENVS, DEV_ENV)
 		env = DEV_ENV
 	}
 
@@ -42,13 +42,12 @@ func NewConfig() *Config {
 
 	err := godotenv.Load(envFile)
 	if err != nil {
-		Log.Error().Stack().Err(err).Msg("")
+		Log.Error().Stack().Err(err).Send()
 		os.Exit(1)
 	}
 
-	mindPalaceUser, err := CurrentUser()
 	if err != nil {
-		Log.Error().Stack().Err(err).Msg("")
+		Log.Error().Stack().Err(err).Send()
 		os.Exit(1)
 	}
 
@@ -58,13 +57,14 @@ func NewConfig() *Config {
 
 	dbUser := os.Getenv("DB_USER")
 	dbPass := os.Getenv("DB_PASS")
-	dbName := mindPalaceUser + os.Getenv("DB_NAME")
+	dbName := os.Getenv("DB_NAME")
 	dbPort, _ := strconv.Atoi(os.Getenv("DB_PORT"))
 	dbVersion := os.Getenv("DB_VERSION")
+	dbDriver := os.Getenv("DB_DRIVER")
 	migrationsDir := filepath.Join(projectRoot, os.Getenv("MIGRATIONS_DIR"))
 
 	vdbHost := os.Getenv("VDB_HOST")
-	vdbName := mindPalaceUser + os.Getenv("VDB_NAME")
+	vdbName := os.Getenv("VDB_NAME")
 	vdbPort, _ := strconv.Atoi(os.Getenv("VDB_PORT"))
 
 	return &Config{
@@ -75,6 +75,7 @@ func NewConfig() *Config {
 		DB_NAME:        dbName,
 		DB_PORT:        dbPort,
 		DB_VERSION:     dbVersion,
+		DB_DRIVER:      dbDriver,
 		MIGRATIONS_DIR: migrationsDir,
 
 		VDB_HOST: vdbHost,

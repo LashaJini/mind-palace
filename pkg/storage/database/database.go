@@ -15,7 +15,7 @@ type MindPalaceDB struct {
 
 func InitDB(cfg *common.Config) *MindPalaceDB {
 	connStr := cfg.DBAddr()
-	db, err := sql.Open("postgres", connStr)
+	db, err := sql.Open(cfg.DB_DRIVER, connStr)
 	errors.On(err).Exit()
 
 	err = db.Ping()
