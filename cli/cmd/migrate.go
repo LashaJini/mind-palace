@@ -1,9 +1,11 @@
 package cli
 
 import (
+	"fmt"
 	"os"
 	"path/filepath"
 	"strings"
+	"time"
 
 	"github.com/golang-migrate/migrate/v4"
 	"github.com/lashajini/mind-palace/pkg/common"
@@ -22,17 +24,23 @@ var migrateCmd = &cobra.Command{
 }
 
 var (
-	UP   int
-	DOWN int
+	UP      int
+	DOWN    int
+	VERSION bool
+	FORCE   int
+	CREATE  string
 )
 
 func init() {
 	rootCmd.AddCommand(migrateCmd)
-	migrateCmd.PersistentFlags().IntVarP(&UP, "up", "u", 1, "migrate up by <n>. Setting to 0 migrates all.")
+	migrateCmd.PersistentFlags().IntVarP(&UP, "up", "u", 1, "migrate up by <n>. Setting to 0 migrates all")
 	migrateCmd.PersistentFlags().IntVarP(&DOWN, "down", "d", 1, "migrate down by <n>")
+	migrateCmd.Flags().BoolVarP(&VERSION, "version", "v", false, "last migration version")
+	migrateCmd.PersistentFlags().IntVarP(&FORCE, "force", "f", 1, "set migration version. Don't run migrations")
+	migrateCmd.Flags().StringVarP(&CREATE, "create", "c", "", "create migration")
 
-	migrateCmd.MarkFlagsOneRequired("up", "down")
-	migrateCmd.MarkFlagsMutuallyExclusive("up", "down")
+	migrateCmd.MarkFlagsOneRequired("up", "down", "version", "force", "create")
+	migrateCmd.MarkFlagsMutuallyExclusive("up", "down", "version", "force", "create")
 }
 
 func Migrate(cmd *cobra.Command, args []string) {
@@ -40,7 +48,39 @@ func Migrate(cmd *cobra.Command, args []string) {
 	m, err := migrate.New("file://"+cfg.MIGRATIONS_DIR, cfg.DBAddr())
 	errors.On(err).Exit()
 
+	if VERSION {
+		version, dirty, err := m.Version()
+		errors.On(err).Exit()
+		common.Log.Info().Msgf("version: %d dirty: %t", version, dirty)
+
+		return
+	}
+
+	if cmd.Flags().Changed("force") {
+		err := m.Force(FORCE)
+		errors.On(err).Exit()
+		return
+	}
+
+	if cmd.Flags().Changed("create") {
+		timestamp := time.Now().Format("20060102150405")
+		fileName := fmt.Sprintf("%s_%s", timestamp, CREATE)
+		upFilePath := filepath.Join(cfg.MIGRATIONS_DIR, fmt.Sprintf("%s.up.sql", fileName))
+		downFilePath := filepath.Join(cfg.MIGRATIONS_DIR, fmt.Sprintf("%s.down.sql", fileName))
+
+		upFile, err := os.Create(upFilePath)
+		errors.On(err).Exit()
+		defer upFile.Close()
+
+		downFile, err := os.Create(downFilePath)
+		errors.On(err).Exit()
+		defer downFile.Close()
+
+		return
+	}
+
 	steps := 0
+	// TODO: annoying error when there are no more migrations to apply
 	if cmd.Flags().Changed("up") {
 		ups := 0
 		if UP == 0 {

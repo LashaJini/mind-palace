@@ -2,15 +2,17 @@
 
 source ./scripts/env.sh
 
-NAME=postgres13
+CONTAINER_NAME=postgres13
 POSTGRES_PASSWORD=$DB_PASS
 POSTGRESQL_URL="postgres://$DB_USER:$POSTGRES_PASSWORD@localhost:$DB_PORT/$DB_NAME?sslmode=disable"
 VERSION=$DB_VERSION
 
 start() {
+	mkdir $MIGRATIONS_DIR -p
+
 	docker run --rm -d \
 		-v $HOME/sql-db:/data \
-		--name $NAME \
+		--name $CONTAINER_NAME \
 		-p $DB_PORT:$DB_PORT \
 		-e POSTGRES_PASSWORD=$POSTGRES_PASSWORD \
 		postgres:$VERSION 1>/dev/null
@@ -23,7 +25,7 @@ start() {
 }
 
 stop() {
-	docker stop $NAME 1>/dev/null
+	docker stop $CONTAINER_NAME 1>/dev/null
 
 	if [ $? -ne 0 ]; then
 		echo "Stop failed."
@@ -33,7 +35,7 @@ stop() {
 }
 
 cli() {
-	docker exec -it postgres13 \
+	docker exec -it $CONTAINER_NAME \
 		bash -c "echo 'set -o vi'>~/.bashrc && \
 	             echo 'set editing-mode vi'>~/.inputrc && \
 	             psql -U $DB_USER -d $DB_NAME"
@@ -41,82 +43,13 @@ cli() {
 
 # run once, when application is created
 first() {
-	docker exec postgres13 \
+	docker exec $CONTAINER_NAME \
 		bash -c "su - $DB_USER -c 'createdb $DB_NAME'"
 }
 
-db:migrate() {
-	mkdir $MIGRATIONS_DIR -p
-
-	case $1 in
-	create)
-		db:migrate:create $2
-		;;
-	up)
-		db:migrate:up $2
-		;;
-	down)
-		db:migrate:down $2
-		;;
-	version)
-		db:migrate:version
-		;;
-	fix)
-		db:migrate:fix $2
-		;;
-	*)
-		echo "please use bash postgres.sh db:migrate create|up|down|version|fix"
-		;;
-	esac
-}
-
-db:migrate:create() {
-	migrate create -ext sql -dir $MIGRATIONS_DIR $1 1>/dev/null
-
-	if [ $? -ne 0 ]; then
-		echo "db:migrate create failed."
-		exit 1
-	fi
-	echo "Success"
-}
-
-db:migrate:up() {
-	migrate -database $POSTGRESQL_URL -path $MIGRATIONS_DIR up
-
-	if [ $? -ne 0 ]; then
-		echo "db:migrate up failed."
-		exit 1
-	fi
-	echo "Success"
-}
-
-db:migrate:down() {
-	migrate -database $POSTGRESQL_URL -path $MIGRATIONS_DIR down 1
-
-	if [ $? -ne 0 ]; then
-		echo "db:migrate down failed."
-		exit 1
-	fi
-	echo "Success"
-}
-
-db:migrate:version() {
-	migrate -database $POSTGRESQL_URL -path $MIGRATIONS_DIR version
-
-	if [ $? -ne 0 ]; then
-		echo "db:migrate version failed."
-		exit 1
-	fi
-	echo "Success"
-}
-
-db:migrate:fix() {
-	migrate -database $POSTGRESQL_URL -path $MIGRATIONS_DIR force $1
-
-	if [ $? -ne 0 ]; then
-		echo "db:migrate fix failed."
-		exit 1
-	fi
+drop() {
+	docker exec $CONTAINER_NAME \
+		bash -c "su - $DB_USER -c 'dropdb $DB_NAME'"
 }
 
 case $1 in
@@ -132,10 +65,10 @@ cli)
 first)
 	first
 	;;
-db:migrate)
-	$@
+drop)
+	drop
 	;;
 *)
-	echo "please use bash postgres.sh start|stop|cli|first|db:migrate"
+	echo "please use bash postgres.sh start|stop|cli|first|drop"
 	;;
 esac
