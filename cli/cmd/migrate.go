@@ -82,8 +82,8 @@ func Migrate(cmd *cobra.Command, args []string) {
 	steps := 0
 	// TODO: annoying error when there are no more migrations to apply
 	if cmd.Flags().Changed("up") {
-		ups := 0
-		if UP == 0 {
+		ups := UP
+		if ups == 0 {
 			// count total files ending with *.up.sql in migrations dir
 			// ls -l migrations | grep ".up.sql" | wc -l
 			ext := ".up.sql"
