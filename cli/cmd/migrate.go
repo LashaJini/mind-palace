@@ -211,7 +211,7 @@ func up(cfg *common.Config, sqlTemplateDatas []SQLTemplateData) (*InMemorySource
 				inject(&sqlBuffer, path, sqlTemplateData)
 			}
 			migration := &source.Migration{
-				Version:    uint(migrationID),
+				Version:    migrationID,
 				Direction:  source.Up,
 				Raw:        sqlBuffer.String(),
 				Identifier: path,
@@ -245,7 +245,7 @@ func down(cfg *common.Config, sqlTemplateDatas []SQLTemplateData) *InMemorySourc
 				inject(&sqlBuffer, path, sqlTemplateData)
 			}
 			migration := &source.Migration{
-				Version:    uint(migrationID),
+				Version:    migrationID,
 				Direction:  source.Down,
 				Raw:        sqlBuffer.String(),
 				Identifier: path,
