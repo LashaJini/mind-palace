@@ -1,9 +1,6 @@
 package cli
 
 import (
-	"fmt"
-	"os"
-
 	"github.com/lashajini/mind-palace/pkg/common"
 	"github.com/lashajini/mind-palace/pkg/errors"
 	"github.com/lashajini/mind-palace/pkg/mpuser"
@@ -11,9 +8,8 @@ import (
 )
 
 var (
-	NEW          string
-	SWITCH       string
-	CURRENT_USER string
+	NEW    string
+	SWITCH string
 )
 
 var userCmd = &cobra.Command{
@@ -27,46 +23,39 @@ func init() {
 	rootCmd.AddCommand(userCmd)
 	userCmd.Flags().StringVarP(&NEW, "new", "n", "", "new user")
 	userCmd.Flags().StringVarP(&SWITCH, "switch", "s", "", "switch user")
+
+	userCmd.MarkFlagsOneRequired("new", "switch")
+	userCmd.MarkFlagsMutuallyExclusive("new", "switch")
 }
 
 func User(cmd *cobra.Command, args []string) {
 	newUser, _ := cmd.Flags().GetString("new")
 	switchUser, _ := cmd.Flags().GetString("switch")
 
-	if newUser == "" && switchUser == "" {
-		fmt.Println("either --new or --switch must be provided")
-		cmd.Usage()
-		os.Exit(1)
-	}
-
-	if newUser != "" && switchUser != "" {
-		fmt.Println("only one of --new or --switch can be provided")
-		cmd.Usage()
-		os.Exit(1)
-	}
-
-	if newUser != "" {
-		CURRENT_USER = newUser
-
-		if err := mpuser.CreateMindPalace(newUser); err != nil {
-			errors.On(err).Exit()
+	currentUser := ""
+	if cmd.Flags().Changed("new") {
+		if len(newUser) < 1 {
+			errors.ExitWithMsg("new user cannot be empty")
 		}
-	} else if switchUser != "" {
+
+		currentUser = newUser
+
+		err := mpuser.CreateMindPalace(newUser)
+		errors.On(err).Exit()
+	} else if cmd.Flags().Changed("switch") {
 		mindPalaceUserPath := common.UserPath(switchUser, true)
 
 		exists, err := common.DirExists(mindPalaceUserPath)
 		errors.On(err).Exit()
 
 		if !exists {
-			fmt.Printf("user '%s' does not exist\n", switchUser)
-			cmd.Usage()
-			os.Exit(1)
+			errors.ExitWithMsgf("user '%s' does not exist\n", switchUser)
 		}
 
-		CURRENT_USER = switchUser
+		currentUser = switchUser
 	}
 
-	common.UpdateMindPalaceInfo(common.MindPalaceInfo{CurrentUser: CURRENT_USER})
+	common.UpdateMindPalaceInfo(common.MindPalaceInfo{CurrentUser: currentUser})
 	user(args...)
 }
 
