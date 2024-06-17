@@ -54,3 +54,14 @@ func (m *MindPalaceDB) ListMPSchemas() ([]string, error) {
 	common.Log.Info().Msgf("found schemas %v", results)
 	return results, nil
 }
+
+func (m *MindPalaceDB) CreateSchema(user string) error {
+	schema := user + m.cfg.DB_SCHEMA_SUFFIX
+	_, err := m.db.Exec(fmt.Sprintf("CREATE SCHEMA %s", schema))
+	if err != nil {
+		return err
+	}
+
+	common.Log.Info().Msgf("created schema '%s'", schema)
+	return nil
+}

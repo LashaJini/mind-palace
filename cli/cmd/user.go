@@ -4,6 +4,7 @@ import (
 	"github.com/lashajini/mind-palace/pkg/common"
 	"github.com/lashajini/mind-palace/pkg/errors"
 	"github.com/lashajini/mind-palace/pkg/mpuser"
+	"github.com/lashajini/mind-palace/pkg/storage/database"
 	"github.com/spf13/cobra"
 )
 
@@ -41,6 +42,13 @@ func User(cmd *cobra.Command, args []string) {
 		currentUser = newUser
 
 		err := mpuser.CreateMindPalace(newUser)
+		errors.On(err).Exit()
+
+		cfg := common.NewConfig()
+		db := database.InitDB(cfg)
+		defer db.DB().Close()
+
+		err = db.CreateSchema(newUser)
 		errors.On(err).Exit()
 	} else if cmd.Flags().Changed("switch") {
 		mindPalaceUserPath := common.UserPath(switchUser, true)
