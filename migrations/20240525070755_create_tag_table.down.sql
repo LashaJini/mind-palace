@@ -1,2 +1,2 @@
-DROP TABLE IF EXISTS tag CASCADE;
-DROP TABLE IF EXISTS memory_tag;
+DROP TABLE IF EXISTS {{ .Namespace }}.tag CASCADE;
+DROP TABLE IF EXISTS {{ .Namespace }}.memory_tag;

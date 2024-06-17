@@ -1,1 +1,1 @@
-ALTER TABLE resource RENAME TO original_resource;
+ALTER TABLE {{ .Namespace }}.resource RENAME TO original_resource;

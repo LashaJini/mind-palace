@@ -1,1 +1,1 @@
-DROP TABLE IF EXISTS summary;
+DROP TABLE IF EXISTS {{ .Namespace }}.summary;
