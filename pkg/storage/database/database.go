@@ -56,7 +56,7 @@ func (m *MindPalaceDB) ListMPSchemas() ([]string, error) {
 }
 
 func (m *MindPalaceDB) CreateSchema(user string) error {
-	schema := user + m.cfg.DB_SCHEMA_SUFFIX
+	schema := m.UserSchema(user)
 	_, err := m.db.Exec(fmt.Sprintf("CREATE SCHEMA %s", schema))
 	if err != nil {
 		return err
@@ -64,4 +64,8 @@ func (m *MindPalaceDB) CreateSchema(user string) error {
 
 	common.Log.Info().Msgf("created schema '%s'", schema)
 	return nil
+}
+
+func (m *MindPalaceDB) UserSchema(user string) string {
+	return user + m.cfg.DB_SCHEMA_SUFFIX
 }

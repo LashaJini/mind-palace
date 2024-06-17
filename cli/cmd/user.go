@@ -1,6 +1,9 @@
 package cli
 
 import (
+	"bytes"
+	"path/filepath"
+
 	"github.com/lashajini/mind-palace/pkg/common"
 	"github.com/lashajini/mind-palace/pkg/errors"
 	"github.com/lashajini/mind-palace/pkg/mpuser"
@@ -39,8 +42,6 @@ func User(cmd *cobra.Command, args []string) {
 			errors.ExitWithMsg("new user cannot be empty")
 		}
 
-		currentUser = newUser
-
 		err := mpuser.CreateMindPalace(newUser)
 		errors.On(err).Exit()
 
@@ -50,6 +51,22 @@ func User(cmd *cobra.Command, args []string) {
 
 		err = db.CreateSchema(newUser)
 		errors.On(err).Exit()
+
+		pattern := filepath.Join(cfg.MIGRATIONS_DIR, "*.up.sql")
+		sqlUpFiles, err := filepath.Glob(pattern)
+		errors.On(err).Exit()
+
+		sqlTemplate := common.SQLTemplate{Namespace: db.UserSchema(newUser)}
+		for _, sqlUpFile := range sqlUpFiles {
+			var sqlBuffer bytes.Buffer
+			err = sqlTemplate.Inject(&sqlBuffer, sqlUpFile)
+			errors.On(err).Exit()
+
+			_, err = db.DB().Exec(sqlBuffer.String())
+			errors.On(err).Exit()
+		}
+
+		currentUser = newUser
 	} else if cmd.Flags().Changed("switch") {
 		mindPalaceUserPath := common.UserPath(switchUser, true)
 
