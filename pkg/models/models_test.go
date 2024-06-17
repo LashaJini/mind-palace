@@ -1,6 +1,7 @@
 package models
 
 import (
+	"bytes"
 	"context"
 	"fmt"
 	"log"
@@ -19,20 +20,17 @@ import (
 	"github.com/testcontainers/testcontainers-go/wait"
 )
 
-// TODO: initialize user first
 type ModelsTestSuite struct {
 	suite.Suite
-	pgContainer *postgres.PostgresContainer
-	mpuser      string
-	db          *database.MindPalaceDB
-	cfg         *common.Config
-	ctx         context.Context
+	pgContainer      *postgres.PostgresContainer
+	mpuser           string
+	tmpMigrationsDir string
+	db               *database.MindPalaceDB
+	cfg              *common.Config
+	ctx              context.Context
 }
 
-func CreatePostgresContainer(ctx context.Context, cfg *common.Config) (*postgres.PostgresContainer, error) {
-	pattern := filepath.Join(cfg.MIGRATIONS_DIR, "*.up.sql")
-	migrationFiles, _ := filepath.Glob(pattern)
-
+func CreatePostgresContainer(ctx context.Context, cfg *common.Config, migrationFiles []string) (*postgres.PostgresContainer, error) {
 	pgContainer, err := postgres.RunContainer(ctx,
 		testcontainers.WithImage(fmt.Sprintf("postgres:%s", cfg.DB_VERSION)),
 		postgres.WithInitScripts(migrationFiles...),
@@ -65,7 +63,25 @@ func (suite *ModelsTestSuite) SetupSuite() {
 	suite.cfg = common.NewConfig()
 	suite.ctx = context.Background()
 
-	pgContainer, err := CreatePostgresContainer(suite.ctx, suite.cfg)
+	// create temporary migrations dir for up migrations and inject into sql templates
+	pattern := filepath.Join(suite.cfg.MIGRATIONS_DIR, "*.up.sql")
+	migrationFiles, _ := filepath.Glob(pattern)
+	suite.tmpMigrationsDir = filepath.Join(suite.cfg.MIGRATIONS_DIR, "..", "tmp_test_migrations")
+	os.Mkdir(suite.tmpMigrationsDir, 0755)
+	sqlTemplate := common.SQLTemplate{Namespace: suite.cfg.DB_DEFAULT_NAMESPACE}
+	for _, migrationFile := range migrationFiles {
+		var sqlBuffer bytes.Buffer
+		err = sqlTemplate.Inject(&sqlBuffer, migrationFile)
+		if err != nil {
+			log.Fatal(err)
+		}
+
+		err = os.WriteFile(filepath.Join(suite.tmpMigrationsDir, filepath.Base(migrationFile)), sqlBuffer.Bytes(), 0644)
+	}
+	pattern = filepath.Join(suite.tmpMigrationsDir, "*.up.sql")
+	migrationFiles, _ = filepath.Glob(pattern)
+
+	pgContainer, err := CreatePostgresContainer(suite.ctx, suite.cfg, migrationFiles)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -101,6 +117,11 @@ func (suite *ModelsTestSuite) TearDownSuite() {
 	err = common.UpdateMindPalaceInfo(common.MindPalaceInfo{CurrentUser: ""})
 	if err != nil {
 		log.Fatalf("failed to update config: %s", err)
+	}
+
+	err = os.RemoveAll(suite.tmpMigrationsDir)
+	if err != nil {
+		log.Fatalf("failed to remove %s: %s", suite.tmpMigrationsDir, err)
 	}
 }
 

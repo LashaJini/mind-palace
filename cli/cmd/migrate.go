@@ -8,7 +8,6 @@ import (
 	"path/filepath"
 	"strconv"
 	"strings"
-	"text/template"
 	"time"
 
 	"github.com/golang-migrate/migrate/v4"
@@ -93,24 +92,24 @@ func Migrate(cmd *cobra.Command, args []string) {
 	schemas, err := db.ListMPSchemas()
 	errors.On(err).Exit()
 
-	sqlTemplateDatas := []SQLTemplateData{}
+	sqlTemplates := []common.SQLTemplate{}
 	for _, schema := range schemas {
-		sqlTemplateData := SQLTemplateData{
+		sqlTemplate := common.SQLTemplate{
 			Namespace: schema,
 		}
 
-		sqlTemplateDatas = append(sqlTemplateDatas, sqlTemplateData)
+		sqlTemplates = append(sqlTemplates, sqlTemplate)
 	}
 
 	steps := 0
 	var inMemorySource *InMemorySource
 	if cmd.Flags().Changed("down") {
-		inMemorySource = down(cfg, sqlTemplateDatas)
+		inMemorySource = down(cfg, sqlTemplates)
 
 		steps = -DOWN
 	} else {
 		var ups int
-		inMemorySource, ups = up(cfg, sqlTemplateDatas)
+		inMemorySource, ups = up(cfg, sqlTemplates)
 
 		steps = UP
 		if steps == 0 {
@@ -133,10 +132,6 @@ func migrationSteps(m *migrate.Migrate, steps int) {
 	errors.On(err).Exit()
 
 	common.Log.Info().Msg("successfully migrated")
-}
-
-type SQLTemplateData struct {
-	Namespace string
 }
 
 type InMemorySource struct {
@@ -197,7 +192,7 @@ func NewInMemorySource() *InMemorySource {
 
 // TODO: when ups (steps) exceeds total number of migrations (or total steps - last migration version),
 // calculate the difference and apply
-func up(cfg *common.Config, sqlTemplateDatas []SQLTemplateData) (*InMemorySource, int) {
+func up(cfg *common.Config, sqlTemplates []common.SQLTemplate) (*InMemorySource, int) {
 	inMemorySource := NewInMemorySource()
 	ups := 0
 
@@ -207,9 +202,11 @@ func up(cfg *common.Config, sqlTemplateDatas []SQLTemplateData) (*InMemorySource
 			migrationID := migrationIDFromFile(path)
 
 			var sqlBuffer bytes.Buffer
-			for _, sqlTemplateData := range sqlTemplateDatas {
-				inject(&sqlBuffer, path, sqlTemplateData)
+			for _, sqlTemplate := range sqlTemplates {
+				err := sqlTemplate.Inject(&sqlBuffer, path)
+				errors.On(err).Exit()
 			}
+
 			migration := &source.Migration{
 				Version:    migrationID,
 				Direction:  source.Up,
@@ -232,7 +229,7 @@ func up(cfg *common.Config, sqlTemplateDatas []SQLTemplateData) (*InMemorySource
 	return inMemorySource, ups
 }
 
-func down(cfg *common.Config, sqlTemplateDatas []SQLTemplateData) *InMemorySource {
+func down(cfg *common.Config, sqlTemplates []common.SQLTemplate) *InMemorySource {
 	inMemorySource := NewInMemorySource()
 
 	ext := ".down.sql"
@@ -241,9 +238,11 @@ func down(cfg *common.Config, sqlTemplateDatas []SQLTemplateData) *InMemorySourc
 			migrationID := migrationIDFromFile(path)
 
 			var sqlBuffer bytes.Buffer
-			for _, sqlTemplateData := range sqlTemplateDatas {
-				inject(&sqlBuffer, path, sqlTemplateData)
+			for _, sqlTemplate := range sqlTemplates {
+				err := sqlTemplate.Inject(&sqlBuffer, path)
+				errors.On(err).Exit()
 			}
+
 			migration := &source.Migration{
 				Version:    migrationID,
 				Direction:  source.Down,
@@ -267,18 +266,4 @@ func migrationIDFromFile(path string) uint {
 	errors.On(err).Exit()
 
 	return uint(migrationID)
-}
-
-func inject(sqlBuffer *bytes.Buffer, path string, sqlTemplateData SQLTemplateData) {
-	f, err := os.ReadFile(path)
-	errors.On(err).Exit()
-
-	tmpl, err := template.New("sql").Parse(string(f))
-	errors.On(err).Exit()
-
-	var buf bytes.Buffer
-	err = tmpl.Execute(&buf, sqlTemplateData)
-	errors.On(err).Exit()
-
-	sqlBuffer.WriteString(buf.String())
 }
