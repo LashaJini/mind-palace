@@ -2,6 +2,7 @@ package database
 
 import (
 	"database/sql"
+	"fmt"
 
 	"github.com/lashajini/mind-palace/pkg/common"
 	"github.com/lashajini/mind-palace/pkg/errors"
@@ -11,6 +12,7 @@ import (
 type MindPalaceDB struct {
 	db               *sql.DB
 	ConnectionString string
+	cfg              *common.Config
 }
 
 func InitDB(cfg *common.Config) *MindPalaceDB {
@@ -21,9 +23,34 @@ func InitDB(cfg *common.Config) *MindPalaceDB {
 	err = db.Ping()
 	errors.On(err).Exit()
 
-	return &MindPalaceDB{db: db, ConnectionString: connStr}
+	return &MindPalaceDB{db: db, ConnectionString: connStr, cfg: cfg}
 }
 
 func (m *MindPalaceDB) DB() *sql.DB {
 	return m.db
+}
+
+func (m *MindPalaceDB) ListMPSchemas() ([]string, error) {
+	var results []string
+	q := fmt.Sprintf("SELECT schema_name FROM information_schema.schemata WHERE schema_name LIKE '%%%s' OR schema_name = 'public'", m.cfg.DB_SCHEMA_SUFFIX)
+	rows, err := m.db.Query(q)
+	if err != nil {
+		return results, err
+	}
+	defer rows.Close()
+
+	for rows.Next() {
+		var (
+			name string
+		)
+		err := rows.Scan(&name)
+		if err != nil {
+			return results, err
+		}
+
+		results = append(results, name)
+	}
+
+	common.Log.Info().Msgf("found schemas %v", results)
+	return results, nil
 }
