@@ -2,9 +2,11 @@ package common
 
 import (
 	"bufio"
+	"bytes"
 	"fmt"
 	"io"
 	"os"
+	"text/template"
 	"unicode/utf8"
 )
 
@@ -104,4 +106,30 @@ func DirExists(path string) (bool, error) {
 	}
 
 	return info.IsDir(), nil
+}
+
+type SQLTemplate struct {
+	Namespace string
+}
+
+func (s *SQLTemplate) Inject(sqlBuffer *bytes.Buffer, path string) error {
+	f, err := os.ReadFile(path)
+	if err != nil {
+		return err
+	}
+
+	tmpl, err := template.New("sql").Parse(string(f))
+	if err != nil {
+		return err
+	}
+
+	var buf bytes.Buffer
+	err = tmpl.Execute(&buf, s)
+	if err != nil {
+		return err
+	}
+
+	_, err = sqlBuffer.WriteString(buf.String())
+
+	return err
 }

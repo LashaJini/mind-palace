@@ -1,2 +1,2 @@
-DROP TABLE IF EXISTS memory CASCADE;
-DROP TABLE IF EXISTS resource CASCADE;
+DROP TABLE IF EXISTS {{ .Namespace }}.memory CASCADE;
+DROP TABLE IF EXISTS {{ .Namespace }}.resource CASCADE;
