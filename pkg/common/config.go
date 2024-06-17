@@ -17,13 +17,15 @@ type Config struct {
 	GRPC_SERVER_PORT int
 
 	// database
-	DB_USER        string
-	DB_PASS        string
-	DB_NAME        string
-	DB_PORT        int
-	DB_VERSION     string
-	DB_DRIVER      string
-	MIGRATIONS_DIR string
+	DB_USER              string
+	DB_PASS              string
+	DB_NAME              string
+	DB_PORT              int
+	DB_VERSION           string
+	DB_DRIVER            string
+	DB_DEFAULT_NAMESPACE string
+	DB_SCHEMA_SUFFIX     string
+	MIGRATIONS_DIR       string
 
 	// vector database
 	VDB_HOST string
@@ -61,6 +63,8 @@ func NewConfig() *Config {
 	dbPort, _ := strconv.Atoi(os.Getenv("DB_PORT"))
 	dbVersion := os.Getenv("DB_VERSION")
 	dbDriver := os.Getenv("DB_DRIVER")
+	dbDefaultNamespace := "public"
+	dbSchemaSuffix := "_mindpalace"
 	migrationsDir := filepath.Join(projectRoot, os.Getenv("MIGRATIONS_DIR"))
 
 	vdbHost := os.Getenv("VDB_HOST")
@@ -70,13 +74,15 @@ func NewConfig() *Config {
 	return &Config{
 		GRPC_SERVER_PORT: grpcServerPort,
 
-		DB_USER:        dbUser,
-		DB_PASS:        dbPass,
-		DB_NAME:        dbName,
-		DB_PORT:        dbPort,
-		DB_VERSION:     dbVersion,
-		DB_DRIVER:      dbDriver,
-		MIGRATIONS_DIR: migrationsDir,
+		DB_USER:              dbUser,
+		DB_PASS:              dbPass,
+		DB_NAME:              dbName,
+		DB_PORT:              dbPort,
+		DB_VERSION:           dbVersion,
+		DB_DRIVER:            dbDriver,
+		DB_DEFAULT_NAMESPACE: dbDefaultNamespace,
+		DB_SCHEMA_SUFFIX:     dbSchemaSuffix,
+		MIGRATIONS_DIR:       migrationsDir,
 
 		VDB_HOST: vdbHost,
 		VDB_NAME: vdbName,
