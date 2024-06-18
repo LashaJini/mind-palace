@@ -10,11 +10,12 @@ VERSION=$DB_VERSION
 start() {
 	mkdir $MIGRATIONS_DIR -p
 
+	# https://hub.docker.com/_/postgres
 	docker run --rm -d \
-		-v $HOME/sql-db:/data \
 		--name $CONTAINER_NAME \
 		-p $DB_PORT:$DB_PORT \
 		-e POSTGRES_PASSWORD=$POSTGRES_PASSWORD \
+		-v ./postgres-data:/var/lib/postgresql/data \
 		postgres:$VERSION 1>/dev/null
 
 	if [ $? -ne 0 ]; then
