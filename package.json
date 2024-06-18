@@ -1,0 +1,16 @@
+{
+  "name": "mindpalace",
+  "version": "1.0.0",
+  "main": "index.js",
+  "repository": "git@github.com-lashajini:LashaJini/mind-palace.git",
+  "author": "Lasha Jini <lasha.jini@gmail.com>",
+  "license": "MIT",
+  "scripts": {
+    "prepare": "husky install"
+  },
+  "devDependencies": {
+    "@commitlint/cli": "^19.3.0",
+    "@commitlint/config-conventional": "^19.2.2",
+    "husky": "^9.0.11"
+  }
+}
