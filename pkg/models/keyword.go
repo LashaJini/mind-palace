@@ -39,7 +39,7 @@ func InsertManyKeywordsTx(tx *database.MultiInstruction, keywords []string) (map
 
 	values := valuesString(valueTuples)
 
-	q := insertF(database.Table.Keyword, joinedColumns, values, "RETURNING id")
+	q := insertF(tx.CurrentSchema(), database.Table.Keyword, joinedColumns, values, "RETURNING id")
 	common.Log.DBInfo(tx.ID, q)
 
 	rows, err := tx.Query(q)

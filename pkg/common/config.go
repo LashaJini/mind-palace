@@ -63,8 +63,8 @@ func NewConfig() *Config {
 	dbPort, _ := strconv.Atoi(os.Getenv("DB_PORT"))
 	dbVersion := os.Getenv("DB_VERSION")
 	dbDriver := os.Getenv("DB_DRIVER")
-	dbDefaultNamespace := "public"
-	dbSchemaSuffix := "_mindpalace"
+	dbDefaultNamespace := DB_DEFAULT_SCHEMA
+	dbSchemaSuffix := DB_SCHEMA_SUFFIX
 	migrationsDir := filepath.Join(projectRoot, os.Getenv("MIGRATIONS_DIR"))
 
 	vdbHost := os.Getenv("VDB_HOST")

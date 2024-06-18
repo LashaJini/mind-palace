@@ -70,9 +70,10 @@ func valuesString(tuples [][]any) string {
 	return values
 }
 
-func insertF(table, columns, values, additional string) string {
+func insertF(schema, table, columns, values, additional string) string {
 	q := strings.TrimSpace(
-		fmt.Sprintf(`INSERT INTO %s (%s) VALUES %s %s`,
+		fmt.Sprintf(`INSERT INTO %s.%s (%s) VALUES %s %s`,
+			schema,
 			table,
 			columns,
 			values,

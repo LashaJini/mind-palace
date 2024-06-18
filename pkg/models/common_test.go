@@ -1,9 +1,12 @@
 package models
 
 import (
+	"fmt"
 	"reflect"
 	"strings"
 	"testing"
+
+	"github.com/lashajini/mind-palace/pkg/common"
 )
 
 func Test_excludeColumns(t *testing.T) {
@@ -75,20 +78,20 @@ func Test_insertF(t *testing.T) {
 			columns:    "name, age",
 			values:     "'Alice', 30",
 			additional: "",
-			expected:   strings.TrimSpace(`INSERT INTO users (name, age) VALUES 'Alice', 30`),
+			expected:   strings.TrimSpace(fmt.Sprintf("INSERT INTO %s.users (name, age) VALUES 'Alice', 30", common.DB_DEFAULT_SCHEMA)),
 		},
 		{
 			table:      "products",
 			columns:    "name, price",
 			values:     "'Apple', 1.5",
 			additional: "RETURNING id",
-			expected:   strings.TrimSpace(`INSERT INTO products (name, price) VALUES 'Apple', 1.5 RETURNING id`),
+			expected:   strings.TrimSpace(fmt.Sprintf("INSERT INTO %s.products (name, price) VALUES 'Apple', 1.5 RETURNING id", common.DB_DEFAULT_SCHEMA)),
 		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			result := insertF(tt.table, tt.columns, tt.values, tt.additional)
+			result := insertF(common.DB_DEFAULT_SCHEMA, tt.table, tt.columns, tt.values, tt.additional)
 
 			if result != tt.expected {
 				t.Errorf("Failed: %s.\nExpected: %s\ngot: %s", tt.name, tt.expected, result)

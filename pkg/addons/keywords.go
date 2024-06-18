@@ -19,7 +19,7 @@ func (k *KeywordsAddon) Action(db *database.MindPalaceDB, memoryIDC chan uuid.UU
 	keywords := k.Output.([]string)
 
 	ctx := context.Background()
-	tx := database.NewMultiInstruction(ctx, db.DB())
+	tx := database.NewMultiInstruction(ctx, db)
 
 	defer func() {
 		if err != nil {

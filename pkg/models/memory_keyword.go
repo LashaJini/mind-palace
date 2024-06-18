@@ -30,7 +30,7 @@ func InsertManyMemoryKeywordsTx(tx *database.MultiInstruction, keywords map[stri
 
 	values := valuesString(valueTuples)
 
-	q := insertF(database.Table.MemoryKeyword, joinedColumns, values, "")
+	q := insertF(tx.CurrentSchema(), database.Table.MemoryKeyword, joinedColumns, values, "")
 	common.Log.DBInfo(tx.ID, q)
 
 	err := tx.Exec(q)

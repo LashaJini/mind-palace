@@ -24,6 +24,7 @@ type ModelsTestSuite struct {
 	suite.Suite
 	pgContainer      *postgres.PostgresContainer
 	mpuser           string
+	currentSchema    string
 	tmpMigrationsDir string
 	db               *database.MindPalaceDB
 	cfg              *common.Config
@@ -49,6 +50,36 @@ func CreatePostgresContainer(ctx context.Context, cfg *common.Config, migrationF
 	return pgContainer, nil
 }
 
+// create temporary migrations dir for up migrations and inject into sql templates
+func (suite *ModelsTestSuite) initMigrationFiles() []string {
+	pattern := filepath.Join(suite.cfg.MIGRATIONS_DIR, "*.up.sql")
+	migrationFiles, _ := filepath.Glob(pattern)
+	suite.tmpMigrationsDir = filepath.Join(suite.cfg.MIGRATIONS_DIR, "..", "tmp_test_migrations")
+	os.Mkdir(suite.tmpMigrationsDir, 0755)
+
+	suite.currentSchema = suite.mpuser + suite.cfg.DB_SCHEMA_SUFFIX
+	sqlTemplate := common.SQLTemplate{Namespace: suite.currentSchema}
+	for _, migrationFile := range migrationFiles {
+		var sqlBuffer bytes.Buffer
+		err := sqlTemplate.Inject(&sqlBuffer, migrationFile)
+		if err != nil {
+			log.Fatal(err)
+		}
+
+		err = os.WriteFile(filepath.Join(suite.tmpMigrationsDir, filepath.Base(migrationFile)), sqlBuffer.Bytes(), 0644)
+	}
+	schemaQuery := fmt.Sprintf("CREATE SCHEMA %s", suite.currentSchema)
+	err := os.WriteFile(filepath.Join(suite.tmpMigrationsDir, "000_init_user_schema.up.sql"), []byte(schemaQuery), 0644)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	pattern = filepath.Join(suite.tmpMigrationsDir, "*.up.sql")
+	migrationFiles, _ = filepath.Glob(pattern)
+
+	return migrationFiles
+}
+
 func (suite *ModelsTestSuite) SetupSuite() {
 	suite.mpuser = common.TEST_USER
 	err := mpuser.CreateMindPalace(suite.mpuser)
@@ -63,25 +94,7 @@ func (suite *ModelsTestSuite) SetupSuite() {
 	suite.cfg = common.NewConfig()
 	suite.ctx = context.Background()
 
-	// create temporary migrations dir for up migrations and inject into sql templates
-	pattern := filepath.Join(suite.cfg.MIGRATIONS_DIR, "*.up.sql")
-	migrationFiles, _ := filepath.Glob(pattern)
-	suite.tmpMigrationsDir = filepath.Join(suite.cfg.MIGRATIONS_DIR, "..", "tmp_test_migrations")
-	os.Mkdir(suite.tmpMigrationsDir, 0755)
-	sqlTemplate := common.SQLTemplate{Namespace: suite.cfg.DB_DEFAULT_NAMESPACE}
-	for _, migrationFile := range migrationFiles {
-		var sqlBuffer bytes.Buffer
-		err = sqlTemplate.Inject(&sqlBuffer, migrationFile)
-		if err != nil {
-			log.Fatal(err)
-		}
-
-		err = os.WriteFile(filepath.Join(suite.tmpMigrationsDir, filepath.Base(migrationFile)), sqlBuffer.Bytes(), 0644)
-	}
-	pattern = filepath.Join(suite.tmpMigrationsDir, "*.up.sql")
-	migrationFiles, _ = filepath.Glob(pattern)
-
-	pgContainer, err := CreatePostgresContainer(suite.ctx, suite.cfg, migrationFiles)
+	pgContainer, err := CreatePostgresContainer(suite.ctx, suite.cfg, suite.initMigrationFiles())
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -102,6 +115,7 @@ func (suite *ModelsTestSuite) SetupSuite() {
 		log.Fatal(err)
 	}
 	suite.db = database.InitDB(suite.cfg)
+	suite.db.SetSchema(suite.currentSchema)
 }
 
 func (suite *ModelsTestSuite) TearDownSuite() {
@@ -125,6 +139,6 @@ func (suite *ModelsTestSuite) TearDownSuite() {
 	}
 }
 
-func TestMemoryTestSuite(t *testing.T) {
+func TestModelsTestSuite(t *testing.T) {
 	suite.Run(t, new(ModelsTestSuite))
 }

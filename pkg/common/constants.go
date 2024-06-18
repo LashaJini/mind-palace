@@ -39,3 +39,8 @@ const (
 	COLOR_RESET  = "\033[0m"
 	COLOR_YELLOW = "\033[33m"
 )
+
+const (
+	DB_DEFAULT_SCHEMA = "public"
+	DB_SCHEMA_SUFFIX  = "_mindpalace"
+)

@@ -2,6 +2,7 @@ package models
 
 import (
 	"fmt"
+	"log"
 
 	"github.com/lashajini/mind-palace/pkg/storage/database"
 	"github.com/stretchr/testify/assert"
@@ -9,7 +10,7 @@ import (
 
 func (suite *ModelsTestSuite) Test_InsertManyKeywordsTx_success() {
 	t := suite.T()
-	tx := database.NewMultiInstruction(suite.ctx, suite.db.DB())
+	tx := database.NewMultiInstruction(suite.ctx, suite.db)
 
 	t.Cleanup(suite.KeywordCleanup)
 
@@ -36,7 +37,8 @@ func (suite *ModelsTestSuite) Test_InsertManyKeywordsTx_success() {
 		}
 	}
 
-	rows, err := suite.db.DB().Query(fmt.Sprintf("select id, name from %s", database.Table.Keyword))
+	q := fmt.Sprintf("select id, name from %s.%s", tx.CurrentSchema(), database.Table.Keyword)
+	rows, err := suite.db.DB().Query(q)
 	assert.NoError(t, err)
 	defer rows.Close()
 
@@ -54,8 +56,8 @@ func (suite *ModelsTestSuite) Test_InsertManyKeywordsTx_success() {
 }
 
 func (suite *ModelsTestSuite) KeywordCleanup() {
-	_, err := suite.db.DB().Exec(fmt.Sprintf("delete from %s", database.Table.Keyword))
+	_, err := suite.db.DB().Exec(fmt.Sprintf("delete from %s.%s", suite.currentSchema, database.Table.Keyword))
 	if err != nil {
-		fmt.Println(err)
+		log.Fatal(err)
 	}
 }

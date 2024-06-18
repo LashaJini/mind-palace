@@ -21,7 +21,7 @@ func (s *SummaryAddon) Action(db *database.MindPalaceDB, memoryIDC chan uuid.UUI
 	rpcClient := args[0].(*rpcclient.Client)
 
 	ctx := context.Background()
-	tx := database.NewMultiInstruction(ctx, db.DB())
+	tx := database.NewMultiInstruction(ctx, db)
 
 	defer func() {
 		if err != nil {

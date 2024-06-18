@@ -51,7 +51,7 @@ func InsertResourceTx(tx *database.MultiInstruction, resource *OriginalResource)
 
 	values := valuesString(valueTuples)
 
-	q := insertF(database.Table.OriginalResource, joinedColumns, values, "")
+	q := insertF(tx.CurrentSchema(), database.Table.OriginalResource, joinedColumns, values, "")
 	common.Log.DBInfo(tx.ID, q)
 
 	return tx.Exec(q)

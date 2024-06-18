@@ -2,6 +2,7 @@ package models
 
 import (
 	"fmt"
+	"log"
 
 	"github.com/google/uuid"
 	"github.com/lashajini/mind-palace/pkg/storage/database"
@@ -10,7 +11,7 @@ import (
 
 func (suite *ModelsTestSuite) Test_InsertSummaryTx_success() {
 	t := suite.T()
-	tx := database.NewMultiInstruction(suite.ctx, suite.db.DB())
+	tx := database.NewMultiInstruction(suite.ctx, suite.db)
 
 	t.Cleanup(suite.SummaryCleanup)
 
@@ -30,7 +31,8 @@ func (suite *ModelsTestSuite) Test_InsertSummaryTx_success() {
 	err = tx.Commit()
 	assert.NoError(t, err)
 
-	rows, err := suite.db.DB().Query(fmt.Sprintf("select memory_id, text from %s where id = '%s'", database.Table.Summary, summaryID.String()))
+	q := fmt.Sprintf("select memory_id, text from %s.%s where id = '%s'", suite.currentSchema, database.Table.Summary, summaryID.String())
+	rows, err := suite.db.DB().Query(q)
 	assert.NoError(t, err)
 	defer rows.Close()
 
@@ -54,8 +56,8 @@ func (suite *ModelsTestSuite) Test_InsertSummaryTx_success() {
 }
 
 func (suite *ModelsTestSuite) SummaryCleanup() {
-	_, err := suite.db.DB().Exec(fmt.Sprintf("delete from %s", database.Table.Summary))
+	_, err := suite.db.DB().Exec(fmt.Sprintf("delete from %s.%s", suite.currentSchema, database.Table.Summary))
 	if err != nil {
-		fmt.Println(err)
+		log.Fatal(err)
 	}
 }

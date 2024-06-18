@@ -56,7 +56,7 @@ func User(cmd *cobra.Command, args []string) {
 		sqlUpFiles, err := filepath.Glob(pattern)
 		errors.On(err).Exit()
 
-		sqlTemplate := common.SQLTemplate{Namespace: db.UserSchema(newUser)}
+		sqlTemplate := common.SQLTemplate{Namespace: db.CurrentSchema}
 		for _, sqlUpFile := range sqlUpFiles {
 			var sqlBuffer bytes.Buffer
 			err = sqlTemplate.Inject(&sqlBuffer, sqlUpFile)
