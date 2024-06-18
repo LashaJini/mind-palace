@@ -2,6 +2,7 @@ package models
 
 import (
 	"fmt"
+	"log"
 
 	"github.com/google/uuid"
 	"github.com/lashajini/mind-palace/pkg/storage/database"
@@ -10,7 +11,7 @@ import (
 
 func (suite *ModelsTestSuite) Test_InsertManyMemoryKeywordsTx_success() {
 	t := suite.T()
-	tx := database.NewMultiInstruction(suite.ctx, suite.db.DB())
+	tx := database.NewMultiInstruction(suite.ctx, suite.db)
 
 	err := tx.Begin()
 	assert.NoError(t, err)
@@ -35,7 +36,8 @@ func (suite *ModelsTestSuite) Test_InsertManyMemoryKeywordsTx_success() {
 	err = tx.Commit()
 	assert.NoError(t, err)
 
-	rows, err := suite.db.DB().Query(fmt.Sprintf("select keyword_id, memory_id from %s order by keyword_id asc", database.Table.MemoryKeyword))
+	q := fmt.Sprintf(fmt.Sprintf("select keyword_id, memory_id from %s.%s order by keyword_id asc", suite.currentSchema, database.Table.MemoryKeyword))
+	rows, err := suite.db.DB().Query(q)
 	assert.NoError(t, err)
 	defer rows.Close()
 
@@ -62,8 +64,8 @@ func (suite *ModelsTestSuite) MemoryKeywordCleanup() {
 	// cascades and deletes memory_keyword pairs as well
 	suite.KeywordCleanup()
 
-	_, err := suite.db.DB().Exec(fmt.Sprintf("delete from %s", database.Table.Memory))
+	_, err := suite.db.DB().Exec(fmt.Sprintf("delete from %s.%s", suite.currentSchema, database.Table.Memory))
 	if err != nil {
-		fmt.Println(err)
+		log.Fatal(err)
 	}
 }

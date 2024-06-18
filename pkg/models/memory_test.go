@@ -2,6 +2,7 @@ package models
 
 import (
 	"fmt"
+	"log"
 
 	"github.com/lashajini/mind-palace/pkg/storage/database"
 	"github.com/stretchr/testify/assert"
@@ -9,7 +10,7 @@ import (
 
 func (suite *ModelsTestSuite) Test_InsertMemoryTx_success() {
 	t := suite.T()
-	tx := database.NewMultiInstruction(suite.ctx, suite.db.DB())
+	tx := database.NewMultiInstruction(suite.ctx, suite.db)
 
 	t.Cleanup(suite.MemoryCleanup)
 
@@ -23,7 +24,8 @@ func (suite *ModelsTestSuite) Test_InsertMemoryTx_success() {
 	err = tx.Commit()
 	assert.NoError(t, err)
 
-	rows, err := suite.db.DB().Query(fmt.Sprintf("select created_at, updated_at from %s where id = '%s'", database.Table.Memory, id.String()))
+	q := fmt.Sprintf("select created_at, updated_at from %s.%s where id = '%s'", suite.currentSchema, database.Table.Memory, id.String())
+	rows, err := suite.db.DB().Query(q)
 	assert.NoError(t, err)
 	defer rows.Close()
 
@@ -36,8 +38,8 @@ func (suite *ModelsTestSuite) Test_InsertMemoryTx_success() {
 }
 
 func (suite *ModelsTestSuite) MemoryCleanup() {
-	_, err := suite.db.DB().Exec(fmt.Sprintf("delete from %s", database.Table.Memory))
+	_, err := suite.db.DB().Exec(fmt.Sprintf("delete from %s.%s", suite.currentSchema, database.Table.Memory))
 	if err != nil {
-		fmt.Println(err)
+		log.Fatal(err)
 	}
 }

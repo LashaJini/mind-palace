@@ -58,6 +58,7 @@ func add(file string) {
 	userCfg := userConfig(currentUser)
 	rpcClient := rpcclient.NewClient(cfg, userCfg)
 	db := database.InitDB(cfg)
+	db.SetSchema(db.ConstructSchema(currentUser))
 
 	// TODO: ctx
 	ctx := context.Background()

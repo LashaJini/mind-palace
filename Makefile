@@ -7,6 +7,7 @@ SOURCE_DIR=.
 .EXPORT_ALL_VARIABLES:
 PROJECT_ROOT=$(shell pwd)
 MP_ENV ?= dev# prod,test,dev
+LOG_LEVEL ?= 1
 
 all: build
 
@@ -56,7 +57,7 @@ test-py:
 	@poetry run pytest
 
 test-go:
-	MP_ENV=test LOG_LEVEL=5 go test -v $(shell go list ./...) $(ARGS)
+	MP_ENV=test LOG_LEVEL=$(LOG_LEVEL) go test -v $(shell go list ./...) $(ARGS)
 
 test: test-go test-py
 	@echo "Done"

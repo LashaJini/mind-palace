@@ -18,4 +18,6 @@
 make test-go ARGS="-count=1"
 # run test names containing TestSuite
 make test-go ARGS="-run TestSuite"
+# regex also works
+make test-go ARGS='-run "^TestSuite/SomeTest.*$"'
 ```

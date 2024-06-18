@@ -27,7 +27,7 @@ func InsertSummaryTx(tx *database.MultiInstruction, memoryID, summaryID uuid.UUI
 
 	joinedColumns, _ := joinColumns(summaryColumns)
 	values := valuesString(valueTuples)
-	q := insertF(database.Table.Summary, joinedColumns, values, "")
+	q := insertF(tx.CurrentSchema(), database.Table.Summary, joinedColumns, values, "")
 	common.Log.DBInfo(tx.ID, q)
 
 	return tx.Exec(q)

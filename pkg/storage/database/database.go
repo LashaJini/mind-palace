@@ -12,6 +12,7 @@ import (
 type MindPalaceDB struct {
 	db               *sql.DB
 	ConnectionString string
+	CurrentSchema    string
 	cfg              *common.Config
 }
 
@@ -23,7 +24,12 @@ func InitDB(cfg *common.Config) *MindPalaceDB {
 	err = db.Ping()
 	errors.On(err).Exit()
 
-	return &MindPalaceDB{db: db, ConnectionString: connStr, cfg: cfg}
+	return &MindPalaceDB{
+		db:               db,
+		ConnectionString: connStr,
+		cfg:              cfg,
+		CurrentSchema:    cfg.DB_DEFAULT_NAMESPACE,
+	}
 }
 
 func (m *MindPalaceDB) DB() *sql.DB {
@@ -53,4 +59,24 @@ func (m *MindPalaceDB) ListMPSchemas() ([]string, error) {
 
 	common.Log.Info().Msgf("found schemas %v", results)
 	return results, nil
+}
+
+func (m *MindPalaceDB) CreateSchema(user string) error {
+	schema := m.ConstructSchema(user)
+	_, err := m.db.Exec(fmt.Sprintf("CREATE SCHEMA %s", schema))
+	if err != nil {
+		return err
+	}
+
+	common.Log.Info().Msgf("created schema '%s'", schema)
+	m.SetSchema(schema)
+	return nil
+}
+
+func (m *MindPalaceDB) SetSchema(schema string) {
+	m.CurrentSchema = schema
+}
+
+func (m *MindPalaceDB) ConstructSchema(user string) string {
+	return user + m.cfg.DB_SCHEMA_SUFFIX
 }

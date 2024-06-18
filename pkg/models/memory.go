@@ -41,7 +41,7 @@ func InsertMemoryTx(tx *database.MultiInstruction, memory *Memory) (uuid.UUID, e
 
 	values := valuesString(valueTuples)
 
-	q := insertF(database.Table.Memory, joinedColumns, values, "RETURNING id")
+	q := insertF(tx.CurrentSchema(), database.Table.Memory, joinedColumns, values, "RETURNING id")
 	common.Log.DBInfo(tx.ID, q)
 
 	var id string

@@ -22,7 +22,7 @@ func (d *DefaultAddon) Action(db *database.MindPalaceDB, memoryIDC chan uuid.UUI
 	resourcePath := args[3].(string)
 
 	ctx := context.Background()
-	tx := database.NewMultiInstruction(ctx, db.DB())
+	tx := database.NewMultiInstruction(ctx, db)
 	defer revert(tx)
 
 	memory := models.NewMemory()

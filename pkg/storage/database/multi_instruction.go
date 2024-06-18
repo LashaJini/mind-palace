@@ -9,13 +9,13 @@ import (
 )
 
 type MultiInstruction struct {
-	db  *sql.DB
+	db  *MindPalaceDB
 	tx  *sql.Tx
 	ID  uuid.UUID
 	ctx context.Context
 }
 
-func NewMultiInstruction(ctx context.Context, db *sql.DB) *MultiInstruction {
+func NewMultiInstruction(ctx context.Context, db *MindPalaceDB) *MultiInstruction {
 	return &MultiInstruction{
 		db:  db,
 		ctx: ctx,
@@ -24,9 +24,13 @@ func NewMultiInstruction(ctx context.Context, db *sql.DB) *MultiInstruction {
 	}
 }
 
+func (t *MultiInstruction) CurrentSchema() string {
+	return t.db.CurrentSchema
+}
+
 func (t *MultiInstruction) Begin() error {
 	common.Log.TXInfo(t.ID, "BEGIN Transaction")
-	tx, err := t.db.BeginTx(t.ctx, nil)
+	tx, err := t.db.DB().BeginTx(t.ctx, nil)
 	if err != nil {
 		return err
 	}
