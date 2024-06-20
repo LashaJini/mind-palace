@@ -2,8 +2,14 @@ import grpc
 import time
 from concurrent import futures
 
+from llama_index.core import KeywordTableIndex, Settings, SimpleDirectoryReader
+from llama_index.core.base.embeddings.base import BaseEmbedding
+from llama_index.core.node_parser import SemanticSplitterNodeParser, SentenceSplitter
+from llama_index.core.extractors import KeywordExtractor
+from llama_index.core.ingestion import IngestionPipeline
+from llama_index.core.storage.docstore.simple_docstore import SimpleDocumentStore
 from pkg.rpc.server import config
-from pkg.rpc.server.llm import CustomLlamaCPP
+from pkg.rpc.server.llm import CustomLlamaCPP, EmbeddingModel
 from pkg.rpc.server.services.mindpalace import MindPalaceService
 from pkg.rpc.server.vdb import Milvus
 
@@ -30,6 +36,28 @@ client = Milvus(
 )
 
 
+def tmp():
+    # Settings.llm = llm
+    embed_model = EmbeddingModel()
+
+    documents = SimpleDirectoryReader(
+        input_files=["/home/jini/examples/example2.txt"]
+    ).load_data()
+
+    # after some trials and errors
+    # buffer_size=2 and breakpoint_percentile_threshold=65 seems ok
+    #
+    # internally calls _get_text_embeddings
+    splitter = SemanticSplitterNodeParser(
+        buffer_size=2,
+        breakpoint_percentile_threshold=65,
+        embed_model=embed_model,
+    )
+    nodes = splitter.get_nodes_from_documents(documents)
+    for node in nodes:
+        embed_model.embeddings(node.get_content())
+
+
 def server():
     server = grpc.server(futures.ThreadPoolExecutor(max_workers=10))
     grpcPalace.add_PalaceServicer_to_server(
@@ -47,7 +75,8 @@ def server():
 
 
 def main():
-    server()
+    # server()
+    tmp()
 
 
 if __name__ == "__main__":
