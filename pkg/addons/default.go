@@ -37,15 +37,20 @@ func (d *DefaultAddon) Action(db *database.MindPalaceDB, memoryIDC chan uuid.UUI
 	err = models.InsertResourceTx(tx, resource)
 	errors.On(err).Panic()
 
+	defaultResponse := d.Response.GetDefaultResponse().Default
+	if defaultResponse == "" {
+		errors.ExitWithMsg("reason: server didn't send default addon response")
+	}
+
+	err = rpcClient.VDBInsert(ctx, []uuid.UUID{memoryID}, []string{defaultResponse})
+	errors.On(err).Panic()
+
 	err = tx.Commit()
 	errors.On(err).Panic()
 
 	for range maxBufSize {
 		memoryIDC <- memoryID
 	}
-
-	err = rpcClient.VDBInsert(ctx, memoryID, d.Output.([]string)[0])
-	errors.On(err).Panic()
 
 	return nil
 }

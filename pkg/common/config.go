@@ -106,7 +106,7 @@ func MindPalacePath(homePrefix bool) string {
 
 	var root string
 	env := os.Getenv("MP_ENV")
-	if ENVS[env] {
+	if env == TEST_ENV {
 		root = _MIND_PALACE_TEST_PATH
 	}
 	root = filepath.Join(MIND_PALACE_ROOT, root)

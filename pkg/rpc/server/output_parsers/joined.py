@@ -1,82 +1,54 @@
-import re
-from typing import Any, List, Dict
+from typing import List
 
-# pydantic.errors.PydanticUserError: Please use `typing_extensions.TypedDict` instead of `typing.TypedDict` on Python < 3.12.
-from typing_extensions import TypedDict
-
-from pkg.rpc.server.output_parsers.abstract import OutputParser, CustomBaseModel
-from pkg.rpc.server.output_parsers.factory import OutputParserFactory
+from pkg.rpc.server import logger
+from pkg.rpc.server.addons.abstract import Addon
+import pkg.rpc.server.gen.Palace_pb2 as pbPalace
+from pkg.rpc.server.output_parsers.abstract import (
+    OutputParser,
+    CustomBaseModel,
+)
 from pkg.rpc.server.output_parsers.keywords import KeywordsParser
 from pkg.rpc.server.output_parsers.summary import SummaryParser
 
 
-class PalaceAddonResultInfo(TypedDict):
-    value: Any
-    success: bool
-
-
 class Joined(CustomBaseModel):
-    """Data model for joined data models"""
+    _addon_results: List[pbPalace.AddonResult] = []
 
-    value: Dict[str, PalaceAddonResultInfo]
+    class Config:
+        arbitrary_types_allowed = True
 
-    def get_value(self):
-        return self.value
+    def __init__(self, addon_results: List[pbPalace.AddonResult] = [], **kwargs):
+        super().__init__(**kwargs)
+
+        self._addon_results = addon_results
+
+    def to_addon_result(self) -> pbPalace.AddonResult:
+        result = pbPalace.AddonResult()
+        for addon_result in self._addon_results:
+            result.MergeFrom(addon_result)
+
+        return result
 
 
 class JoinedParser(OutputParser):
-    def __init__(self, addons: List[str], input: Any, verbose=False):
-        self.verbose = verbose
-        self.addons = addons
-        self.input = input
+    def __init__(self, addons: dict[str, Addon], **kwargs):
+        super().__init__(**kwargs)
+
+        self._addons = addons
 
     def parse(self, output: str) -> Joined:
         if self.verbose:
-            print(f"> Raw output: {output}")
+            logger.log.debug(f"> Raw output:\n{output}")
 
-        patterns = []
-        parsers: List[OutputParser] = []
-        for addon_name in self.addons:
-            parser = OutputParserFactory.construct(addon_name)
+        addon_results: List[pbPalace.AddonResult] = []
 
-            parser_instance: OutputParser = parser(verbose=self.verbose)  # type: ignore
-            parsers.append(parser_instance)
-            patterns.append(parser_instance.pattern)
+        for _, addon in self._addons.items():
+            output_model = addon.parser.parse(output)
+            addon_result = output_model.to_addon_result()
 
-        pattern = ".*".join(p for p in patterns if p)
+            addon_results.append(addon_result)
 
-        if self.verbose:
-            print(f"> Output parser pattern: {pattern}")
-
-        match = re.search(pattern, output, re.DOTALL)
-
-        results: Dict[str, PalaceAddonResultInfo] = {}
-
-        self.success = False
-        if match:
-            outputs = []
-            for parser in parsers:
-                # when parser does not care about the format pass the whole user input
-                output = self.input
-                if not parser.skip:
-                    output = match.group(parser.group_name)
-
-                outputs.append(output)
-
-            for i, output in enumerate(outputs):
-                parser = parsers[i]
-                output_model = parser.parse(
-                    f"{parser.format_start} {output} {parser.format_end}"
-                )
-
-                results[output_model.name] = PalaceAddonResultInfo(
-                    value=output_model.value, success=parser.success
-                )
-
-        if not self.success:
-            pass
-
-        return Joined(value=results)
+        return Joined(addon_results=addon_results, success=True)
 
     @classmethod
     def construct_output(cls, **kwargs) -> str:

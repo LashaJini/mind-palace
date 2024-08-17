@@ -3,6 +3,7 @@ import time
 from concurrent import futures
 
 from pkg.rpc.server import config
+from pkg.rpc.server.logger import log
 from pkg.rpc.server.llm import CustomLlamaCPP
 from pkg.rpc.server.services.mindpalace import MindPalaceService
 from pkg.rpc.server.vdb import Milvus
@@ -21,6 +22,7 @@ llm = CustomLlamaCPP(
     # kwargs to pass to __init__()
     model_kwargs={
         "n_gpu_layers": -1,  # TODO: config
+        "flash_attn": True,
     },
 )
 
@@ -37,7 +39,7 @@ def server():
     )
     server.add_insecure_port(f"[::]:{config.PYTHON_GRPC_SERVER_PORT}")
     server.start()
-    print("Server started. Listen on port:", config.PYTHON_GRPC_SERVER_PORT)
+    log.info(f"Server started on port: {config.PYTHON_GRPC_SERVER_PORT}")
     # server.wait_for_termination()
     try:
         while True:

@@ -1,7 +1,11 @@
-from typing import List
+from typing import List, Optional
 from llama_index.core import PromptTemplate
 from llama_index.core.program import LLMTextCompletionProgram
 
+
+from pkg.rpc.server.addons.default import DefaultAddon
+from pkg.rpc.server.addons.factory import AddonFactory
+from pkg.rpc.server.addons.keywords import KeywordsAddon
 import pkg.rpc.server.gen.Palace_pb2 as pbPalace
 from pkg.rpc.server.addons.abstract import Addon
 from pkg.rpc.server.llm import CustomLlamaCPP
@@ -10,38 +14,78 @@ from pkg.rpc.server.output_parsers.joined import Joined, JoinedParser
 
 
 class JoinedAddons(Addon):
-    def __init__(self, addons: List[str]):
-        self.addons = addons
+    _parser: JoinedParser
+    _output_model: Joined
+    _addons: dict[str, Addon]
+
+    def __init__(self, names: List[str], verbose=False, **kwargs):
+        super().__init__(**kwargs)
+
+        self._addons = {}
+        for name in names:
+            self._addons[name] = AddonFactory.construct(name)
+
+        self._parser = JoinedParser(addons=self._addons, verbose=verbose)
+        self._output_model = Joined()
+
+    def prepare_input(self, user_input: str):
+        for _, addon in self._addons.items():
+            addon.prepare_input(user_input=user_input)
+
+        return self
+
+    # TODO: dis is ugly
+    def input(self, verbose=False) -> str:
+        _result = []
+        for _, addon in self._addons.items():
+            if isinstance(addon, KeywordsAddon):
+                addon_input = addon.input(verbose)
+                _result.append(addon_input)
+
+        if len(_result) == 0:
+            for _, addon in self._addons.items():
+                if isinstance(addon, DefaultAddon):
+                    _result.append(addon.output_model.default)
+
+        return "\n\n".join(_result)
 
     def apply(
         self,
-        input: str,
         llm: CustomLlamaCPP,
         verbose=False,
         **kwargs,
     ):
-        prompt = JoinedPrompts().prompt(text=input, verbose=verbose, **kwargs)
-        parser = JoinedParser(verbose=verbose, addons=self.addons, input=input)
+        prompt = JoinedPrompts().prompt(
+            context_str=self.input(verbose),
+            verbose=verbose,
+            **kwargs,
+        )
         program = LLMTextCompletionProgram(
             llm=llm,
-            output_parser=parser,
+            output_parser=self._parser,
             output_cls=Joined,  # type:ignore
             prompt=PromptTemplate(prompt),
             verbose=verbose,
         )
 
-        results = (
-            program(context_str=input, verbose=verbose, **kwargs).dict().get("value")
-        )
+        llm_output = program(verbose=verbose, **kwargs)
+        result = Joined.model_validate(llm_output)
 
-        data = {}
-        if results is not None:
-            for key, addon_result_info in results.items():
-                data[key] = pbPalace.AddonResultInfo(
-                    value=addon_result_info.get("value"),
-                    success=addon_result_info.get("success"),
-                )
+        self._result = result.to_addon_result()
 
-        return pbPalace.AddonResult(
-            data=data,
-        )
+        return self
+
+    def finalize(self, result: Optional[pbPalace.AddonResult] = None, verbose=False):
+        for _, addon in self._addons.items():
+            addon.finalize(self._result, verbose)
+
+        self._addons = {}
+        return self
+
+    @property
+    def output_model(self) -> Joined:
+        return self._output_model
+
+    @property
+    def parser(self) -> JoinedParser:
+        return self._parser

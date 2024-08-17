@@ -6,7 +6,7 @@ class AddonFactory:
     @classmethod
     def construct(cls, name: str) -> Addon:
         if name not in addons:
-            print(f"Unknown addon {name}")
+            raise ValueError(f"Unknown addon {name}")
 
-        addon = addons[name].get("addon")
+        addon = addons[name].addon
         return addon()

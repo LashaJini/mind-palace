@@ -1,6 +1,8 @@
 package database
 
 type table struct {
+	Chunk            string
+	ChunkKeyword     string
 	Keyword          string
 	MemoryKeyword    string
 	Memory           string
@@ -9,6 +11,8 @@ type table struct {
 }
 
 var Table = table{
+	Chunk:            "chunk",
+	ChunkKeyword:     "chunk_keyword",
 	Keyword:          "keyword",
 	MemoryKeyword:    "memory_keyword",
 	Memory:           "memory",

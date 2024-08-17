@@ -1,26 +1,75 @@
 import re
 from typing import ClassVar, List
-from pydantic import ConfigDict
 
-from pkg.rpc.server import addon_names
-from pkg.rpc.server.output_parsers.abstract import OutputParser, CustomBaseModel
+from pydantic import PrivateAttr
+
+import pkg.rpc.server.gen.Palace_pb2 as pbPalace
+from pkg.rpc.server import addon_names, logger
+from pkg.rpc.server.output_parsers.abstract import (
+    OutputParser,
+    CustomBaseModel,
+)
 from pkg.rpc.server.prompts.keywords import KeywordsPrompts
 
 
 class Keywords(CustomBaseModel):
-    """Data model for a keywords."""
-
-    model_config = ConfigDict(from_attributes=True)
-
-    value: List[str]
     name: ClassVar[str] = addon_names.keywords
+    _keywords: List[List[str]] = PrivateAttr([])
+    _chunks: List[str] = PrivateAttr([])
 
-    def get_value(self) -> List[str]:
-        return self.value
+    class Config:
+        arbitrary_types_allowed = True
+
+    def __init__(
+        self, keywords: List[List[str]] = [], chunks: List[str] = [], **kwargs
+    ):
+        super().__init__(**kwargs)
+
+        self._keywords = keywords
+        self._chunks = chunks
+
+    @property
+    def keywords(self) -> List[List[str]]:
+        return self._keywords
+
+    @keywords.setter
+    def keywords(self, keywords):
+        self._keywords = keywords
+
+    @property
+    def chunks(self) -> List[str]:
+        return self._chunks
+
+    @chunks.setter
+    def chunks(self, chunks: List[str]):
+        self._chunks = chunks
+
+    def to_addon_result(self) -> pbPalace.AddonResult:
+        result: List[pbPalace.KeywordsResponse.KeywordChunk] = []
+
+        if len(self.keywords) != len(self.chunks):
+            raise ValueError("Keywords and chunks must be the same length")
+
+        for keywords, chunk in zip(self.keywords, self.chunks):
+            result.append(
+                pbPalace.KeywordsResponse.KeywordChunk(
+                    keywords=keywords,
+                    chunk=chunk,
+                )
+            )
+
+        response = pbPalace.AddonResponse(
+            keywords_response=pbPalace.KeywordsResponse(list=result),
+            success=self.success,
+        )
+
+        return pbPalace.AddonResult(map={Keywords.name: response})
 
 
 class KeywordsParser(OutputParser):
-    def __init__(self, verbose: bool = False):
+    _chunks: List[str] = []
+
+    def __init__(self, verbose: bool = False, **kwargs):
         format_start = KeywordsPrompts.format_start
         format_end = KeywordsPrompts.format_end
         group_name = "keywords"
@@ -32,20 +81,29 @@ class KeywordsParser(OutputParser):
             group_name=group_name,
             pattern=pattern,
             verbose=verbose,
+            **kwargs,
         )
+
+        self._chunks: List[str] = kwargs.get("chunks", [])
 
     def parse(self, output: str) -> Keywords:
         if self.verbose:
-            print(f"> Raw output: {output}")
+            logger.log.debug(f"> Raw output: {output}")
 
         self.success = False
-        keywords = []
-        match = re.search(self.pattern, output, re.DOTALL)
-        if match:
-            keywords = match.group(self.group_name)
-            keywords = [
-                keyword.strip().lower() for keyword in keywords.split(",") if keyword
+        keywords: List[List[str]] = []
+        matches = re.finditer(self.pattern, output, re.DOTALL)
+
+        for match in matches:
+            chunk_keywords = match.group(self.group_name)
+            chunk_keywords = [
+                chunk_keyword.strip().lower()
+                for chunk_keyword in chunk_keywords.split(",")
+                if chunk_keyword
             ]
+            keywords.append(chunk_keywords)
+
+            # TODO: this is not a correct way to validate
             self.success = len(keywords) > 0
 
         if not self.success:
@@ -56,9 +114,9 @@ class KeywordsParser(OutputParser):
             raise ValueError(e)
 
         if self.verbose:
-            print(f"> Extracted keywords: {keywords}")
+            logger.log.debug(f"> Extracted keywords: {keywords}")
 
-        return Keywords(value=keywords)
+        return Keywords(keywords=keywords, chunks=self._chunks, success=self.success)
 
     @classmethod
     def construct_output(cls, **kwargs) -> str:
@@ -68,3 +126,11 @@ class KeywordsParser(OutputParser):
         """
         input = kwargs.get("input", [])
         return f"{KeywordsPrompts.format_start} {','.join(input)} {KeywordsPrompts.format_end}"
+
+    @property
+    def chunks(self) -> List[str]:
+        return self._chunks
+
+    @chunks.setter
+    def chunks(self, chunks: List[str]):
+        self._chunks = chunks

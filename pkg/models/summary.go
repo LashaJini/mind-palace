@@ -1,6 +1,7 @@
 package models
 
 import (
+	"errors"
 	"time"
 
 	"github.com/google/uuid"
@@ -17,6 +18,10 @@ var summaryColumns = []string{
 }
 
 func InsertSummaryTx(tx *database.MultiInstruction, memoryID, summaryID uuid.UUID, summary string) error {
+	if len(summary) == 0 {
+		return errors.New("reason: empty summary")
+	}
+
 	now := time.Now().UTC().Unix()
 	createdAt := now
 	updatedAt := now

@@ -22,6 +22,7 @@ func excludeColumns(columns []string, names ...string) []string {
 	return remainingColumns
 }
 
+// returns comma separated column names
 func joinColumns(columns []string, excluded ...string) (string, int) {
 	joinedColumns := ""
 	remainingColumns := excludeColumns(columns, excluded...)

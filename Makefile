@@ -1,4 +1,4 @@
-.PHONY: all build start-grpc-server deps deps-go deps-py dev-deps rpc clean-rpc rpc-py clean-rpc-py test-py test-go test cover db vdb graph godoc
+.PHONY: all build start-grpc-server deps deps-go deps-py dev-deps deps-llama rpc clean-rpc rpc-py clean-rpc-py test-py test-go test cover db vdb graph godoc migrate
 
 BUILD_OUT_DIR=bin
 BINARY_NAME=mind-palace
@@ -37,6 +37,12 @@ dev-deps:
 	@go install google.golang.org/grpc/cmd/protoc-gen-go-grpc@v1.2.0
 	@poetry add pytest-cov
 
+# export PATH="/usr/local/cuda-12.5/bin:$PATH"
+# export CUDA_HOME=/usr/local/cuda-12.5
+deps-llama:
+	# CMAKE_ARGS="-DLLAMA_CUDA=on" LLAMA_CCACHE=OFF FORCE_CMAKE=1 poetry run pip install llama-index-core==0.10.43 llama-index-llms-llama-cpp==0.1.3 --no-cache-dir --force-reinstall --upgrade
+	CMAKE_ARGS="-DLLAMA_CUDA=on" LLAMA_CCACHE=OFF FORCE_CMAKE=1 poetry run pip install llama-cpp-python --no-cache-dir --force-reinstall --upgrade
+
 rpc:
 	@echo "Compiling '.proto' files..."
 	@bash ./scripts/pb-compiler.sh
@@ -54,8 +60,9 @@ clean-rpc-py:
 	@rm -rf ./pkg/rpc/server/gen
 
 test-py:
-	@poetry run pytest
+	@poetry run pytest $(ARGS)
 
+# -count=1 ignores caching
 test-go:
 	MP_ENV=test LOG_LEVEL=$(LOG_LEVEL) go test -v $(shell go list ./pkg/... ./cli/...) $(ARGS)
 
@@ -70,6 +77,9 @@ db:
 
 vdb:
 	@bash scripts/standalone_embed.sh $(ARGS)
+
+migrate:
+	@go run . migrate $(ARGS)
 
 graph:
 	@godepgraph -p \

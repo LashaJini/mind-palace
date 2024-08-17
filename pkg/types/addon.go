@@ -4,6 +4,7 @@ import (
 	"strings"
 
 	"github.com/google/uuid"
+	pb "github.com/lashajini/mind-palace/pkg/rpc/client/gen/proto"
 	"github.com/lashajini/mind-palace/pkg/storage/database"
 )
 
@@ -16,9 +17,9 @@ type IAddon interface {
 	GetDescription() string
 	GetInputTypes() IOTypes
 	GetOutputTypes() IOTypes
-	GetOutput() any
+	GetResponse() *pb.AddonResponse
 
-	SetOutput(output any)
+	SetResponse(response *pb.AddonResponse)
 }
 
 type IOType string

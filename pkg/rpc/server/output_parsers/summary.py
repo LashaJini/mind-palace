@@ -1,26 +1,43 @@
 import re
-from typing import ClassVar, List
-from pydantic import ConfigDict
+from typing import ClassVar
 
-from pkg.rpc.server import addon_names
-from pkg.rpc.server.output_parsers.abstract import OutputParser, CustomBaseModel
+from pydantic import PrivateAttr
+
+import pkg.rpc.server.gen.Palace_pb2 as pbPalace
+from pkg.rpc.server import addon_names, logger
+from pkg.rpc.server.output_parsers.abstract import (
+    OutputParser,
+    CustomBaseModel,
+)
 from pkg.rpc.server.prompts.summary import SummaryPrompts
 
 
 class Summary(CustomBaseModel):
-    """Data model for a summary."""
-
-    model_config = ConfigDict(from_attributes=True)
-
-    value: List[str]
     name: ClassVar[str] = addon_names.summary
+    _summary: str = PrivateAttr("")
 
-    def get_value(self) -> str:
-        return self.value[0]
+    class Config:
+        arbitrary_types_allowed = True
+
+    def __init__(self, summary: str = "", **kwargs):
+        super().__init__(**kwargs)
+
+        self._summary = summary
+
+    @property
+    def summary(self) -> str:
+        return self._summary
+
+    def to_addon_result(self) -> pbPalace.AddonResult:
+        response = pbPalace.AddonResponse(
+            summary_response=pbPalace.SummaryResponse(summary=self._summary),
+            success=self.success,
+        )
+        return pbPalace.AddonResult(map={Summary.name: response})
 
 
 class SummaryParser(OutputParser):
-    def __init__(self, verbose: bool = False):
+    def __init__(self, verbose: bool = False, **kwargs):
         format_start = SummaryPrompts.format_start
         format_end = SummaryPrompts.format_end
         group_name = "summary"
@@ -32,11 +49,12 @@ class SummaryParser(OutputParser):
             group_name=group_name,
             pattern=pattern,
             verbose=verbose,
+            **kwargs,
         )
 
     def parse(self, output: str) -> Summary:
         if self.verbose:
-            print(f"> Raw output: {output}")
+            logger.log.debug(f"> Raw output: {output}")
 
         self.success = False
         summary = ""
@@ -53,9 +71,9 @@ class SummaryParser(OutputParser):
             raise ValueError(e)
 
         if self.verbose:
-            print(f"> Extracted summary: {summary}")
+            logger.log.debug(f"> Extracted summary: {summary}")
 
-        return Summary(value=[summary])
+        return Summary(summary=summary, success=self.success)
 
     @classmethod
     def construct_output(cls, **kwargs) -> str:
