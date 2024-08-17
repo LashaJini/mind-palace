@@ -59,8 +59,10 @@ clean-rpc-py:
 	@echo "Removing compiled '.proto' python files..."
 	@rm -rf ./pkg/rpc/server/gen
 
+# -s don't capture stdout
+# -k <test_name>
 test-py:
-	@poetry run pytest $(ARGS)
+	MP_ENV=test poetry run pytest $(ARGS)
 
 # -count=1 ignores caching
 test-go:
