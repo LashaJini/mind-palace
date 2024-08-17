@@ -3,6 +3,7 @@ from dotenv import load_dotenv
 
 mp_env = os.environ.get("MP_ENV", "dev")
 load_dotenv(f".env.{mp_env}")
+MP_ENV = mp_env
 
 VDB_HOST = os.getenv("VDB_HOST", "localhost")
 VDB_PORT = int(os.getenv("VDB_PORT", 19530))

@@ -1,7 +1,7 @@
 import logging
 import os
 
-from pkg.rpc.server.config import LOG_FILEPATH
+from pkg.rpc.server import config
 
 
 class STDFormatter(logging.Formatter):
@@ -64,6 +64,7 @@ class FileFormatter(logging.Formatter):
         return formatter.format(record)
 
 
-file_handler = logging.FileHandler(LOG_FILEPATH, mode="a", encoding="utf-8")
-file_handler.setFormatter(FileFormatter())
-log.addHandler(file_handler)
+if config.MP_ENV != "test":
+    file_handler = logging.FileHandler(config.LOG_FILEPATH, mode="a", encoding="utf-8")
+    file_handler.setFormatter(FileFormatter())
+    log.addHandler(file_handler)

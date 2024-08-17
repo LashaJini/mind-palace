@@ -16,7 +16,10 @@ build: deps rpc
 	@go mod tidy
 	@go build -o $(BUILD_OUT_DIR)/$(BINARY_NAME) $(SOURCE_DIR)
 
-start-grpc-server:
+dirs:
+	@mkdir -p logs
+
+start-grpc-server: dirs
 	@poetry run python pkg/rpc/server/server.py
 
 deps: deps-go deps-py

@@ -106,7 +106,7 @@ class KeywordsAddon(Addon):
 
                 if verbose:
                     if len(unique_keywords) > 0:
-                        logger.log.warning(f"> Updated keywords: {unique_keywords}")
+                        logger.log.info(f"> Updated keywords: {unique_keywords}")
 
         return self
 
