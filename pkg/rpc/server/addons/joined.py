@@ -25,7 +25,9 @@ class JoinedAddons(Addon):
         for name in names:
             self._addons[name] = AddonFactory.construct(name)
 
-        self._parser = JoinedParser(addons=self._addons, verbose=verbose)
+        self._parser = JoinedParser(
+            parsers=[addon.parser for addon in self._addons.values()], verbose=verbose
+        )
         self._output_model = Joined()
 
     def prepare_input(self, user_input: str):

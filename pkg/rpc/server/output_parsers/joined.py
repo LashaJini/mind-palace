@@ -1,7 +1,6 @@
 from typing import List
 
 from pkg.rpc.server import logger
-from pkg.rpc.server.addons.abstract import Addon
 import pkg.rpc.server.gen.Palace_pb2 as pbPalace
 from pkg.rpc.server.output_parsers.abstract import (
     OutputParser,
@@ -31,10 +30,10 @@ class Joined(CustomBaseModel):
 
 
 class JoinedParser(OutputParser):
-    def __init__(self, addons: dict[str, Addon], **kwargs):
+    def __init__(self, parsers: List[OutputParser], **kwargs):
         super().__init__(**kwargs)
 
-        self._addons = addons
+        self._parsers = parsers
 
     def parse(self, output: str) -> Joined:
         if self.verbose:
@@ -42,8 +41,8 @@ class JoinedParser(OutputParser):
 
         addon_results: List[pbPalace.AddonResult] = []
 
-        for _, addon in self._addons.items():
-            output_model = addon.parser.parse(output)
+        for parser in self._parsers:
+            output_model = parser.parse(output)
             addon_result = output_model.to_addon_result()
 
             addon_results.append(addon_result)
