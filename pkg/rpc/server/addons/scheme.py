@@ -1,4 +1,4 @@
-from typing import Dict, Type, TypedDict
+from typing import Dict, Type
 from pkg.rpc.server.addons.abstract import Addon
 
 from pkg.rpc.server.output_parsers.abstract import OutputParser
@@ -15,26 +15,36 @@ from pkg.rpc.server.addons.keywords import KeywordsAddon
 from pkg.rpc.server.addon_names import default, summary, keywords
 
 
-class AddonScheme(TypedDict):
+class AddonScheme:
     addon: Type[Addon]
     prompts: Type[Prompts]
     parser: Type[OutputParser]
+    name: str
+
+    def __init__(self, **kwargs):
+        self.addon = kwargs["addon"]
+        self.prompts = kwargs["prompts"]
+        self.parser = kwargs["parser"]
+        self.name = kwargs["name"]
 
 
 addons: Dict[str, AddonScheme] = {
-    default: {
-        "addon": DefaultAddon,
-        "prompts": DefaultPrompts,
-        "parser": DefaultParser,
-    },
-    summary: {
-        "addon": SummaryAddon,
-        "prompts": SummaryPrompts,
-        "parser": SummaryParser,
-    },
-    keywords: {
-        "addon": KeywordsAddon,
-        "prompts": KeywordsPrompts,
-        "parser": KeywordsParser,
-    },
+    default: AddonScheme(
+        addon=DefaultAddon,
+        prompts=DefaultPrompts,
+        parser=DefaultParser,
+        name=default,
+    ),
+    summary: AddonScheme(
+        addon=SummaryAddon,
+        prompts=SummaryPrompts,
+        parser=SummaryParser,
+        name=summary,
+    ),
+    keywords: AddonScheme(
+        addon=KeywordsAddon,
+        prompts=KeywordsPrompts,
+        parser=KeywordsParser,
+        name=keywords,
+    ),
 }

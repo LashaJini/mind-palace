@@ -57,14 +57,19 @@ func (c *Client) Add(ctx context.Context, file string) (<-chan *pb.AddonResult, 
 	return addonResultC, nil
 }
 
-func (c *Client) VDBInsert(ctx context.Context, memoryID uuid.UUID, output string) error {
-	vdbRow := &pb.VDBRow{
-		User:  c.userCfg.Config.User,
-		Id:    memoryID.String(),
-		Input: output,
+func (c *Client) VDBInsert(ctx context.Context, ids []uuid.UUID, outputs []string) error {
+	var _ids []string
+	for _, id := range ids {
+		_ids = append(_ids, id.String())
 	}
 
-	_, err := c.client.VDBInsert(ctx, vdbRow)
+	vdbRows := &pb.VDBRows{
+		User:   c.userCfg.Config.User,
+		Ids:    _ids,
+		Inputs: outputs,
+	}
+
+	_, err := c.client.VDBInsert(ctx, vdbRows)
 
 	return err
 }

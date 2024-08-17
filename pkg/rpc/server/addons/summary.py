@@ -1,3 +1,4 @@
+from typing import Optional
 from llama_index.core import PromptTemplate
 from llama_index.core.program import LLMTextCompletionProgram
 
@@ -9,30 +10,58 @@ from pkg.rpc.server.output_parsers.summary import Summary, SummaryParser
 
 
 class SummaryAddon(Addon):
+    _parser: SummaryParser
+    _output_model: Summary
+    _input: str
+
+    def __init__(self, verbose=False, **kwargs):
+        super().__init__(**kwargs)
+
+        self._parser = SummaryParser(verbose=verbose)
+        self._output_model = Summary()
+        self._input = ""
+
+    def prepare_input(self, user_input: str):
+        self._input = user_input
+        return self
+
+    def input(self, verbose=False) -> str:
+        return self._input
+
     def apply(
         self,
-        input: str,
         llm: CustomLlamaCPP,
         verbose=False,
         **kwargs,
     ):
         """input -> generate summary -> insert embeddings -> return summary"""
-        prompt = SummaryPrompts().prompt(text=input, verbose=verbose, **kwargs)
-        parser = SummaryParser(verbose=verbose)
+        prompt = SummaryPrompts().prompt(
+            context_str=self.input(verbose),
+            verbose=verbose,
+            **kwargs,
+        )
         program = LLMTextCompletionProgram(
             llm=llm,
-            output_parser=parser,
+            output_parser=self._parser,
             output_cls=Summary,  # type:ignore
             prompt=PromptTemplate(prompt),
             verbose=verbose,
         )
 
-        value = program(context_str=input, verbose=verbose).dict().get("value")
+        llm_output = program(verbose=verbose, **kwargs)
+        result = Summary.model_validate(llm_output)
 
-        return pbPalace.AddonResult(
-            data={
-                Summary.name: pbPalace.AddonResultInfo(
-                    success=parser.success, value=value
-                )
-            },
-        )
+        self._result = result.to_addon_result()
+
+        return self
+
+    def finalize(self, result: Optional[pbPalace.AddonResult] = None, verbose=False):
+        return self
+
+    @property
+    def output_model(self) -> Summary:
+        return self._output_model
+
+    @property
+    def parser(self) -> SummaryParser:
+        return self._parser

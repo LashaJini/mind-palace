@@ -2,6 +2,7 @@ from abc import ABC, abstractmethod
 from typing import TypedDict
 from llama_index.llms.llama_cpp.llama_utils import DEFAULT_SYSTEM_PROMPT
 
+from pkg.rpc.server import logger
 from pkg.rpc.server.llm import CustomLlamaCPP
 
 
@@ -35,7 +36,7 @@ class Prompts(ABC):
         pass
 
     @abstractmethod
-    def prompt(self, text: str, verbose: bool, **kwargs) -> str:
+    def prompt(self, context_str: str, verbose: bool, **kwargs) -> str:
         pass
 
     @abstractmethod
@@ -50,7 +51,7 @@ class Prompts(ABC):
     def _standalone_template(self, tmpl: str, verbose=False, **kwargs):
         result = f"<|system|>\n{Prompts.sys_prompt}</s>\n<|user|>\n{tmpl}</s>\n<|assistant|>\n"
         if verbose:
-            print(result)
+            logger.log.info(result)
 
         return result
 

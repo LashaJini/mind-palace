@@ -6,7 +6,7 @@ class PromptsFactory:
     @classmethod
     def construct(cls, name: str) -> Prompts:
         if name not in registry:
-            print(f"Unknown prompt {name}")
+            raise ValueError(f"Unknown addon name {name}")
 
-        prompts = registry[name].get("prompts")
+        prompts = registry[name].prompts
         return prompts()

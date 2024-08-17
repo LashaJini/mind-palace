@@ -7,6 +7,7 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/lashajini/mind-palace/pkg/common"
+	pb "github.com/lashajini/mind-palace/pkg/rpc/client/gen/proto"
 	"github.com/lashajini/mind-palace/pkg/storage/database"
 	"github.com/lashajini/mind-palace/pkg/types"
 	"github.com/stretchr/testify/assert"
@@ -27,20 +28,20 @@ type DefaultAddon struct {
 	Description string
 	InputTypes  types.IOTypes
 	OutputTypes types.IOTypes
-	Output      any
+	Response    *pb.AddonResponse
 }
 
 func (a *DefaultAddon) Action(db *database.MindPalaceDB, memoryIDC chan uuid.UUID, args ...any) (err error) {
 	return nil
 }
-func (a *DefaultAddon) Empty() bool                   { return true }
-func (a *DefaultAddon) GetName() string               { return a.Name }
-func (a *DefaultAddon) GetDescription() string        { return a.Description }
-func (a *DefaultAddon) GetInputTypes() types.IOTypes  { return a.InputTypes }
-func (a *DefaultAddon) GetOutputTypes() types.IOTypes { return a.OutputTypes }
-func (a *DefaultAddon) GetOutput() any                { return a.Output }
-func (a *DefaultAddon) SetOutput(output any)          { a.Output = output }
-func (a DefaultAddon) String() string                 { return "" }
+func (a *DefaultAddon) Empty() bool                            { return true }
+func (a *DefaultAddon) GetName() string                        { return a.Name }
+func (a *DefaultAddon) GetDescription() string                 { return a.Description }
+func (a *DefaultAddon) GetInputTypes() types.IOTypes           { return a.InputTypes }
+func (a *DefaultAddon) GetOutputTypes() types.IOTypes          { return a.OutputTypes }
+func (a *DefaultAddon) GetResponse() *pb.AddonResponse         { return a.Response }
+func (a *DefaultAddon) SetResponse(response *pb.AddonResponse) { a.Response = response }
+func (a DefaultAddon) String() string                          { return "" }
 
 func (suite *MpUserTestSuite) Test_user_cant_disable_default_addon() {
 	t := suite.T()

@@ -6,19 +6,19 @@ service Palace {
   rpc ApplyAddon(JoinedAddons) returns (AddonResult) {}
   rpc JoinAddons(Resource) returns (JoinedAddonsResponse) {}
 
-  rpc VDBInsert(VDBRow) returns (Empty) {}
+  rpc VDBInsert(VDBRows) returns (Empty) {}
 }
 
 message Empty{}
 
-message VDBRow {
+message VDBRows {
   string user = 1;
-  string id = 2;
-  string input = 3;
+  repeated string ids = 2;
+  repeated string inputs = 3;
 }
 
 message AddonResult {
-  map<string, AddonResultInfo> data = 1;
+  map<string, AddonResponse> map = 1;
 }
 
 message JoinedAddons {
@@ -35,10 +35,32 @@ message JoinedAddon {
   bool joined = 2;
 }
 
-message AddonResultInfo {
-  repeated string value = 1;
-  bool success = 2;
+message AddonResponse {
+  oneof addon_responses {
+    DefaultResponse default_response = 1;
+    SummaryResponse summary_response = 2;
+    KeywordsResponse keywords_response = 3;
+  }
+  bool success = 4;
 }
+
+message DefaultResponse {
+  string default = 1;
+}
+
+message SummaryResponse {
+  string summary = 1;
+}
+
+message KeywordsResponse {
+  repeated KeywordChunk list = 1;
+
+  message KeywordChunk {
+    repeated string keywords = 1;
+    string chunk = 2;
+  }
+}
+
 
 message Resource {
   string file = 1;

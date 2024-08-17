@@ -14,7 +14,7 @@ type Addon struct {
 	Description string
 	InputTypes  types.IOTypes
 	OutputTypes types.IOTypes
-	Output      any
+	Response    *pb.AddonResponse
 }
 
 func (a *Addon) GetName() string {
@@ -33,12 +33,12 @@ func (a *Addon) GetOutputTypes() types.IOTypes {
 	return a.OutputTypes
 }
 
-func (a *Addon) GetOutput() any {
-	return a.Output
+func (a *Addon) GetResponse() *pb.AddonResponse {
+	return a.Response
 }
 
-func (a *Addon) SetOutput(output any) {
-	a.Output = output
+func (a *Addon) SetResponse(response *pb.AddonResponse) {
+	a.Response = response
 }
 
 func (a *Addon) Empty() bool {
@@ -55,17 +55,17 @@ Name: %s
 Description: %s
 Input types: %s
 Output types: %s
-Last output: %s
-`, a.Name, a.Description, a.InputTypes, a.OutputTypes, a.Output)
+Last response: %s
+`, a.Name, a.Description, a.InputTypes, a.OutputTypes, a.Response)
 }
 
 func ToAddons(addonResult *pb.AddonResult) ([]types.IAddon, error) {
 	var addons []types.IAddon
 	if addonResult != nil {
-		for key, value := range addonResult.Data {
+		for key, addonResponse := range addonResult.Map {
 			addon := Find(key)
-			if !addon.Empty() && value.Success {
-				addon.SetOutput(value.Value)
+			if !addon.Empty() && addonResponse.Success {
+				addon.SetResponse(addonResponse)
 
 				addons = append(addons, addon)
 			}

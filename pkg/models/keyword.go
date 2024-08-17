@@ -1,6 +1,8 @@
 package models
 
 import (
+	"errors"
+	"fmt"
 	"time"
 
 	"github.com/lashajini/mind-palace/pkg/common"
@@ -22,6 +24,10 @@ var keywordColumns = []string{
 }
 
 func InsertManyKeywordsTx(tx *database.MultiInstruction, keywords []string) (map[string]int, error) {
+	if len(keywords) == 0 {
+		return nil, errors.New("reason: empty keywords")
+	}
+
 	joinedColumns, _ := joinColumns(keywordColumns, "id")
 
 	now := time.Now().UTC().Unix()
@@ -39,7 +45,13 @@ func InsertManyKeywordsTx(tx *database.MultiInstruction, keywords []string) (map
 
 	values := valuesString(valueTuples)
 
-	q := insertF(tx.CurrentSchema(), database.Table.Keyword, joinedColumns, values, "RETURNING id")
+	q := insertF(
+		tx.CurrentSchema(),
+		database.Table.Keyword,
+		joinedColumns,
+		values,
+		fmt.Sprintf(`ON CONFLICT (name) DO UPDATE SET updated_at = %d RETURNING name, id`, now),
+	)
 	common.Log.DBInfo(tx.ID, q)
 
 	rows, err := tx.Query(q)
@@ -48,14 +60,12 @@ func InsertManyKeywordsTx(tx *database.MultiInstruction, keywords []string) (map
 	}
 	defer rows.Close()
 
-	i := 0
 	keywordIDs := make(map[string]int)
 	for rows.Next() {
-		defer rows.Close()
 		var id int
-		_ = rows.Scan(&id)
-		keywordIDs[keywords[i]] = id
-		i++
+		var name string
+		_ = rows.Scan(&name, &id)
+		keywordIDs[name] = id
 	}
 
 	return keywordIDs, nil

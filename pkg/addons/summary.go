@@ -17,7 +17,8 @@ type SummaryAddon struct {
 }
 
 func (s *SummaryAddon) Action(db *database.MindPalaceDB, memoryIDC chan uuid.UUID, args ...any) (err error) {
-	summary := s.Output.([]string)[0]
+	summary := s.Response.GetSummaryResponse().Summary
+
 	rpcClient := args[0].(*rpcclient.Client)
 
 	ctx := context.Background()
@@ -47,7 +48,7 @@ func (s *SummaryAddon) Action(db *database.MindPalaceDB, memoryIDC chan uuid.UUI
 		return fmt.Errorf("failed to commit transaction: %w", err)
 	}
 
-	err = rpcClient.VDBInsert(ctx, memoryID, summary)
+	err = rpcClient.VDBInsert(ctx, []uuid.UUID{memoryID}, []string{summary})
 	if err != nil {
 		return fmt.Errorf("failed to insert in vdb: %w", err)
 	}

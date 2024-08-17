@@ -34,10 +34,10 @@ class SummaryPrompts(Prompts):
     def standalone_template_token_count(self, llm: CustomLlamaCPP):
         return llm.token_size(text=self.tmpl)
 
-    def prompt(self, text: str, verbose=False, **kwargs):
-        result = self.standalone_template().format(context_str=text, **kwargs)
-        if verbose:
-            print(result)
+    def prompt(self, context_str: str, verbose=False, **kwargs):
+        result = self.standalone_template().format(
+            context_str=context_str, verbose=verbose, **kwargs
+        )
 
         return result
 
