@@ -43,8 +43,7 @@ class Addon(ABC):
         raise NotImplementedError
 
     def result(self, verbose=False) -> pbPalace.AddonResult | None:
-        if verbose:
-            logger.log.info(f"> RESULT {self._result}")
+        logger.log.debug(f"> RESULT {self._result}")
         return self._result
 
     @property

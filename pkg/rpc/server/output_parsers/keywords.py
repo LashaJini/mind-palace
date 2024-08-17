@@ -87,8 +87,7 @@ class KeywordsParser(OutputParser):
         self._chunks: List[str] = kwargs.get("chunks", [])
 
     def parse(self, output: str) -> Keywords:
-        if self.verbose:
-            logger.log.debug(f"> Raw output: {output}")
+        logger.log.debug(f"> Raw output: {output}")
 
         self.success = False
         keywords: List[List[str]] = []
@@ -113,8 +112,7 @@ class KeywordsParser(OutputParser):
             )
             raise ValueError(e)
 
-        if self.verbose:
-            logger.log.debug(f"> Extracted keywords: {keywords}")
+        logger.log.debug(f"> Extracted keywords: {keywords}")
 
         return Keywords(keywords=keywords, chunks=self._chunks, success=self.success)
 

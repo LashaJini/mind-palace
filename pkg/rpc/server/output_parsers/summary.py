@@ -53,8 +53,7 @@ class SummaryParser(OutputParser):
         )
 
     def parse(self, output: str) -> Summary:
-        if self.verbose:
-            logger.log.debug(f"> Raw output: {output}")
+        logger.log.debug(f"> Raw output: {output}")
 
         self.success = False
         summary = ""
@@ -70,8 +69,7 @@ class SummaryParser(OutputParser):
             )
             raise ValueError(e)
 
-        if self.verbose:
-            logger.log.debug(f"> Extracted summary: {summary}")
+        logger.log.debug(f"> Extracted summary: {summary}")
 
         return Summary(summary=summary, success=self.success)
 

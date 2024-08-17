@@ -48,6 +48,8 @@ class KeywordsPrompts(Prompts):
             context_str=context_str, verbose=verbose, **kwargs
         )
 
+        logger.log.debug(f"> Prompt: {result}")
+
         return result
 
     def joinable_template(self, **kwargs) -> JoinableTemplate:

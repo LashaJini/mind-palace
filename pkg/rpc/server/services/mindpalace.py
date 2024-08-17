@@ -94,8 +94,7 @@ class MindPalaceService:
             # TODO: algo for most addons joined together
             addons_tokens.sort(key=lambda x: x["token"])
 
-            if self.verbose:
-                logger.log.debug(f"> addons + approx tokens required: {addons_tokens}")
+            logger.log.debug(f"> addons + approx tokens required: {addons_tokens}")
 
             available_tokens = self.llm.calculate_available_tokens(
                 input_text_token_count,
@@ -133,13 +132,12 @@ class MindPalaceService:
             # drain remaining addons in batch
             add_batch_to_addons()
 
-            if self.verbose:
-                logger.log.debug("> Addon distribution:")
-                for addon_cluster in addons:
-                    if addon_cluster.joined:
-                        logger.log.debug(f"> Joined: {', '.join(addon_cluster.names)}")
-                    else:
-                        logger.log.debug(f"> Single: {addon_cluster.names[0]}")
+            [
+                logger.log.debug(
+                    f"> {'Joined addons' if addon_cluster.joined else 'Single addon'}: {', '.join(addon_cluster.names) if addon_cluster.joined else addon_cluster.names[0]}"
+                )
+                for addon_cluster in addons
+            ]
 
             joinedAddons = pbPalace.JoinedAddonsResponse(addons=addons)
 
