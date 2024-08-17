@@ -104,7 +104,7 @@ class KeywordsParser(OutputParser):
             keywords.append(chunk_keywords)
 
             # TODO: this is not a correct way to validate
-            self.success = len(keywords) > 0
+            self.success = len(chunk_keywords) > 0
 
         if not self.success:
             e = (
