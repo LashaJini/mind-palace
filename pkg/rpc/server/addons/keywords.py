@@ -37,8 +37,7 @@ class KeywordsAddon(Addon):
         return self
 
     def input(self, verbose=False) -> str:
-        if verbose:
-            logger.log.info(f"> Total Chunks {len(self._output_model.chunks)}")
+        logger.log.debug(f"> Total Chunks {len(self._output_model.chunks)}")
 
         result = "\n\n".join(
             ["<CHUNK>" + chunk + "</CHUNK>" for chunk in self._output_model.chunks]
@@ -104,9 +103,9 @@ class KeywordsAddon(Addon):
                     )
                 )
 
-                if verbose:
-                    if len(unique_keywords) > 0:
-                        logger.log.info(f"> Updated keywords: {unique_keywords}")
+                logger.log.debug(
+                    f"> Updated keywords: {unique_keywords if len(unique_keywords) > 0 else None}"
+                )
 
         return self
 

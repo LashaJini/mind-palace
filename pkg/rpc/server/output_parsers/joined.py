@@ -36,8 +36,7 @@ class JoinedParser(OutputParser):
         self._parsers = parsers
 
     def parse(self, output: str) -> Joined:
-        if self.verbose:
-            logger.log.debug(f"> Raw output:\n{output}")
+        logger.log.debug(f"> Raw output:\n{output}")
 
         addon_results: List[pbPalace.AddonResult] = []
 

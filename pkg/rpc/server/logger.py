@@ -7,7 +7,7 @@ from pkg.rpc.server import config
 class STDFormatter(logging.Formatter):
     white = "\x1b[1;38;20m"
     dark_grey = "\x1b[2;38;20m"
-    grey = "\x1b[38;20m"
+    magenta = "\x1b[35;20m"
     green = "\x1b[32;20m"
     yellow = "\x1b[33;20m"
     red = "\x1b[31;20m"
@@ -17,7 +17,7 @@ class STDFormatter(logging.Formatter):
 
     FORMATS = {
         logging.DEBUG: {
-            "levelcolor": grey,
+            "levelcolor": magenta,
             "levelname": "DBG",
         },
         logging.INFO: {"levelcolor": green, "levelname": "INF"},

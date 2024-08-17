@@ -1,3 +1,4 @@
+from pkg.rpc.server import logger
 from pkg.rpc.server.llm import CustomLlamaCPP
 from pkg.rpc.server.prompts.abstract import (
     Prompts,
@@ -38,6 +39,8 @@ class SummaryPrompts(Prompts):
         result = self.standalone_template().format(
             context_str=context_str, verbose=verbose, **kwargs
         )
+
+        logger.log.debug(f"> Prompt: {result}")
 
         return result
 
