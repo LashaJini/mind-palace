@@ -95,7 +95,7 @@ func (c *Config) VDBAddr() string {
 }
 
 func (c *Config) DBAddr() string {
-	return fmt.Sprintf("postgres://%s:%s@localhost:%d/%s?sslmode=disable", c.DB_USER, c.DB_PASS, c.DB_PORT, c.DB_NAME)
+	return fmt.Sprintf("postgres://%s:%s@localhost:%d/%s?sslmode=disable&connect_timeout=5", c.DB_USER, c.DB_PASS, c.DB_PORT, c.DB_NAME)
 }
 
 func MindPalacePath(homePrefix bool) string {

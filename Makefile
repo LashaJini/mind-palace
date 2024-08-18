@@ -1,4 +1,4 @@
-.PHONY: all build start-grpc-server deps deps-go deps-py dev-deps deps-llama rpc clean-rpc rpc-py clean-rpc-py test-py test-go test cover db vdb graph godoc migrate
+.PHONY: all build start-grpc-server stop-grpc-server deps deps-go deps-py dev-deps deps-llama rpc clean-rpc rpc-py clean-rpc-py test-py test-go test test-e2e cover db vdb graph godoc migrate
 
 BUILD_OUT_DIR=bin
 BINARY_NAME=mind-palace
@@ -12,7 +12,7 @@ LOG_LEVEL ?= 1
 all: build
 
 build: deps rpc
-	@echo "Building the binary..."
+	@echo "> Building the binary..."
 	@go mod tidy
 	@go build -o $(BUILD_OUT_DIR)/$(BINARY_NAME) $(SOURCE_DIR)
 
@@ -20,17 +20,21 @@ dirs:
 	@mkdir -p logs
 
 start-grpc-server: dirs
-	@poetry run python pkg/rpc/server/server.py
+	@echo "> Starting gRPC server with environment $(MP_ENV)"
+	@MP_ENV=$(MP_ENV) poetry run python pkg/rpc/server/server.py &
+
+stop-grpc-server:
+	@ps aux | grep "python pkg/rpc/server/server.py" | grep -v grep | awk '{print $$2}' | xargs kill
 
 deps: deps-go deps-py
 
 deps-go:
-	@echo "Installing go dependencies..."
+	@echo "> Installing go dependencies..."
 	@go mod download
 	@go mod verify
 
 deps-py:
-	@echo "Installing python dependencies..."
+	@echo "> Installing python dependencies..."
 	@poetry install
 
 dev-deps:
@@ -47,19 +51,19 @@ deps-llama:
 	CMAKE_ARGS="-DLLAMA_CUDA=on" LLAMA_CCACHE=OFF FORCE_CMAKE=1 poetry run pip install llama-cpp-python --no-cache-dir --force-reinstall --upgrade
 
 rpc:
-	@echo "Compiling '.proto' files..."
+	@echo "> Compiling '.proto' files..."
 	@bash ./scripts/pb-compiler.sh
 
 clean-rpc:
-	@echo "Removing compiled '.proto' files..."
+	@echo "> Removing compiled '.proto' files..."
 	@rm -rf ./pkg/rpc/client/gen ./pkg/rpc/server/gen
 
 rpc-py:
-	@echo "Compiling '.proto' files..."
+	@echo "> Compiling '.proto' files..."
 	@bash ./scripts/pb-compiler-py.sh
 
 clean-rpc-py:
-	@echo "Removing compiled '.proto' python files..."
+	@echo "> Removing compiled '.proto' python files..."
 	@rm -rf ./pkg/rpc/server/gen
 
 # -s don't capture stdout
@@ -72,7 +76,19 @@ test-go:
 	MP_ENV=test LOG_LEVEL=$(LOG_LEVEL) go test -v $(shell go list ./pkg/... ./cli/...) $(ARGS)
 
 test: test-go test-py
-	@echo "Done"
+	@echo "> Done"
+
+test-e2e: start-grpc-server
+	@$(MAKE) MP_ENV=test db ARGS=start
+	@echo "> Running e2e tests..."
+	@$(MAKE) MP_ENV=test test-go ARGS='-count=1 -run "^TestE2ETestSuite"'
+	@echo "> Stopping grpc server"
+	@$(MAKE) MP_ENV=test stop-grpc-server
+	@sleep 1 # to avoid connection peer timeout
+	@echo "> Dropping database"
+	@$(MAKE) MP_ENV=test db ARGS=drop
+	@echo "> Stopping database"
+	@$(MAKE) MP_ENV=test db ARGS=stop
 
 cover: dev-deps
 	MP_ENV=test LOG_LEVEL=5 bash scripts/cover.sh $(ARGS)
@@ -94,5 +110,5 @@ graph:
 	@eog godepgraph.png
 
 godoc:
-	@echo "Generating godoc..."
+	@echo "> Generating godoc..."
 	@godoc -http=:6060 -play

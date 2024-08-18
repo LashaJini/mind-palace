@@ -4,12 +4,11 @@ source ./scripts/env.sh
 
 CONTAINER_NAME=postgres13
 POSTGRES_PASSWORD=$DB_PASS
-POSTGRESQL_URL="postgres://$DB_USER:$POSTGRES_PASSWORD@localhost:$DB_PORT/$DB_NAME?sslmode=disable"
+# POSTGRESQL_URL="postgres://$DB_USER:$POSTGRES_PASSWORD@localhost:$DB_PORT/$DB_NAME?sslmode=disable"
 VERSION=$DB_VERSION
-POSTGRES_DATA=postgres-data
 
 start() {
-	mkdir $MIGRATIONS_DIR $POSTGRES_DATA -p
+	mkdir $MIGRATIONS_DIR $POSTGRES_DATA_DIR -p
 
 	# https://hub.docker.com/_/postgres
 	docker run --rm -d \
@@ -18,7 +17,7 @@ start() {
 		-e POSTGRES_PASSWORD=$POSTGRES_PASSWORD \
 		-e POSTGRES_DB=$DB_NAME \
 		-e POSTGRES_USER=$DB_USER \
-		-v ./$POSTGRES_DATA:/var/lib/postgresql/data \
+		-v ./$POSTGRES_DATA_DIR:/var/lib/postgresql/data \
 		postgres:$VERSION 1>/dev/null
 
 	if [ $? -ne 0 ]; then
@@ -48,7 +47,8 @@ cli() {
 
 drop() {
 	docker exec $CONTAINER_NAME \
-		bash -c "psql -U $DB_USER -d postgres -c 'drop database $DB_NAME'"
+		bash -c "psql -U $DB_USER -d postgres -c 'drop database $DB_NAME'" &&
+		sudo rm -rf $POSTGRES_DATA_DIR
 }
 
 case $1 in

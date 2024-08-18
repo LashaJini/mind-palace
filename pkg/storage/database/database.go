@@ -3,11 +3,14 @@ package database
 import (
 	"database/sql"
 	"fmt"
+	"time"
 
 	"github.com/lashajini/mind-palace/pkg/common"
 	"github.com/lashajini/mind-palace/pkg/errors"
 	_ "github.com/lib/pq"
 )
+
+const RETRY_COUNT = 3
 
 type MindPalaceDB struct {
 	db               *sql.DB
@@ -18,11 +21,24 @@ type MindPalaceDB struct {
 
 func InitDB(cfg *common.Config) *MindPalaceDB {
 	connStr := cfg.DBAddr()
-	db, err := sql.Open(cfg.DB_DRIVER, connStr)
-	errors.On(err).Exit()
+	common.Log.Debug().Msg(connStr)
 
-	err = db.Ping()
-	errors.On(err).Exit()
+	var err error
+	db, err := sql.Open(cfg.DB_DRIVER, connStr)
+	errors.On(err).Panic()
+
+	for i := 1; i <= RETRY_COUNT; i++ {
+		err = db.Ping()
+		if err != nil {
+			common.Log.Warn().Msgf("database ping '%d' failed (retrying in 1 sec), reason: %v", i, err)
+		} else {
+			common.Log.Info().Msgf("database ping '%d' successful", i)
+			err = nil
+			break
+		}
+		time.Sleep(1 * time.Second)
+	}
+	errors.On(err).Panic()
 
 	return &MindPalaceDB{
 		db:               db,

@@ -82,6 +82,10 @@ func (u *Config) Update() error {
 	return os.WriteFile(common.UserConfigPath(u.Config.User, true), d, 0777)
 }
 
+func CreateNewUser(user string) (*Config, error) {
+	return CreateMindPalace(user)
+}
+
 func NewUserConfig(user string) *Config {
 	return &Config{
 		Config: UserConfigRoot{
@@ -93,6 +97,28 @@ func NewUserConfig(user string) *Config {
 			},
 		},
 	}
+}
+
+func DeleteUser(user string) error {
+	userpath, exists, err := UserExists(user)
+	if err != nil {
+		return err
+	}
+
+	if exists {
+		err := os.RemoveAll(userpath)
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+func UserExists(user string) (string, bool, error) {
+	mindPalaceUserPath := common.UserPath(user, true)
+	exists, err := common.DirExists(mindPalaceUserPath)
+	return mindPalaceUserPath, exists, err
 }
 
 func ReadConfig(user string) (*Config, error) {

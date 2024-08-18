@@ -89,7 +89,6 @@ class CustomLlamaCPP(LlamaCPP, FunctionCallingLLM, extra="allow"):
             - sys_prompt_token_count
             - joined_prompt_token_count
         )
-        available_tokens = 1
 
         logger.log.debug(f"> Available tokens: {available_tokens}")
 

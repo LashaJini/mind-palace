@@ -46,7 +46,7 @@ func (a DefaultAddon) String() string                          { return "" }
 func (suite *MpUserTestSuite) Test_user_cant_disable_default_addon() {
 	t := suite.T()
 
-	err := CreateMindPalace(common.TEST_USER)
+	_, err := CreateMindPalace(common.TEST_USER)
 	if err != nil {
 		log.Fatal(err)
 	}

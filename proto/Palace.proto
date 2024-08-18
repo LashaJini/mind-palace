@@ -7,6 +7,9 @@ service Palace {
   rpc JoinAddons(Resource) returns (JoinedAddonsResponse) {}
 
   rpc VDBInsert(VDBRows) returns (Empty) {}
+  rpc Ping(Empty) returns (Empty) {}
+  rpc VDBPing(Empty) returns (Empty) {}
+  rpc VDBDrop(Empty) returns (Empty) {}
 }
 
 message Empty{}

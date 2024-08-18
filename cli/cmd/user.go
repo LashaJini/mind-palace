@@ -42,7 +42,7 @@ func User(cmd *cobra.Command, args []string) {
 			errors.ExitWithMsg("new user cannot be empty")
 		}
 
-		err := mpuser.CreateMindPalace(newUser)
+		_, err := mpuser.CreateMindPalace(newUser)
 		errors.On(err).Exit()
 
 		cfg := common.NewConfig()

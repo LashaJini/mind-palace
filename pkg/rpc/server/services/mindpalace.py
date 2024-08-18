@@ -151,3 +151,15 @@ class MindPalaceService:
             data=MilvusInsertData(ids=request.ids, inputs=request.inputs),
         )
         return pbPalace.Empty()
+
+    def Ping(self, request, context):
+        return pbPalace.Empty()
+
+    def VDBPing(self, request, context):
+        if not self.client.ping():
+            raise ConnectionError
+        return pbPalace.Empty()
+
+    def VDBDrop(self, request, context):
+        self.client.drop()
+        return pbPalace.Empty()

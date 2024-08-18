@@ -82,7 +82,7 @@ func (suite *ModelsTestSuite) initMigrationFiles() []string {
 
 func (suite *ModelsTestSuite) SetupSuite() {
 	suite.mpuser = common.TEST_USER
-	err := mpuser.CreateMindPalace(suite.mpuser)
+	_, err := mpuser.CreateMindPalace(suite.mpuser)
 	if err != nil {
 		log.Fatal(err)
 	}

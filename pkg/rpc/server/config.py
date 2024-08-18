@@ -7,6 +7,7 @@ MP_ENV = mp_env
 
 VDB_HOST = os.getenv("VDB_HOST", "localhost")
 VDB_PORT = int(os.getenv("VDB_PORT", 19530))
+VDB_NAME = os.getenv("VDB_NAME", "_mind_palace_dev")
 PYTHON_GRPC_SERVER_PORT = os.getenv("PYTHON_GRPC_SERVER_PORT", 50051)
 ONE_DAY_IN_SECONDS = 60 * 60 * 24
 
