@@ -1,7 +1,7 @@
 from typing import List
 from pymilvus import MilvusClient, connections, DataType, db
 
-from pkg.rpc.server import logger
+from pkg.rpc.server import config, logger
 from pkg.rpc.server.llm import EmbeddingModel
 
 
@@ -15,18 +15,18 @@ class MilvusInsertData:
 
 
 class Milvus:
-    db_name = "mindpalace_vdb"
+    db_name: str = ""
 
     def __init__(self, host: str, port: int):
         self.host = host
         self.port = port
-        self.db_name = Milvus.db_name
+        self.db_name = config.VDB_NAME
         self.embedding_model = EmbeddingModel()
 
         connections.connect(host=self.host, port=self.port)
-        if Milvus.db_name not in db.list_database():
-            logger.log.info(f"Database {Milvus.db_name} not found. Creating...")
-            db.create_database(Milvus.db_name)
+        if not self.db_exists():
+            logger.log.info(f"Database '{config.VDB_NAME}' not found. Creating...")
+            db.create_database(config.VDB_NAME)
 
         self.client = MilvusClient(
             uri=f"http://{self.host}:{self.port}",
@@ -88,3 +88,17 @@ class Milvus:
             }
             embedded_data.append(new_item)
         return embedded_data
+
+    def drop(self):
+        for collection in self.client.list_collections():
+            self.client.drop_collection(collection)
+            logger.log.info(f"Drop {collection} collection")
+
+        db.drop_database(self.db_name)
+        logger.log.info(f"Drop {self.db_name} database")
+
+    def db_exists(self):
+        return self.db_name in db.list_database()
+
+    def ping(self):
+        return self.db_exists()

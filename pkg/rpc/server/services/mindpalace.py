@@ -5,6 +5,7 @@ from llama_index.core import SimpleDirectoryReader
 from pkg.rpc.server import logger
 from pkg.rpc.server.addons.factory import AddonFactory
 from pkg.rpc.server.addons.joined import JoinedAddons
+from pkg.rpc.server.config import ServerConfig
 from pkg.rpc.server.prompts.joined import JoinedPrompts
 from pkg.rpc.server.prompts.abstract import Prompts
 from pkg.rpc.server.prompts.factory import PromptsFactory
@@ -15,9 +16,11 @@ import pkg.rpc.server.gen.Palace_pb2 as pbPalace
 
 
 class MindPalaceService:
-    def __init__(self, llm: CustomLlamaCPP, client: Milvus, verbose=False):
+    def __init__(
+        self, llm: CustomLlamaCPP, client: Milvus, server_config: ServerConfig
+    ):
         self.llm = llm
-        self.verbose = verbose
+        self.server_config = server_config
 
         self.client = client
 
@@ -51,10 +54,10 @@ class MindPalaceService:
                         llm=self.llm,
                         instructions=", ".join([s for s in instructions if s]),
                         format="\n".join([s for s in formats if s]),
-                        verbose=self.verbose,
+                        verbose=self.server_config.verbose,
                     )
-                    .finalize(verbose=self.verbose)
-                    .result(verbose=self.verbose)
+                    .finalize(verbose=self.server_config.verbose)
+                    .result(verbose=self.server_config.verbose)
                 )
 
             # TODO: abstract away
@@ -64,11 +67,11 @@ class MindPalaceService:
                 .prepare_input(user_input=input)
                 .apply(
                     llm=self.llm,
-                    verbose=self.verbose,
+                    verbose=self.server_config.verbose,
                     max_keywords=10,
                 )
-                .finalize(verbose=self.verbose)
-                .result(verbose=self.verbose)
+                .finalize(verbose=self.server_config.verbose)
+                .result(verbose=self.server_config.verbose)
             )
         except Exception as e:
             logger.log.exception(e)
@@ -100,7 +103,7 @@ class MindPalaceService:
                 input_text_token_count,
                 sys_prompt_token_count,
                 joined_prompt_token_count,
-                self.verbose,
+                self.server_config.verbose,
             )
             tokens_left = available_tokens
 
@@ -150,4 +153,22 @@ class MindPalaceService:
             user=request.user,
             data=MilvusInsertData(ids=request.ids, inputs=request.inputs),
         )
+        return pbPalace.Empty()
+
+    def Ping(self, request, context):
+        return pbPalace.Empty()
+
+    def VDBPing(self, request, context):
+        if not self.client.ping():
+            raise ConnectionError
+        return pbPalace.Empty()
+
+    def VDBDrop(self, request, context):
+        self.client.drop()
+        return pbPalace.Empty()
+
+    def SetConfig(self, request: pbPalace.Config, context):
+        if request.map is not None:
+            self.server_config.update(**request.map)
+
         return pbPalace.Empty()

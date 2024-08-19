@@ -41,8 +41,10 @@ func CreatePostgresContainer(ctx context.Context, cfg *common.Config, migrationF
 
 		testcontainers.WithWaitStrategy(
 			wait.ForLog("database system is ready to accept connections").
-				WithOccurrence(2).WithStartupTimeout(5*time.Second)),
+				WithOccurrence(2).WithStartupTimeout(5*time.Second),
+		),
 	)
+
 	if err != nil {
 		return nil, err
 	}
@@ -82,7 +84,7 @@ func (suite *ModelsTestSuite) initMigrationFiles() []string {
 
 func (suite *ModelsTestSuite) SetupSuite() {
 	suite.mpuser = common.TEST_USER
-	err := mpuser.CreateMindPalace(suite.mpuser)
+	_, err := mpuser.CreateMindPalace(suite.mpuser)
 	if err != nil {
 		log.Fatal(err)
 	}

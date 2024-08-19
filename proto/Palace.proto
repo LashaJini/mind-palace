@@ -7,6 +7,11 @@ service Palace {
   rpc JoinAddons(Resource) returns (JoinedAddonsResponse) {}
 
   rpc VDBInsert(VDBRows) returns (Empty) {}
+  rpc Ping(Empty) returns (Empty) {}
+  rpc VDBPing(Empty) returns (Empty) {}
+  rpc VDBDrop(Empty) returns (Empty) {}
+
+  rpc SetConfig(Config) returns (Empty) {}
 }
 
 message Empty{}
@@ -15,6 +20,10 @@ message VDBRows {
   string user = 1;
   repeated string ids = 2;
   repeated string inputs = 3;
+}
+
+message Config {
+  map<string, string> map = 1;
 }
 
 message AddonResult {

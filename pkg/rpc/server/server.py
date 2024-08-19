@@ -10,9 +10,10 @@ from pkg.rpc.server.vdb import Milvus
 
 import pkg.rpc.server.gen.Palace_pb2_grpc as grpcPalace
 
-verbose = True
+server_config = config.ServerConfig(verbose=True)
+
 llm = CustomLlamaCPP(
-    verbose=verbose,
+    server_config=server_config,
     generate_kwargs={
         "top_k": 1,  # TODO: config
         "stop": ["<|endoftext|>", "</s>"],  # TODO: wtf
@@ -35,7 +36,7 @@ client = Milvus(
 def server():
     server = grpc.server(futures.ThreadPoolExecutor(max_workers=10))
     grpcPalace.add_PalaceServicer_to_server(
-        MindPalaceService(llm=llm, client=client, verbose=verbose), server
+        MindPalaceService(llm=llm, client=client, server_config=server_config), server
     )
     server.add_insecure_port(f"[::]:{config.PYTHON_GRPC_SERVER_PORT}")
     server.start()

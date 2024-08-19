@@ -3,6 +3,7 @@ package rpcclient
 import (
 	"context"
 	"fmt"
+	"time"
 
 	"github.com/google/uuid"
 	"github.com/lashajini/mind-palace/pkg/common"
@@ -11,6 +12,8 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
 )
+
+const RETRY_COUNT = 15
 
 type Client struct {
 	client pb.PalaceClient
@@ -71,5 +74,57 @@ func (c *Client) VDBInsert(ctx context.Context, ids []uuid.UUID, outputs []strin
 
 	_, err := c.client.VDBInsert(ctx, vdbRows)
 
+	return err
+}
+
+func (c *Client) VDBPing(ctx context.Context) error {
+	var err error
+	for i := 1; i <= RETRY_COUNT; i++ {
+		_, err := c.client.VDBPing(ctx, &pb.Empty{})
+		if err != nil {
+			common.Log.Warn().Msgf("vector database ping '%d' failed (retrying in 1 sec), reason: %v", i, err)
+		} else {
+			common.Log.Info().Msgf("vector database ping '%d' successful", i)
+			err = nil
+			break
+		}
+		time.Sleep(1 * time.Second)
+	}
+
+	return err
+}
+
+func (c *Client) Ping(ctx context.Context) error {
+	var err error
+	for i := 1; i <= RETRY_COUNT; i++ {
+		_, err := c.client.Ping(ctx, &pb.Empty{})
+		if err != nil {
+			common.Log.Warn().Msgf("grpc server ping '%d' failed (retrying in 1 sec), reason: %v", i, err)
+		} else {
+			common.Log.Info().Msgf("grpc server ping '%d' successful", i)
+			err = nil
+			break
+		}
+		time.Sleep(1 * time.Second)
+	}
+
+	return err
+}
+
+func (c *Client) VDBDrop(ctx context.Context) error {
+	_, err := c.client.VDBDrop(ctx, &pb.Empty{})
+
+	return err
+}
+
+func (c *Client) SetConfig(ctx context.Context, cfg map[string]string) error {
+	m := make(map[string]string)
+	for k, v := range cfg {
+		m[k] = v
+	}
+
+	pbCfg := &pb.Config{Map: m}
+
+	_, err := c.client.SetConfig(ctx, pbCfg)
 	return err
 }

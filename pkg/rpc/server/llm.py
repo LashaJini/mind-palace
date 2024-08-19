@@ -1,3 +1,4 @@
+import os
 from pathlib import Path
 from typing import (
     Callable,
@@ -17,6 +18,7 @@ from llama_index.llms.llama_cpp import LlamaCPP
 from pydantic import BaseModel, PrivateAttr
 
 from pkg.rpc.server import logger
+from pkg.rpc.server.config import ServerConfig
 from pkg.rpc.server.output_parsers.abstract import CustomBaseModel
 
 # TODO: read from config
@@ -36,16 +38,17 @@ class CustomLlamaCPP(LlamaCPP, FunctionCallingLLM, extra="allow"):
     _output_parser: Optional[BaseOutputParser] = PrivateAttr()
     output_cls: BaseModel = PrivateAttr()
 
-    def __init__(self, verbose: bool = False, **kwargs):
+    def __init__(self, server_config: ServerConfig, **kwargs):
         super().__init__(
             model_path=model_path,
             temperature=0.1,
             max_new_tokens=CustomLlamaCPP._max_new_tokens,
             context_window=CustomLlamaCPP._context_window,
-            verbose=verbose,
+            verbose=server_config.verbose,
             **kwargs,
         )
         self._output_parser = None
+        self.server_config = server_config
 
     @property
     def metadata(self) -> LLMMetadata:
@@ -78,18 +81,21 @@ class CustomLlamaCPP(LlamaCPP, FunctionCallingLLM, extra="allow"):
 
     def calculate_available_tokens(
         self,
-        input_text_token_count,
-        sys_prompt_token_count,
-        joined_prompt_token_count,
+        input_text_token_count: int,
+        sys_prompt_token_count: int,
+        joined_prompt_token_count: int,
         verbose=False,
     ):
         available_tokens = (
-            CustomLlamaCPP.context_size
-            - input_text_token_count
-            - sys_prompt_token_count
-            - joined_prompt_token_count
+            int(self.server_config.available_tokens)
+            if self.server_config.available_tokens is not None
+            else (
+                CustomLlamaCPP.context_size
+                - input_text_token_count
+                - sys_prompt_token_count
+                - joined_prompt_token_count
+            )
         )
-        available_tokens = 1
 
         logger.log.debug(f"> Available tokens: {available_tokens}")
 
