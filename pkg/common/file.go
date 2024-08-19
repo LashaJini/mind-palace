@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"path/filepath"
 	"text/template"
 	"unicode/utf8"
 )
@@ -108,8 +109,35 @@ func DirExists(path string) (bool, error) {
 	return info.IsDir(), nil
 }
 
+func RemoveAllFiles(dir string) error {
+	files, err := os.ReadDir(dir)
+	if err != nil {
+		return err
+	}
+
+	for _, file := range files {
+		filePath := filepath.Join(dir, file.Name())
+
+		if err := os.Remove(filePath); err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
 type SQLTemplate struct {
 	Namespace string
+}
+
+func NewSQLTemplates(schemas []string) []SQLTemplate {
+	sqlTemplates := make([]SQLTemplate, 0, len(schemas))
+
+	for _, schema := range schemas {
+		sqlTemplates = append(sqlTemplates, SQLTemplate{Namespace: schema})
+	}
+
+	return sqlTemplates
 }
 
 func (s *SQLTemplate) Inject(sqlBuffer *bytes.Buffer, path string) error {

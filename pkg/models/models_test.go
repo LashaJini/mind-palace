@@ -11,6 +11,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/docker/go-connections/nat"
 	"github.com/lashajini/mind-palace/pkg/common"
 	"github.com/lashajini/mind-palace/pkg/mpuser"
 	"github.com/lashajini/mind-palace/pkg/storage/database"
@@ -105,7 +106,7 @@ func (suite *ModelsTestSuite) SetupSuite() {
 		log.Fatal(err)
 	}
 
-	port, err := pgContainer.MappedPort(suite.ctx, "5432")
+	port, err := pgContainer.MappedPort(suite.ctx, nat.Port(fmt.Sprint(suite.cfg.DB_PORT)))
 	if err != nil {
 		log.Fatal(err)
 	}

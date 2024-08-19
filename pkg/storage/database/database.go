@@ -77,16 +77,16 @@ func (m *MindPalaceDB) ListMPSchemas() ([]string, error) {
 	return results, nil
 }
 
-func (m *MindPalaceDB) CreateSchema(user string) error {
+func (m *MindPalaceDB) CreateSchema(user string) (string, error) {
 	schema := m.ConstructSchema(user)
 	_, err := m.db.Exec(fmt.Sprintf("CREATE SCHEMA %s", schema))
 	if err != nil {
-		return err
+		return "", err
 	}
 
 	common.Log.Info().Msgf("created schema '%s'", schema)
 	m.SetSchema(schema)
-	return nil
+	return schema, nil
 }
 
 func (m *MindPalaceDB) SetSchema(schema string) {

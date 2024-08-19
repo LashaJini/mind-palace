@@ -49,7 +49,7 @@ func User(cmd *cobra.Command, args []string) {
 		db := database.InitDB(cfg)
 		defer db.DB().Close()
 
-		err = db.CreateSchema(newUser)
+		_, err = db.CreateSchema(newUser)
 		errors.On(err).Exit()
 
 		pattern := filepath.Join(cfg.MIGRATIONS_DIR, "*.up.sql")

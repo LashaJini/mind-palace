@@ -96,7 +96,6 @@ class Milvus:
 
         db.drop_database(self.db_name)
         logger.log.info(f"Drop {self.db_name} database")
-        pass
 
     def db_exists(self):
         return self.db_name in db.list_database()

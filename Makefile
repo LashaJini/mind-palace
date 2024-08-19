@@ -7,7 +7,7 @@ SOURCE_DIR=.
 .EXPORT_ALL_VARIABLES:
 PROJECT_ROOT=$(shell pwd)
 MP_ENV ?= dev# prod,test,dev
-LOG_LEVEL ?= 1
+LOG_LEVEL ?= 0
 
 all: build
 
@@ -78,10 +78,12 @@ test-go:
 test: test-go test-py
 	@echo "> Done"
 
+# locally
 test-e2e: start-grpc-server
 	@$(MAKE) MP_ENV=test db ARGS=start
 	@echo "> Running e2e tests..."
-	@$(MAKE) MP_ENV=test test-go ARGS='-count=1 -run "^TestE2ETestSuite"'
+	-@ARGS=$${ARGS:="-count=1 -run '^TestE2ETestSuite'"}; \
+		$(MAKE) MP_ENV=test test-go ARGS="$$ARGS"
 	@echo "> Stopping grpc server"
 	@$(MAKE) MP_ENV=test stop-grpc-server
 	@sleep 1 # to avoid connection peer timeout

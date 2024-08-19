@@ -116,3 +116,15 @@ func (c *Client) VDBDrop(ctx context.Context) error {
 
 	return err
 }
+
+func (c *Client) SetConfig(ctx context.Context, cfg map[string]string) error {
+	m := make(map[string]string)
+	for k, v := range cfg {
+		m[k] = v
+	}
+
+	pbCfg := &pb.Config{Map: m}
+
+	_, err := c.client.SetConfig(ctx, pbCfg)
+	return err
+}

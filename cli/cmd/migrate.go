@@ -87,14 +87,7 @@ func Migrate(cmd *cobra.Command, args []string) {
 	schemas, err := db.ListMPSchemas()
 	errors.On(err).Exit()
 
-	sqlTemplates := []common.SQLTemplate{}
-	for _, schema := range schemas {
-		sqlTemplate := common.SQLTemplate{
-			Namespace: schema,
-		}
-
-		sqlTemplates = append(sqlTemplates, sqlTemplate)
-	}
+	sqlTemplates := common.NewSQLTemplates(schemas)
 
 	steps := 0
 	var inMemorySource *database.InMemorySource
