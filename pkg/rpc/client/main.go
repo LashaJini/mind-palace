@@ -13,7 +13,7 @@ import (
 	"google.golang.org/grpc/credentials/insecure"
 )
 
-const RETRY_COUNT = 10
+const RETRY_COUNT = 15
 
 type Client struct {
 	client pb.PalaceClient
@@ -107,8 +107,6 @@ func (c *Client) Ping(ctx context.Context) error {
 		}
 		time.Sleep(1 * time.Second)
 	}
-
-	return err
 
 	return err
 }

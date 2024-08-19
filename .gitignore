@@ -15,5 +15,5 @@ coverage/
 godepgraph.png
 logs/
 
-postgres-data/
+postgres-data*
 data/
