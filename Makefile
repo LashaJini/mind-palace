@@ -1,4 +1,4 @@
-.PHONY: all build start-grpc-server stop-grpc-server deps deps-go deps-py dev-deps deps-llama rpc clean-rpc rpc-py clean-rpc-py test-py test-go test test-e2e cover db vdb graph godoc migrate
+.PHONY: all build start-grpc-server stop-grpc-server deps deps-go deps-py dev-deps deps-llama rpc clean-rpc rpc-py clean-rpc-py test-py test-go test-go-helper test test-e2e cover db vdb graph godoc migrate
 
 BUILD_OUT_DIR=bin
 BINARY_NAME=mind-palace
@@ -71,8 +71,11 @@ clean-rpc-py:
 test-py:
 	MP_ENV=test poetry run pytest $(ARGS)
 
-# -count=1 ignores caching
 test-go:
+	@$(MAKE) MP_ENV=test test-go-helper ARGS="-tags=e2e $$ARGS"
+
+# -count=1 ignores caching
+test-go-helper:
 	MP_ENV=test LOG_LEVEL=$(LOG_LEVEL) go test -v $(shell go list ./pkg/... ./cli/...) $(ARGS)
 
 test: test-go test-py
@@ -83,7 +86,7 @@ test-e2e: start-grpc-server
 	@$(MAKE) MP_ENV=test db ARGS=start
 	@echo "> Running e2e tests..."
 	-@ARGS=$${ARGS:="-count=1 -run '^TestE2ETestSuite'"}; \
-		$(MAKE) MP_ENV=test test-go ARGS="$$ARGS"
+		$(MAKE) MP_ENV=test test-go-helper ARGS="$$ARGS"
 	@echo "> Stopping grpc server"
 	@$(MAKE) MP_ENV=test stop-grpc-server
 	@sleep 1 # to avoid connection peer timeout

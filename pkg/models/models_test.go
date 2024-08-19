@@ -11,7 +11,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/docker/go-connections/nat"
 	"github.com/lashajini/mind-palace/pkg/common"
 	"github.com/lashajini/mind-palace/pkg/mpuser"
 	"github.com/lashajini/mind-palace/pkg/storage/database"
@@ -42,8 +41,10 @@ func CreatePostgresContainer(ctx context.Context, cfg *common.Config, migrationF
 
 		testcontainers.WithWaitStrategy(
 			wait.ForLog("database system is ready to accept connections").
-				WithOccurrence(2).WithStartupTimeout(5*time.Second)),
+				WithOccurrence(2).WithStartupTimeout(5*time.Second),
+		),
 	)
+
 	if err != nil {
 		return nil, err
 	}
@@ -106,7 +107,7 @@ func (suite *ModelsTestSuite) SetupSuite() {
 		log.Fatal(err)
 	}
 
-	port, err := pgContainer.MappedPort(suite.ctx, nat.Port(fmt.Sprint(suite.cfg.DB_PORT)))
+	port, err := pgContainer.MappedPort(suite.ctx, "5432")
 	if err != nil {
 		log.Fatal(err)
 	}
