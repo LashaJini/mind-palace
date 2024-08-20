@@ -98,9 +98,9 @@ message EmbeddingModelConfig {
 }
 
 message LLMConfig {
-  optional int32 context_size = 1;
-  optional int32 context_window = 2;
-  optional int32 max_new_tokens = 3;
+  int32 context_size = 1;
+  int32 context_window = 2;
+  int32 max_new_tokens = 3;
 
   map<string, string> map = 4;
 }
