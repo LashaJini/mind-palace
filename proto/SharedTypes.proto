@@ -1,0 +1,7 @@
+syntax = "proto3";
+
+option go_package = "github.com/lashajini/mind-palace/proto";
+
+package SharedTypes;
+
+message Empty{}

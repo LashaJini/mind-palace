@@ -5,7 +5,6 @@ import (
 	"fmt"
 
 	"github.com/google/uuid"
-	"github.com/lashajini/mind-palace/pkg/errors"
 	"github.com/lashajini/mind-palace/pkg/models"
 	rpcclient "github.com/lashajini/mind-palace/pkg/rpc/client"
 	"github.com/lashajini/mind-palace/pkg/storage/database"
@@ -19,17 +18,11 @@ type SummaryAddon struct {
 func (s *SummaryAddon) Action(db *database.MindPalaceDB, memoryIDC chan uuid.UUID, args ...any) (err error) {
 	summary := s.Response.GetSummaryResponse().Summary
 
-	rpcClient := args[0].(*rpcclient.Client)
+	vdbGrpcClient := args[0].(*rpcclient.VDBGrpcClient)
 
 	ctx := context.Background()
 	tx := database.NewMultiInstruction(ctx, db)
-
-	defer func() {
-		if err != nil {
-			err := tx.Rollback()
-			errors.On(err).PanicWithMsg("failed to rollback")
-		}
-	}()
+	defer revert(tx)
 
 	err = tx.Begin()
 	if err != nil {
@@ -48,7 +41,7 @@ func (s *SummaryAddon) Action(db *database.MindPalaceDB, memoryIDC chan uuid.UUI
 		return fmt.Errorf("failed to commit transaction: %w", err)
 	}
 
-	err = rpcClient.VDBInsert(ctx, []uuid.UUID{memoryID}, []string{summary})
+	err = vdbGrpcClient.Insert(ctx, []uuid.UUID{memoryID}, []string{summary})
 	if err != nil {
 		return fmt.Errorf("failed to insert in vdb: %w", err)
 	}

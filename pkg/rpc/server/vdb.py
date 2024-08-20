@@ -1,8 +1,11 @@
+import grpc
 from typing import List
 from pymilvus import MilvusClient, connections, DataType, db
 
 from pkg.rpc.server import config, logger
 from pkg.rpc.server.llm import EmbeddingModel
+import pkg.rpc.server.gen.Palace_pb2_grpc as palaceService
+import pkg.rpc.server.gen.Palace_pb2 as pbPalace
 
 
 class MilvusInsertData:
@@ -13,6 +16,9 @@ class MilvusInsertData:
         self.ids = ids
         self.inputs = inputs
 
+    def __repr__(self):
+        return f"MilvusInsertData({self.ids}, {self.inputs})"
+
 
 class Milvus:
     db_name: str = ""
@@ -21,7 +27,9 @@ class Milvus:
         self.host = host
         self.port = port
         self.db_name = config.VDB_NAME
-        self.embedding_model = EmbeddingModel()
+
+        channel = grpc.insecure_channel(f"localhost:{config.PALACE_GRPC_SERVER_PORT}")
+        self.embedding_model = palaceService.EmbeddingModelStub(channel)
 
         connections.connect(host=self.host, port=self.port)
         if not self.db_exists():
@@ -77,14 +85,20 @@ class Milvus:
     def insert(self, user: str, data: MilvusInsertData):
         embedded_data = self._get_text_embedding(data)
         collection_name = self.collection(user)
+        logger.log.info(f"Insert into {collection_name}: {data}")
         self.client.insert(collection_name=collection_name, data=embedded_data)
 
     def _get_text_embedding(self, data: MilvusInsertData):
         embedded_data = []
+
         for id, input in zip(data.ids, data.inputs):
+            embeddings: pbPalace.Embeddings = self.embedding_model.CalculateEmbeddings(
+                pbPalace.Text(text=input)
+            )
+
             new_item = {
                 "id": id,
-                "vector": self.embedding_model.embeddings(input),
+                "vector": list(embeddings.embedding),
             }
             embedded_data.append(new_item)
         return embedded_data

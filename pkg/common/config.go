@@ -14,7 +14,8 @@ var Log = NewLoggger()
 // developer config
 type Config struct {
 	// grpc server
-	GRPC_SERVER_PORT int
+	PALACE_GRPC_SERVER_PORT int
+	VDB_GRPC_SERVER_PORT    int
 
 	// database
 	DB_USER              string
@@ -55,7 +56,8 @@ func NewConfig() *Config {
 
 	Log.Info().Msgf("using env file %s", envFile)
 
-	grpcServerPort, _ := strconv.Atoi(os.Getenv("PYTHON_GRPC_SERVER_PORT"))
+	palaceGrpcServerPort, _ := strconv.Atoi(os.Getenv("PALACE_GRPC_SERVER_PORT"))
+	vdbGrpcServerPort, _ := strconv.Atoi(os.Getenv("VDB_GRPC_SERVER_PORT"))
 
 	dbUser := os.Getenv("DB_USER")
 	dbPass := os.Getenv("DB_PASS")
@@ -72,7 +74,8 @@ func NewConfig() *Config {
 	vdbPort, _ := strconv.Atoi(os.Getenv("VDB_PORT"))
 
 	return &Config{
-		GRPC_SERVER_PORT: grpcServerPort,
+		PALACE_GRPC_SERVER_PORT: palaceGrpcServerPort,
+		VDB_GRPC_SERVER_PORT:    vdbGrpcServerPort,
 
 		DB_USER:              dbUser,
 		DB_PASS:              dbPass,

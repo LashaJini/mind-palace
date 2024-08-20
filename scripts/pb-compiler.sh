@@ -20,6 +20,7 @@ fi
 mkdir pkg/rpc/client/gen -p
 
 protoc \
+	--proto_path=./proto \
 	--go_out=./pkg/rpc/client/gen --go_opt=paths=source_relative \
 	--go-grpc_out=./pkg/rpc/client/gen --go-grpc_opt=paths=source_relative \
 	proto/*.proto

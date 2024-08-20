@@ -37,7 +37,8 @@ func Add(file string) error {
 		return err
 	}
 
-	rpcClient := rpcclient.NewClient(cfg, userCfg)
+	addonClient := rpcclient.NewAddonClient(cfg)
+	vdbGrpcClient := rpcclient.NewVDBGrpcClient(cfg, userCfg)
 	db := database.InitDB(cfg)
 	db.SetSchema(db.ConstructSchema(currentUser))
 
@@ -50,7 +51,7 @@ func Add(file string) error {
 
 	var wg sync.WaitGroup
 
-	addonResultC, _ := rpcClient.Add(ctx, dst)
+	addonResultC, _ := addonClient.Add(ctx, dst, userCfg.Steps())
 	for addonResult := range addonResultC {
 		addons, err := addons.ToAddons(addonResult)
 		if err != nil {
@@ -62,7 +63,7 @@ func Add(file string) error {
 
 			go func() {
 				defer wg.Done()
-				err := addon.Action(db, memoryIDC, rpcClient, maxBufSize, resourceID, resourcePath)
+				err := addon.Action(db, memoryIDC, vdbGrpcClient, maxBufSize, resourceID, resourcePath)
 				errors.On(err).Warn()
 			}()
 		}

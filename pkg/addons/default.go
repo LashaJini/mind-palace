@@ -16,7 +16,7 @@ type DefaultAddon struct {
 }
 
 func (d *DefaultAddon) Action(db *database.MindPalaceDB, memoryIDC chan uuid.UUID, args ...any) (err error) {
-	rpcClient := args[0].(*rpcclient.Client)
+	vdbGrpcClient := args[0].(*rpcclient.VDBGrpcClient)
 	maxBufSize := args[1].(int)
 	resourceID := args[2].(uuid.UUID)
 	resourcePath := args[3].(string)
@@ -42,7 +42,7 @@ func (d *DefaultAddon) Action(db *database.MindPalaceDB, memoryIDC chan uuid.UUI
 		errors.ExitWithMsg("reason: server didn't send default addon response")
 	}
 
-	err = rpcClient.VDBInsert(ctx, []uuid.UUID{memoryID}, []string{defaultResponse})
+	err = vdbGrpcClient.Insert(ctx, []uuid.UUID{memoryID}, []string{defaultResponse})
 	errors.On(err).Panic()
 
 	err = tx.Commit()

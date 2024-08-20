@@ -1,28 +1,22 @@
 from typing import List
-
 from llama_index.core import SimpleDirectoryReader
 
 from pkg.rpc.server import logger
 from pkg.rpc.server.addons.factory import AddonFactory
 from pkg.rpc.server.addons.joined import JoinedAddons
-from pkg.rpc.server.config import ServerConfig
-from pkg.rpc.server.prompts.joined import JoinedPrompts
+from pkg.rpc.server.llm import CustomLlamaCPP
+import pkg.rpc.server.prompts.joined as joined_prompts
 from pkg.rpc.server.prompts.abstract import Prompts
 from pkg.rpc.server.prompts.factory import PromptsFactory
-from pkg.rpc.server.vdb import Milvus, MilvusInsertData
-from pkg.rpc.server.llm import CustomLlamaCPP
 
 import pkg.rpc.server.gen.Palace_pb2 as pbPalace
+import pkg.rpc.server.gen.SharedTypes_pb2 as pbShared
 
 
-class MindPalaceService:
-    def __init__(
-        self, llm: CustomLlamaCPP, client: Milvus, server_config: ServerConfig
-    ):
+class AddonService:
+    def __init__(self, llm: CustomLlamaCPP, verbose=False):
         self.llm = llm
-        self.server_config = server_config
-
-        self.client = client
+        self.verbose = verbose
 
     def ApplyAddon(self, request: pbPalace.JoinedAddons, context):
         try:
@@ -54,10 +48,10 @@ class MindPalaceService:
                         llm=self.llm,
                         instructions=", ".join([s for s in instructions if s]),
                         format="\n".join([s for s in formats if s]),
-                        verbose=self.server_config.verbose,
+                        verbose=self.verbose,
                     )
-                    .finalize(verbose=self.server_config.verbose)
-                    .result(verbose=self.server_config.verbose)
+                    .finalize(verbose=self.verbose)
+                    .result(verbose=self.verbose)
                 )
 
             # TODO: abstract away
@@ -67,11 +61,11 @@ class MindPalaceService:
                 .prepare_input(user_input=input)
                 .apply(
                     llm=self.llm,
-                    verbose=self.server_config.verbose,
+                    verbose=self.verbose,
                     max_keywords=10,
                 )
-                .finalize(verbose=self.server_config.verbose)
-                .result(verbose=self.server_config.verbose)
+                .finalize(verbose=self.verbose)
+                .result(verbose=self.verbose)
             )
         except Exception as e:
             logger.log.exception(e)
@@ -83,10 +77,15 @@ class MindPalaceService:
             input_text = documents[0].text
 
             input_text_token_count = self.llm.token_size(input_text)
-            sys_prompt_token_count = Prompts.system_prompt_token_count(self.llm)  # ok
-            joined_prompt_token_count = JoinedPrompts().standalone_template_token_count(
-                self.llm
+            sys_prompt_token_count = self.llm.token_size(Prompts.sys_prompt)
+            joined_prompt_token_count = self.llm.token_size(
+                joined_prompts.DEFAULT_JOINED_TMPL
             )
+            token_decrements = [
+                input_text_token_count,
+                sys_prompt_token_count,
+                joined_prompt_token_count,
+            ]
 
             addons_tokens = []
             for step in request.steps:
@@ -99,12 +98,7 @@ class MindPalaceService:
 
             logger.log.debug(f"> addons + approx tokens required: {addons_tokens}")
 
-            available_tokens = self.llm.calculate_available_tokens(
-                input_text_token_count,
-                sys_prompt_token_count,
-                joined_prompt_token_count,
-                self.server_config.verbose,
-            )
+            available_tokens = self.llm.calculate_available_tokens(token_decrements)
             tokens_left = available_tokens
 
             addons: List[pbPalace.JoinedAddon] = []
@@ -148,27 +142,5 @@ class MindPalaceService:
         except Exception as e:
             logger.log.exception(e)
 
-    def VDBInsert(self, request, context):
-        self.client.insert(
-            user=request.user,
-            data=MilvusInsertData(ids=request.ids, inputs=request.inputs),
-        )
-        return pbPalace.Empty()
-
     def Ping(self, request, context):
-        return pbPalace.Empty()
-
-    def VDBPing(self, request, context):
-        if not self.client.ping():
-            raise ConnectionError
-        return pbPalace.Empty()
-
-    def VDBDrop(self, request, context):
-        self.client.drop()
-        return pbPalace.Empty()
-
-    def SetConfig(self, request: pbPalace.Config, context):
-        if request.map is not None:
-            self.server_config.update(**request.map)
-
-        return pbPalace.Empty()
+        return pbShared.Empty()
