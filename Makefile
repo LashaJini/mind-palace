@@ -21,14 +21,14 @@ dirs:
 
 start-palace-grpc-server: dirs
 	@echo "> Starting gRPC server with environment $(MP_ENV)"
-	@MP_ENV=$(MP_ENV) poetry run python pkg/rpc/server/server.py &
+	@MP_ENV=$(MP_ENV) poetry run python pkg/rpc/server/palace_server.py &
 
 start-vdb-grpc-server: dirs
 	@echo "> Starting VDB gRPC server with environment $(MP_ENV)"
 	@MP_ENV=$(MP_ENV) poetry run python pkg/rpc/server/vdb_server.py &
 
 stop-palace-grpc-server:
-	@ps aux | grep "python pkg/rpc/server/server.py" | grep -v grep | awk '{print $$2}' | xargs kill
+	@ps aux | grep "python pkg/rpc/server/palace_server.py" | grep -v grep | awk '{print $$2}' | xargs kill
 
 stop-vdb-grpc-server:
 	@ps aux | grep "python pkg/rpc/server/vdb_server.py" | grep -v grep | awk '{print $$2}' | xargs kill
