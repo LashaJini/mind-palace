@@ -2,18 +2,19 @@ import grpc
 import time
 from concurrent import futures
 
+from pkg.rpc.server.llm import CustomLlamaCPP, LLMConfig, EmbeddingModel
 from pkg.rpc.server import config
 from pkg.rpc.server.logger import log
-from pkg.rpc.server.llm import CustomLlamaCPP
-from pkg.rpc.server.services.mindpalace import MindPalaceService
-from pkg.rpc.server.vdb import Milvus
+from pkg.rpc.server.services.addon import AddonService
+from pkg.rpc.server.services.llm import LLMService, EmbeddingModelService
 
 import pkg.rpc.server.gen.Palace_pb2_grpc as grpcPalace
 
-server_config = config.ServerConfig(verbose=True)
+
+llm_config = LLMConfig(verbose=True)
 
 llm = CustomLlamaCPP(
-    server_config=server_config,
+    llm_config=llm_config,
     generate_kwargs={
         "top_k": 1,  # TODO: config
         "stop": ["<|endoftext|>", "</s>"],  # TODO: wtf
@@ -27,20 +28,21 @@ llm = CustomLlamaCPP(
     },
 )
 
-client = Milvus(
-    host=config.VDB_HOST,
-    port=config.VDB_PORT,
-)
+embedding_model = EmbeddingModel()
 
 
 def server():
     server = grpc.server(futures.ThreadPoolExecutor(max_workers=10))
-    grpcPalace.add_PalaceServicer_to_server(
-        MindPalaceService(llm=llm, client=client, server_config=server_config), server
+
+    grpcPalace.add_AddonServicer_to_server(AddonService(llm=llm, verbose=True), server)
+    grpcPalace.add_LLMServicer_to_server(LLMService(llm=llm), server)
+    grpcPalace.add_EmbeddingModelServicer_to_server(
+        EmbeddingModelService(embedding_model=embedding_model), server
     )
-    server.add_insecure_port(f"[::]:{config.PYTHON_GRPC_SERVER_PORT}")
+
+    server.add_insecure_port(f"[::]:{config.PALACE_GRPC_SERVER_PORT}")
     server.start()
-    log.info(f"Server started on port: {config.PYTHON_GRPC_SERVER_PORT}")
+    log.info(f"Server started on port: {config.PALACE_GRPC_SERVER_PORT}")
     # server.wait_for_termination()
     try:
         while True:

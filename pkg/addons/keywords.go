@@ -17,19 +17,12 @@ type KeywordsAddon struct {
 }
 
 func (k *KeywordsAddon) Action(db *database.MindPalaceDB, memoryIDC chan uuid.UUID, args ...any) (err error) {
-	// TODO: wtf is this. Maybe pass struct or something
-	rpcClient := args[0].(*rpcclient.Client)
+	vdbGrpcClient := args[0].(*rpcclient.VDBGrpcClient)
 	keywordsChunks := k.Response.GetKeywordsResponse().List
 
 	ctx := context.Background()
 	tx := database.NewMultiInstruction(ctx, db)
-
-	defer func() {
-		if err != nil {
-			err := tx.Rollback()
-			errors.On(err).PanicWithMsg("failed to rollback")
-		}
-	}()
+	defer revert(tx)
 
 	err = tx.Begin()
 	if err != nil {
@@ -79,7 +72,7 @@ func (k *KeywordsAddon) Action(db *database.MindPalaceDB, memoryIDC chan uuid.UU
 		return fmt.Errorf("failed to insert chunk keyword pairs: %w", err)
 	}
 
-	err = rpcClient.VDBInsert(ctx, chunkIDs, chunks)
+	err = vdbGrpcClient.Insert(ctx, chunkIDs, chunks)
 	errors.On(err).Panic()
 
 	err = tx.Commit()

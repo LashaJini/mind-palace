@@ -1,25 +1,17 @@
-import os
 from pathlib import Path
 from typing import (
-    Callable,
     ClassVar,
     List,
-    Optional,
 )
+from llama_index.core.program import LLMTextCompletionProgram
 from llama_index.core.base.embeddings.base import Embedding
 from llama_index.core.base.llms.types import LLMMetadata
-from llama_index.core.tools import ToolMetadata
-from llama_index.core.types import BaseOutputParser
-from llama_index.llms.openai.base import FunctionCallingLLM
 import numpy as np
 
 from llama_index.embeddings.huggingface import HuggingFaceEmbedding
 from llama_index.llms.llama_cpp import LlamaCPP
-from pydantic import BaseModel, PrivateAttr
 
 from pkg.rpc.server import logger
-from pkg.rpc.server.config import ServerConfig
-from pkg.rpc.server.output_parsers.abstract import CustomBaseModel
 
 # TODO: read from config
 user_home = str(Path.home())
@@ -29,48 +21,68 @@ model_path = (
 )
 
 
-class CustomLlamaCPP(LlamaCPP, FunctionCallingLLM, extra="allow"):
+class LLMConfig:
     context_size: ClassVar[int] = 8000
-    _context_window: ClassVar[int] = 3900
-    _max_new_tokens: ClassVar[int] = 1024
-    program: Callable = PrivateAttr()
-    tool_choices: List[ToolMetadata] = PrivateAttr()
-    _output_parser: Optional[BaseOutputParser] = PrivateAttr()
-    output_cls: BaseModel = PrivateAttr()
+    context_window: ClassVar[int] = 3900
+    max_new_tokens: ClassVar[int] = 1024
 
-    def __init__(self, server_config: ServerConfig, **kwargs):
+    def __init__(self, verbose=False, **kwargs):
+        self.verbose = verbose
+        self.kwargs = kwargs
+
+    def update(self, **kwargs):
+        if len(kwargs.keys()):
+            self.kwargs.update(kwargs)
+        else:
+            self.kwargs = {}
+
+    def __getattr__(self, name):
+        if name in self.kwargs:
+            return self.kwargs[name]
+        return None
+
+    def __setattr__(self, name, value):
+        if name in ["verbose", "kwargs"]:
+            super().__setattr__(name, value)
+        else:
+            self.kwargs[name] = value
+
+    def __repr__(self):
+        return f"ServerConfig(verbose={self.verbose}, kwargs={self.kwargs})"
+
+
+class CustomLlamaCPP(LlamaCPP, extra="allow"):
+    def __init__(self, llm_config: LLMConfig, **kwargs):
         super().__init__(
             model_path=model_path,
             temperature=0.1,
-            max_new_tokens=CustomLlamaCPP._max_new_tokens,
-            context_window=CustomLlamaCPP._context_window,
-            verbose=server_config.verbose,
+            max_new_tokens=llm_config.max_new_tokens,
+            context_window=llm_config.context_window,
+            verbose=llm_config.verbose,
             **kwargs,
         )
-        self._output_parser = None
-        self.server_config = server_config
+        self.llm_config = llm_config
 
     @property
     def metadata(self) -> LLMMetadata:
         return LLMMetadata(
-            context_window=CustomLlamaCPP._context_window,
-            num_output=CustomLlamaCPP._max_new_tokens,
+            context_window=self.llm_config.context_window,
+            num_output=self.llm_config.max_new_tokens,
             is_chat_model=False,
             is_function_calling_model=True,
             model_name="CustomLlamaCPP",
         )
 
-    def set_output_cls(self, output_cls: CustomBaseModel):
-        self.output_cls = output_cls
+    def text_completion_program(self, parser, output_cls, prompt):
+        program = LLMTextCompletionProgram(
+            llm=self,
+            output_parser=parser,
+            output_cls=output_cls,
+            prompt=prompt,
+            verbose=self.llm_config.verbose,
+        )
 
-    def set_output_parser(self, output_parser: BaseOutputParser):
-        self._output_parser = output_parser
-
-    def set_text_completion_program(self, program: Callable):
-        self.program = program
-
-    def set_tool_choices(self, tool_choices: List[ToolMetadata]):
-        self.tool_choices = tool_choices
+        return program
 
     def encode(self, text: str):
         """get tokens"""
@@ -81,20 +93,12 @@ class CustomLlamaCPP(LlamaCPP, FunctionCallingLLM, extra="allow"):
 
     def calculate_available_tokens(
         self,
-        input_text_token_count: int,
-        sys_prompt_token_count: int,
-        joined_prompt_token_count: int,
-        verbose=False,
+        decrements: List[int],
     ):
         available_tokens = (
-            int(self.server_config.available_tokens)
-            if self.server_config.available_tokens is not None
-            else (
-                CustomLlamaCPP.context_size
-                - input_text_token_count
-                - sys_prompt_token_count
-                - joined_prompt_token_count
-            )
+            int(self.llm_config.available_tokens)
+            if self.llm_config.available_tokens is not None
+            else (self.llm_config.context_size - sum(decrements))
         )
 
         logger.log.debug(f"> Available tokens: {available_tokens}")
@@ -119,7 +123,7 @@ class EmbeddingModel(HuggingFaceEmbedding):
     def _get_text_embeddings(self, texts: List[str]) -> List[List[float]]:
         return self._embed(texts, prompt_name="text")
 
-    def embeddings(self, text) -> Embedding:
+    def embeddings(self, text: str) -> Embedding:
         sentences = text.split(".")
 
         sentence_embeddings = [

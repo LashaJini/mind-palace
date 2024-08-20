@@ -1,0 +1,17 @@
+syntax = "proto3";
+
+option go_package = "github.com/lashajini/mind-palace/proto";
+
+import "SharedTypes.proto";
+
+service VDB {
+  rpc Insert(VDBRows) returns (SharedTypes.Empty) {}
+  rpc Ping(SharedTypes.Empty) returns (SharedTypes.Empty) {}
+  rpc Drop(SharedTypes.Empty) returns (SharedTypes.Empty) {}
+}
+
+message VDBRows {
+  string user = 1;
+  repeated string ids = 2;
+  repeated string inputs = 3;
+}

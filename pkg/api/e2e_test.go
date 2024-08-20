@@ -23,13 +23,15 @@ import (
 
 type E2ETestSuite struct {
 	suite.Suite
-	client  *rpcclient.Client
-	db      *database.MindPalaceDB
-	user    string
-	cfg     *common.Config
-	userCfg *mpuser.Config
-	schema  string
-	ctx     context.Context
+	addonGrpcClient *rpcclient.AddonClient
+	vdbGrpcClient   *rpcclient.VDBGrpcClient
+	llmGrpcClient   *rpcclient.LLMClient
+	db              *database.MindPalaceDB
+	user            string
+	cfg             *common.Config
+	userCfg         *mpuser.Config
+	schema          string
+	ctx             context.Context
 
 	input_text     []byte
 	input_filepath string
@@ -52,8 +54,11 @@ func (s *E2ETestSuite) SetupSuite() {
 
 	s.cfg = common.NewConfig()
 
-	s.client = rpcclient.NewClient(s.cfg, s.userCfg)
-	err = s.client.Ping(s.ctx)
+	s.addonGrpcClient = rpcclient.NewAddonClient(s.cfg)
+	err = s.addonGrpcClient.Ping(s.ctx)
+	errors.On(err).Panic()
+
+	s.llmGrpcClient = rpcclient.NewLLMClient(s.cfg)
 	errors.On(err).Panic()
 
 	s.db = database.InitDB(s.cfg)
@@ -68,7 +73,8 @@ func (s *E2ETestSuite) SetupSuite() {
 	inMemorySource, ups := database.Up(s.cfg, sqlTemplates)
 	database.CommitMigration(s.cfg, inMemorySource, ups)
 
-	err = s.client.VDBPing(s.ctx)
+	s.vdbGrpcClient = rpcclient.NewVDBGrpcClient(s.cfg, s.userCfg)
+	err = s.vdbGrpcClient.Ping(s.ctx)
 	errors.On(err).Panic()
 
 	f, err := os.CreateTemp("", "mindpalace_test_file")
@@ -165,9 +171,9 @@ func (s *E2ETestSuite) Test_add_with_default_and_keywords_addons_single() {
 	t := s.T()
 	defer s.TearDownSubTest()
 
-	serverCfg := make(map[string]string)
-	serverCfg["available_tokens"] = "1"
-	err := s.client.SetConfig(s.ctx, serverCfg)
+	llmCfg := make(map[string]string)
+	llmCfg["available_tokens"] = "1"
+	err := s.llmGrpcClient.SetConfig(s.ctx, llmCfg)
 	assert.NoError(t, err)
 
 	err = s.userCfg.EnableAddon(&addons.KeywordsAddonInstance)
@@ -195,9 +201,9 @@ func (s *E2ETestSuite) Test_add_with_default_and_summary_addons_single() {
 	t := s.T()
 	defer s.TearDownSubTest()
 
-	serverCfg := make(map[string]string)
-	serverCfg["available_tokens"] = "1"
-	err := s.client.SetConfig(s.ctx, serverCfg)
+	llmCfg := make(map[string]string)
+	llmCfg["available_tokens"] = "1"
+	err := s.llmGrpcClient.SetConfig(s.ctx, llmCfg)
 	assert.NoError(t, err)
 
 	err = s.userCfg.EnableAddon(&addons.SummaryAddonInstance)
@@ -220,9 +226,9 @@ func (s *E2ETestSuite) Test_add_with_all_addons_single() {
 	t := s.T()
 	defer s.TearDownSubTest()
 
-	serverCfg := make(map[string]string)
-	serverCfg["available_tokens"] = "1"
-	err := s.client.SetConfig(s.ctx, serverCfg)
+	llmCfg := make(map[string]string)
+	llmCfg["available_tokens"] = "1"
+	err := s.llmGrpcClient.SetConfig(s.ctx, llmCfg)
 	assert.NoError(t, err)
 
 	err = s.userCfg.EnableAddon(&addons.KeywordsAddonInstance)
@@ -258,7 +264,7 @@ func (s *E2ETestSuite) TearDownSubTest() {
 	s.db.DB().Exec(fmt.Sprintf("DELETE FROM %s.memory", s.schema))
 	s.db.DB().Exec(fmt.Sprintf("DELETE FROM %s.keyword", s.schema))
 
-	s.client.SetConfig(s.ctx, nil)
+	s.llmGrpcClient.SetConfig(s.ctx, nil)
 
 	common.RemoveAllFiles(common.OriginalResourceFullPath(s.user))
 
@@ -281,7 +287,7 @@ func (s *E2ETestSuite) TearDownSuite() {
 	}
 	common.UpdateMindPalaceInfo(common.MindPalaceInfo{CurrentUser: ""})
 
-	err = s.client.VDBDrop(s.ctx)
+	err = s.vdbGrpcClient.Drop(s.ctx)
 	if err != nil {
 		common.Log.Warn().Msgf("could not drop vector database, reason: %v", err)
 	} else {

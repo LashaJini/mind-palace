@@ -1,4 +1,4 @@
-.PHONY: all build start-grpc-server stop-grpc-server deps deps-go deps-py dev-deps deps-llama rpc clean-rpc rpc-py clean-rpc-py test-py test-go test-go-helper test test-e2e cover db vdb graph godoc migrate
+.PHONY: all build start-palace-grpc-server start-vdb-grpc-server stop-palace-grpc-server stop-vdb-grpc-server deps deps-go deps-py dev-deps deps-llama rpc clean-rpc rpc-py clean-rpc-py test-py test-go test-go-helper test test-e2e cover db vdb graph godoc migrate
 
 BUILD_OUT_DIR=bin
 BINARY_NAME=mind-palace
@@ -19,12 +19,19 @@ build: deps rpc
 dirs:
 	@mkdir -p logs
 
-start-grpc-server: dirs
+start-palace-grpc-server: dirs
 	@echo "> Starting gRPC server with environment $(MP_ENV)"
 	@MP_ENV=$(MP_ENV) poetry run python pkg/rpc/server/server.py &
 
-stop-grpc-server:
+start-vdb-grpc-server: dirs
+	@echo "> Starting VDB gRPC server with environment $(MP_ENV)"
+	@MP_ENV=$(MP_ENV) poetry run python pkg/rpc/server/vdb_server.py &
+
+stop-palace-grpc-server:
 	@ps aux | grep "python pkg/rpc/server/server.py" | grep -v grep | awk '{print $$2}' | xargs kill
+
+stop-vdb-grpc-server:
+	@ps aux | grep "python pkg/rpc/server/vdb_server.py" | grep -v grep | awk '{print $$2}' | xargs kill
 
 deps: deps-go deps-py
 
@@ -82,13 +89,15 @@ test: test-go test-py
 	@echo "> Done"
 
 # locally
-test-e2e: start-grpc-server
+test-e2e: start-palace-grpc-server start-vdb-grpc-server
 	@$(MAKE) MP_ENV=test db ARGS=start
 	@echo "> Running e2e tests..."
 	-@ARGS=$${ARGS:="-count=1 -run '^TestE2ETestSuite'"}; \
 		$(MAKE) MP_ENV=test test-go-helper ARGS="$$ARGS"
 	@echo "> Stopping grpc server"
-	@$(MAKE) MP_ENV=test stop-grpc-server
+	@$(MAKE) MP_ENV=test stop-palace-grpc-server
+	@echo "> Stopping vdb grpc server"
+	@$(MAKE) MP_ENV=test stop-vdb-grpc-server
 	@sleep 1 # to avoid connection peer timeout
 	@echo "> Dropping database"
 	@$(MAKE) MP_ENV=test db ARGS=drop

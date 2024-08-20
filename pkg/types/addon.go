@@ -4,7 +4,7 @@ import (
 	"strings"
 
 	"github.com/google/uuid"
-	pb "github.com/lashajini/mind-palace/pkg/rpc/client/gen/proto"
+	pb "github.com/lashajini/mind-palace/pkg/rpc/client/gen"
 	"github.com/lashajini/mind-palace/pkg/storage/database"
 )
 
