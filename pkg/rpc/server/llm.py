@@ -52,22 +52,22 @@ class LLMConfig:
 
 
 class CustomLlamaCPP(LlamaCPP, extra="allow"):
-    def __init__(self, llm_config: LLMConfig, **kwargs):
+    def __init__(self, config: LLMConfig, **kwargs):
         super().__init__(
             model_path=model_path,
             temperature=0.1,
-            max_new_tokens=llm_config.max_new_tokens,
-            context_window=llm_config.context_window,
-            verbose=llm_config.verbose,
+            max_new_tokens=config.max_new_tokens,
+            context_window=config.context_window,
+            verbose=config.verbose,
             **kwargs,
         )
-        self.llm_config = llm_config
+        self.config = config
 
     @property
     def metadata(self) -> LLMMetadata:
         return LLMMetadata(
-            context_window=self.llm_config.context_window,
-            num_output=self.llm_config.max_new_tokens,
+            context_window=self.config.context_window,
+            num_output=self.config.max_new_tokens,
             is_chat_model=False,
             is_function_calling_model=True,
             model_name="CustomLlamaCPP",
@@ -79,7 +79,7 @@ class CustomLlamaCPP(LlamaCPP, extra="allow"):
             output_parser=parser,
             output_cls=output_cls,
             prompt=prompt,
-            verbose=self.llm_config.verbose,
+            verbose=self.config.verbose,
         )
 
         return program
@@ -96,9 +96,9 @@ class CustomLlamaCPP(LlamaCPP, extra="allow"):
         decrements: List[int],
     ):
         available_tokens = (
-            int(self.llm_config.available_tokens)
-            if self.llm_config.available_tokens is not None
-            else (self.llm_config.context_size - sum(decrements))
+            int(self.config.available_tokens)
+            if self.config.available_tokens is not None
+            else (self.config.context_size - sum(decrements))
         )
 
         logger.log.debug(f"> Available tokens: {available_tokens}")

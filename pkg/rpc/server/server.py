@@ -14,7 +14,7 @@ import pkg.rpc.server.gen.Palace_pb2_grpc as grpcPalace
 llm_config = LLMConfig(verbose=True)
 
 llm = CustomLlamaCPP(
-    llm_config=llm_config,
+    config=llm_config,
     generate_kwargs={
         "top_k": 1,  # TODO: config
         "stop": ["<|endoftext|>", "</s>"],  # TODO: wtf

@@ -20,15 +20,15 @@ class LLMService:
 
     def GetConfig(self, request: pbShared.Empty, context) -> pbPalace.LLMConfig:
         return pbPalace.LLMConfig(
-            context_size=self.llm.llm_config.context_size,
-            context_window=self.llm.llm_config.context_window,
-            max_new_tokens=self.llm.llm_config.max_new_tokens,
-            map=self.llm.llm_config.kwargs,
+            context_size=self.llm.config.context_size,
+            context_window=self.llm.config.context_window,
+            max_new_tokens=self.llm.config.max_new_tokens,
+            map=self.llm.config.kwargs,
         )
 
     def SetConfig(self, request: pbPalace.LLMConfig, context):
         if request.map is not None:
-            self.llm.llm_config.update(**request.map)
+            self.llm.config.update(**request.map)
 
         return pbShared.Empty()
 
