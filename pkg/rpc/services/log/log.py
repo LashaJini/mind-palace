@@ -1,3 +1,4 @@
+import json
 import inspect
 import logging
 import os
@@ -52,9 +53,17 @@ class STDFormatter(logging.Formatter):
 
 
 class FileFormatter(logging.Formatter):
+    asctime = "{asctime}"
+    levelname = "{levelname}"
+    servicename = "service={service_name}"
+    caller = "[{caller_filename}:{line}]"
+    msg = "{message}"
+
+    _format = f"{asctime} {levelname} {caller} {servicename} > {msg}"
+
     def format(self, record):
         formatter = logging.Formatter(
-            "{asctime} {levelname} [{caller_filename}:{line}] {message}",
+            self._format,
             style="{",
             datefmt="%H:%M:%S",
         )
@@ -62,9 +71,26 @@ class FileFormatter(logging.Formatter):
         return formatter.format(record)
 
 
+class JSONFormatter(logging.Formatter):
+    def format(self, record):
+        _record = {
+            "time": self.formatTime(record, self.datefmt),
+            "level": record.levelno,
+            "level_name": record.levelname,
+            "message": record.message,
+            "service_name": record.service_name,  # type:ignore
+            "file": record.caller_filename,  # type:ignore
+            "lineno": record.line,  # type:ignore
+        }
+
+        return json.dumps(_record)
+
+
 class Logger(logging.Logger):
     def __init__(self, name=__name__, level=logging.NOTSET):
         super().__init__(name, level)
+
+        self.service_name = "Log"
 
     def makeRecord(
         self,
@@ -86,10 +112,12 @@ class Logger(logging.Logger):
             **_extra,
             "caller_filename": _extra.get("caller_filename", s[0].filename),
             "line": _extra.get("line", s[0].lineno),
-            "service_name": _extra.get("service_name", "Log"),
+            "service_name": _extra.get("service_name", self.service_name),
             "message_color": _extra.get("message_color", ""),
             "message_color_end": _extra.get("message_color_end", ""),
         }
+        # we are basically setting this each time we log something, :shrugging:
+        self.service_name = _extra["service_name"]
 
         record = super().makeRecord(
             name,
@@ -142,8 +170,17 @@ Log.setLevel(config.LOG_LEVEL)
 console_handler = logging.StreamHandler()
 console_handler.setFormatter(STDFormatter())
 Log.addHandler(console_handler)
+Log.debug("Initialized console handler")
 
 if config.MP_ENV != "test":
     file_handler = logging.FileHandler(config.LOG_FILEPATH, mode="a", encoding="utf-8")
     file_handler.setFormatter(FileFormatter())
     Log.addHandler(file_handler)
+    Log.debug("Initialized file handler")
+
+    file_handler = logging.FileHandler(
+        f"{config.LOG_FILEPATH}.json", mode="a", encoding="utf-8"
+    )
+    file_handler.setFormatter(JSONFormatter())
+    Log.addHandler(file_handler)
+    Log.debug("Initialized json handler")

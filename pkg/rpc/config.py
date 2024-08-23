@@ -27,4 +27,4 @@ LOG_LEVEL = (
     int(os.getenv("LOG_LEVEL", 0)) * 10
 )  # logging package log levels are multiple of 10
 
-LOG_FILEPATH = "logs/mindpalace-rpc-server.log"
+LOG_FILEPATH = "logs/mindpalace-grpc-servers.log"
