@@ -28,7 +28,11 @@ func NewLogClient(cfg *common.Config, serviceName string) *LogClient {
 	return &LogClient{client, serviceName}
 }
 
-func (c *LogClient) request(msg, filename, logType string, id uuid.UUID, line int) pb.LogRequest {
+func (c *LogClient) request(logType string, id uuid.UUID, caller_incr int, format string, v ...interface{}) pb.LogRequest {
+	// caller [2 + caller_incr] -> log type (Info, Debug, ...) [1] -> request [0]
+	_, filename, line, _ := runtime.Caller(2 + caller_incr)
+
+	msg := fmt.Sprintf(format, v...)
 	return pb.LogRequest{
 		Msg:         msg,
 		Filename:    filename,
@@ -39,66 +43,44 @@ func (c *LogClient) request(msg, filename, logType string, id uuid.UUID, line in
 	}
 }
 
-func (c *LogClient) Debug(ctx context.Context, format string, v ...interface{}) error {
-	_, filename, line, _ := runtime.Caller(1)
-	msg := fmt.Sprintf(format, v...)
-	request := c.request(msg, filename, "debug", uuid.Nil, line)
+func (c *LogClient) Debug(ctx context.Context, format string, v ...interface{}) (*pb.Empty, error) {
+	request := c.request("debug", uuid.Nil, 0, format, v...)
 
-	_, err := c.client.Message(ctx, &request)
-
-	return err
+	return c.client.Message(ctx, &request)
 }
 
-func (c *LogClient) Warn(ctx context.Context, format string, v ...interface{}) error {
-	_, filename, line, _ := runtime.Caller(1)
-	msg := fmt.Sprintf(format, v...)
-	request := c.request(msg, filename, "warning", uuid.Nil, line)
+func (c *LogClient) Warn(ctx context.Context, format string, v ...interface{}) (*pb.Empty, error) {
+	request := c.request("warning", uuid.Nil, 0, format, v...)
 
-	_, err := c.client.Message(ctx, &request)
-
-	return err
+	return c.client.Message(ctx, &request)
 }
 
-func (c *LogClient) Error(ctx context.Context, err error, format string, v ...interface{}) error {
-	_, filename, line, _ := runtime.Caller(1)
-	msg := fmt.Sprintf(format, v...)
+func (c *LogClient) Error(ctx context.Context, err error, format string, v ...interface{}) (*pb.Empty, error) {
+	_format := format
 	if err != nil {
-		msg = fmt.Sprintf("%s: %s", err.Error(), msg)
+		_format = fmt.Sprintf("%s: %s", err.Error(), _format)
 	}
-	request := c.request(msg, filename, "error", uuid.Nil, line)
+	request := c.request("error", uuid.Nil, 0, _format, v...)
 
-	_, _err := c.client.Message(ctx, &request)
-
-	return _err
+	return c.client.Message(ctx, &request)
 }
 
-func (c *LogClient) Info(ctx context.Context, format string, v ...interface{}) error {
-	_, filename, line, _ := runtime.Caller(1)
-	msg := fmt.Sprintf(format, v...)
-	request := c.request(msg, filename, "info", uuid.Nil, line)
+func (c *LogClient) Info(ctx context.Context, format string, v ...interface{}) (*pb.Empty, error) {
+	request := c.request("info", uuid.Nil, 0, format, v...)
 
-	_, err := c.client.Message(ctx, &request)
-
-	return err
+	return c.client.Message(ctx, &request)
 }
 
-func (c *LogClient) DBInfo(ctx context.Context, id uuid.UUID, format string, v ...interface{}) error {
-	_, filename, line, _ := runtime.Caller(1)
-	msg := fmt.Sprintf(format, v...)
-	request := c.request(msg, filename, "db_info", id, line)
+func (c *LogClient) DBInfo(ctx context.Context, id uuid.UUID, format string, v ...interface{}) (*pb.Empty, error) {
+	request := c.request("db_info", id, 0, format, v...)
 
-	_, err := c.client.Message(ctx, &request)
-
-	return err
+	return c.client.Message(ctx, &request)
 }
 
-// this should be called only from inside MultiInstruction's methods, because the caller stack is set to 2
-func (c *LogClient) TXInfo(ctx context.Context, id uuid.UUID, format string, v ...interface{}) error {
-	_, filename, line, _ := runtime.Caller(2)
-	msg := fmt.Sprintf(format, v...)
-	request := c.request(msg, filename, "tx_info", id, line)
+// this is only called from inside MultiInstruction's methods,
+// that's why the request's caller_inc is set to 1
+func (c *LogClient) TXInfo(ctx context.Context, id uuid.UUID, format string, v ...interface{}) (*pb.Empty, error) {
+	request := c.request("tx_info", id, 1, format, v...)
 
-	_, err := c.client.Message(ctx, &request)
-
-	return err
+	return c.client.Message(ctx, &request)
 }
