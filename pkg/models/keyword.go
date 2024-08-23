@@ -1,11 +1,12 @@
 package models
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"time"
 
-	"github.com/lashajini/mind-palace/pkg/common"
+	"github.com/lashajini/mind-palace/pkg/rpc/loggers"
 	"github.com/lashajini/mind-palace/pkg/storage/database"
 )
 
@@ -27,6 +28,7 @@ func InsertManyKeywordsTx(tx *database.MultiInstruction, keywords []string) (map
 	if len(keywords) == 0 {
 		return nil, errors.New("reason: empty keywords")
 	}
+	ctx := context.Background()
 
 	joinedColumns, _ := joinColumns(keywordColumns, "id")
 
@@ -52,7 +54,7 @@ func InsertManyKeywordsTx(tx *database.MultiInstruction, keywords []string) (map
 		values,
 		fmt.Sprintf(`ON CONFLICT (name) DO UPDATE SET updated_at = %d RETURNING name, id`, now),
 	)
-	common.Log.DBInfo(tx.ID, q)
+	loggers.Log.DBInfo(ctx, tx.ID, q)
 
 	rows, err := tx.Query(q)
 	if err != nil {

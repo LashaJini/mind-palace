@@ -7,7 +7,7 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/lashajini/mind-palace/pkg/common"
-	pb "github.com/lashajini/mind-palace/pkg/rpc/client/gen"
+	pb "github.com/lashajini/mind-palace/pkg/rpc/gen"
 	"github.com/lashajini/mind-palace/pkg/storage/database"
 	"github.com/lashajini/mind-palace/pkg/types"
 	"github.com/stretchr/testify/assert"

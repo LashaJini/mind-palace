@@ -6,7 +6,7 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/lashajini/mind-palace/pkg/models"
-	rpcclient "github.com/lashajini/mind-palace/pkg/rpc/client"
+	vdbrpc "github.com/lashajini/mind-palace/pkg/rpc/vdb"
 	"github.com/lashajini/mind-palace/pkg/storage/database"
 	"github.com/lashajini/mind-palace/pkg/types"
 )
@@ -18,7 +18,7 @@ type SummaryAddon struct {
 func (s *SummaryAddon) Action(db *database.MindPalaceDB, memoryIDC chan uuid.UUID, args ...any) (err error) {
 	summary := s.Response.GetSummaryResponse().Summary
 
-	vdbGrpcClient := args[0].(*rpcclient.VDBGrpcClient)
+	vdbGrpcClient := args[0].(*vdbrpc.VDBGrpcClient)
 
 	ctx := context.Background()
 	tx := database.NewMultiInstruction(ctx, db)

@@ -1,10 +1,12 @@
 package mpuser
 
 import (
+	"context"
 	"encoding/json"
 	"os"
 
 	"github.com/lashajini/mind-palace/pkg/common"
+	"github.com/lashajini/mind-palace/pkg/rpc/loggers"
 	"github.com/lashajini/mind-palace/pkg/types"
 )
 
@@ -17,6 +19,7 @@ func (u *Config) Steps() []string {
 }
 
 func (u *Config) EnableAddon(addon types.IAddon) error {
+	ctx := context.Background()
 	inputTypes := addon.GetInputTypes()
 	var needsUpdate bool
 
@@ -28,7 +31,7 @@ func (u *Config) EnableAddon(addon types.IAddon) error {
 			for _, step := range steps {
 				if step == addon.GetName() {
 					canAppend = false
-					common.Log.Info().Msgf("addon '%s' is already enabled for '%s'.\n", addon.GetName(), types.Text)
+					loggers.Log.Info(ctx, "addon '%s' is already enabled for '%s'.\n", addon.GetName(), types.Text)
 					break
 				}
 			}

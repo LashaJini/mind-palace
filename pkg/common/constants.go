@@ -27,20 +27,6 @@ const (
 )
 
 const (
-	LOG_LEVEL   = "LOG_LEVEL"
-	LEVEL_PANIC = 5
-	LEVEL_FATAL = 4
-	LEVEL_ERROR = 3
-	LEVEL_WARN  = 2
-	LEVEL_INFO  = 1
-	LEVEL_DEBUG = 0
-	LEVEL_TRACE = -1
-
-	COLOR_RESET  = "\033[0m"
-	COLOR_YELLOW = "\033[33m"
-)
-
-const (
 	DB_DEFAULT_SCHEMA = "public"
 	DB_SCHEMA_SUFFIX  = "_mindpalace"
 )

@@ -2,6 +2,7 @@ package database
 
 import (
 	"bytes"
+	"context"
 	"io"
 	"os"
 	"path/filepath"
@@ -12,6 +13,7 @@ import (
 	"github.com/golang-migrate/migrate/v4/source"
 	"github.com/lashajini/mind-palace/pkg/common"
 	"github.com/lashajini/mind-palace/pkg/errors"
+	"github.com/lashajini/mind-palace/pkg/rpc/loggers"
 )
 
 type InMemorySource struct {
@@ -73,6 +75,7 @@ func NewInMemorySource() *InMemorySource {
 // TODO: when ups (steps) exceeds total number of migrations (or total steps - last migration version),
 // calculate the difference and apply
 func Up(cfg *common.Config, sqlTemplates []common.SQLTemplate) (*InMemorySource, int) {
+	ctx := context.Background()
 	inMemorySource := NewInMemorySource()
 	ups := 0
 
@@ -104,7 +107,7 @@ func Up(cfg *common.Config, sqlTemplates []common.SQLTemplate) (*InMemorySource,
 
 	errors.On(err).Exit()
 
-	common.Log.Info().Msgf("total 'up' migrations found: %d", ups)
+	loggers.Log.Info(ctx, "total 'up' migrations found: %d", ups)
 
 	return inMemorySource, ups
 }
@@ -156,12 +159,13 @@ func CommitMigration(cfg *common.Config, inMemorySource *InMemorySource, steps i
 }
 
 func migrationSteps(m *migrate.Migrate, steps int) {
+	ctx := context.Background()
 	err := m.Steps(steps)
 	if err == migrate.ErrNoChange {
-		common.Log.Warn().Msgf("no migrations applied. %s", err)
+		loggers.Log.Warn(ctx, "no migrations applied. %s", err)
 		return
 	}
 	errors.On(err).Exit()
 
-	common.Log.Info().Msg("successfully migrated")
+	loggers.Log.Info(ctx, "successfully migrated")
 }

@@ -1,4 +1,4 @@
-.PHONY: all build start-palace-grpc-server start-vdb-grpc-server stop-palace-grpc-server stop-vdb-grpc-server deps deps-go deps-py dev-deps deps-llama rpc clean-rpc rpc-py clean-rpc-py test-py test-go test-go-helper test test-e2e cover db vdb graph godoc migrate
+.PHONY: all build start-palace-grpc-server start-vdb-grpc-server start-log-grpc-server stop-palace-grpc-server stop-vdb-grpc-server stop-log-grpc-server deps deps-go deps-py dev-deps deps-llama rpc clean-rpc test-py test-go test-go-helper test test-e2e cover db vdb graph godoc migrate
 
 BUILD_OUT_DIR=bin
 BINARY_NAME=mind-palace
@@ -7,7 +7,12 @@ SOURCE_DIR=.
 .EXPORT_ALL_VARIABLES:
 PROJECT_ROOT=$(shell pwd)
 MP_ENV ?= dev# prod,test,dev
-LOG_LEVEL ?= 0
+
+# https://stackoverflow.com/a/70663753/14414945
+ifneq (,$(wildcard ./.env.$(MP_ENV)))
+    include .env.$(MP_ENV)
+    export
+endif
 
 all: build
 
@@ -20,18 +25,28 @@ dirs:
 	@mkdir -p logs
 
 start-palace-grpc-server: dirs
-	@echo "> Starting gRPC server with environment $(MP_ENV)"
-	@MP_ENV=$(MP_ENV) poetry run python pkg/rpc/server/palace_server.py &
+	@echo "> Starting Palace gRPC server with environment $(MP_ENV)"
+	@poetry run python pkg/rpc/palace/server.py
 
 start-vdb-grpc-server: dirs
 	@echo "> Starting VDB gRPC server with environment $(MP_ENV)"
-	@MP_ENV=$(MP_ENV) poetry run python pkg/rpc/server/vdb_server.py &
+	@poetry run python pkg/rpc/vdb/server.py
+
+start-log-grpc-server: dirs
+	@echo "> Starting Log gRPC server with environment $(MP_ENV)"
+	@poetry run python pkg/rpc/log/server.py
 
 stop-palace-grpc-server:
-	@ps aux | grep "python pkg/rpc/server/palace_server.py" | grep -v grep | awk '{print $$2}' | xargs kill
+	@echo "> Stopping Palace gRPC server with environment $(MP_ENV)"
+	@ps aux | grep "python pkg/rpc/palace/server.py" | grep -v grep | awk '{print $$2}' | xargs kill
 
 stop-vdb-grpc-server:
-	@ps aux | grep "python pkg/rpc/server/vdb_server.py" | grep -v grep | awk '{print $$2}' | xargs kill
+	@echo "> Stopping VDB gRPC server with environment $(MP_ENV)"
+	@ps aux | grep "python pkg/rpc/vdb/server.py" | grep -v grep | awk '{print $$2}' | xargs kill
+
+stop-log-grpc-server:
+	@echo "> Stopping Log gRPC server with environment $(MP_ENV)"
+	@ps aux | grep "python pkg/rpc/log/server.py" | grep -v grep | awk '{print $$2}' | xargs kill
 
 deps: deps-go deps-py
 
@@ -63,15 +78,7 @@ rpc:
 
 clean-rpc:
 	@echo "> Removing compiled '.proto' files..."
-	@rm -rf ./pkg/rpc/client/gen ./pkg/rpc/server/gen
-
-rpc-py:
-	@echo "> Compiling '.proto' files..."
-	@bash ./scripts/pb-compiler-py.sh
-
-clean-rpc-py:
-	@echo "> Removing compiled '.proto' python files..."
-	@rm -rf ./pkg/rpc/server/gen
+	@rm -rf ./pkg/rpc/gen
 
 # -s don't capture stdout
 # -k <test_name>
@@ -85,23 +92,26 @@ test-go:
 test-go-helper:
 	MP_ENV=test LOG_LEVEL=$(LOG_LEVEL) go test -v $(shell go list ./pkg/... ./cli/...) $(ARGS)
 
-test: test-go test-py
-	@echo "> Done"
+test:
+	@$(MAKE) MP_ENV=test start-log-grpc-server &
+	-@$(MAKE) test-go
+	-@$(MAKE) test-py
+	@$(MAKE) MP_ENV=test stop-log-grpc-server
 
 # locally
-test-e2e: start-palace-grpc-server start-vdb-grpc-server
+test-e2e:
 	@$(MAKE) MP_ENV=test db ARGS=start
+	@$(MAKE) MP_ENV=test start-log-grpc-server &
+	@$(MAKE) MP_ENV=test start-palace-grpc-server &
+	@$(MAKE) MP_ENV=test start-vdb-grpc-server &
 	@echo "> Running e2e tests..."
 	-@ARGS=$${ARGS:="-count=1 -run '^TestE2ETestSuite'"}; \
 		$(MAKE) MP_ENV=test test-go-helper ARGS="$$ARGS"
-	@echo "> Stopping grpc server"
 	@$(MAKE) MP_ENV=test stop-palace-grpc-server
-	@echo "> Stopping vdb grpc server"
 	@$(MAKE) MP_ENV=test stop-vdb-grpc-server
+	@$(MAKE) MP_ENV=test stop-log-grpc-server
 	@sleep 1 # to avoid connection peer timeout
-	@echo "> Dropping database"
 	@$(MAKE) MP_ENV=test db ARGS=drop
-	@echo "> Stopping database"
 	@$(MAKE) MP_ENV=test db ARGS=stop
 
 cover: dev-deps
@@ -118,8 +128,8 @@ migrate:
 
 graph:
 	@godepgraph -p \
-		google,github.com/google,github.com/lib,github.com/joho,github.com/spf13,github.com/rs/zerolog,gopkg \
-		-stoponerror=false \
+		google,github.com/google,github.com/lib,github.com/joho,github.com/spf13,github.com/rs/zerolog,gopkg,github.com/golang-migrate \
+	-stoponerror=false \
 		-s . | dot -Tpng -o godepgraph.png
 	@eog godepgraph.png
 

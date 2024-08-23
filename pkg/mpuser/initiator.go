@@ -1,14 +1,17 @@
 package mpuser
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"os"
 
 	"github.com/lashajini/mind-palace/pkg/common"
+	"github.com/lashajini/mind-palace/pkg/rpc/loggers"
 )
 
 func CreateMindPalace(user string) (*Config, error) {
+	ctx := context.Background()
 	_, exists, err := UserExists(user)
 	if err != nil {
 		return nil, err
@@ -39,6 +42,6 @@ func CreateMindPalace(user string) (*Config, error) {
 		return userConfig, nil
 	}
 
-	common.Log.Warn().Msgf("user %s already exists. No actions taken", user)
+	loggers.Log.Warn(ctx, "user %s already exists. No actions taken", user)
 	return ReadConfig(user)
 }

@@ -5,7 +5,7 @@ import (
 	"database/sql"
 
 	"github.com/google/uuid"
-	"github.com/lashajini/mind-palace/pkg/common"
+	"github.com/lashajini/mind-palace/pkg/rpc/loggers"
 )
 
 type MultiInstruction struct {
@@ -29,7 +29,7 @@ func (t *MultiInstruction) CurrentSchema() string {
 }
 
 func (t *MultiInstruction) Begin() error {
-	common.Log.TXInfo(t.ID, "BEGIN Transaction")
+	loggers.Log.TXInfo(t.ctx, t.ID, "BEGIN Transaction")
 	tx, err := t.db.DB().BeginTx(t.ctx, nil)
 	if err != nil {
 		return err
@@ -39,12 +39,12 @@ func (t *MultiInstruction) Begin() error {
 }
 
 func (t *MultiInstruction) Commit() error {
-	common.Log.TXInfo(t.ID, "COMMIT Transaction")
+	loggers.Log.TXInfo(t.ctx, t.ID, "COMMIT Transaction")
 	return t.tx.Commit()
 }
 
 func (t *MultiInstruction) Rollback() error {
-	common.Log.TXInfo(t.ID, "ROLLBACK Transaction")
+	loggers.Log.TXInfo(t.ctx, t.ID, "ROLLBACK Transaction")
 	return t.tx.Rollback()
 }
 
