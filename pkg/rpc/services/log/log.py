@@ -21,7 +21,7 @@ class STDFormatter(logging.Formatter):
     levelname = "{levelcolor}{levelname}{color_end}"
     servicename = "service={servicecolor}{service_name}{color_end}"
     caller = "[{filenamecolor}{caller_filename}:{line}{color_end}]"
-    msg = "{message}"
+    msg = "{message_color}{message}{message_color_end}"  # enables clients to have custom message color + they won't show up in log files
     _format = f"{asctime} {levelname} {caller} {servicename} {cyan}>{color_reset} {msg}"
 
     FORMATS = {
@@ -54,7 +54,7 @@ class STDFormatter(logging.Formatter):
 class FileFormatter(logging.Formatter):
     def format(self, record):
         formatter = logging.Formatter(
-            "{asctime} {levelname} [{caller_filename}:{lineno}] {message}",
+            "{asctime} {levelname} [{caller_filename}:{line}] {message}",
             style="{",
             datefmt="%H:%M:%S",
         )
@@ -79,13 +79,17 @@ class Logger(logging.Logger):
         extra: Mapping[str, object] | None = None,
         sinfo: str | None = None,
     ) -> logging.LogRecord:
-        if extra is None:
-            s = inspect.stack()
-            extra = {
-                "caller_filename": s[0].filename,
-                "line": s[0].lineno,
-                "service_name": "Log",
-            }
+        _extra = extra or {}
+        s = inspect.stack()
+
+        _extra = {
+            **_extra,
+            "caller_filename": _extra.get("caller_filename", s[0].filename),
+            "line": _extra.get("line", s[0].lineno),
+            "service_name": _extra.get("service_name", "Log"),
+            "message_color": _extra.get("message_color", ""),
+            "message_color_end": _extra.get("message_color_end", ""),
+        }
 
         record = super().makeRecord(
             name,
@@ -96,34 +100,39 @@ class Logger(logging.Logger):
             args,
             exc_info,
             func,
-            extra,
+            _extra,
             sinfo,
         )
 
         record.caller_filename = os.path.join(
-            os.path.basename(os.path.dirname(str(extra["caller_filename"]))),
-            os.path.basename(str(extra["caller_filename"])),
+            os.path.basename(os.path.dirname(str(_extra["caller_filename"]))),
+            os.path.basename(str(_extra["caller_filename"])),
         )
 
         return record
 
-    def db_info(self, msg, *args, **kwargs):
+    def _tx_info(self, msg, *args, **kwargs):
         extra = kwargs.get("extra")
         id = ""
         if extra is not None:
             id = extra.get("id")
 
-        msg = f"{yellow}{msg} (tx={id}){color_reset}"
+        msg = f"{msg} --- (tx={id})"
+        kwargs = {
+            **kwargs,
+            "extra": {
+                **kwargs.get("extra", {}),
+                "message_color": yellow,
+                "message_color_end": color_reset,
+            },
+        }
         super().info(msg, *args, **kwargs)
+
+    def db_info(self, msg, *args, **kwargs):
+        self._tx_info(msg, *args, **kwargs)
 
     def tx_info(self, msg, *args, **kwargs):
-        extra = kwargs.get("extra")
-        id = ""
-        if extra is not None:
-            id = extra.get("id")
-
-        msg = f"{yellow}{msg} --- (tx={id}){color_reset}"
-        super().info(msg, *args, **kwargs)
+        self._tx_info(msg, *args, **kwargs)
 
 
 logging.setLoggerClass(Logger)
