@@ -4,7 +4,7 @@ import (
 	"fmt"
 
 	"github.com/google/uuid"
-	pb "github.com/lashajini/mind-palace/pkg/rpc/client/gen"
+	pb "github.com/lashajini/mind-palace/pkg/rpc/gen"
 	"github.com/lashajini/mind-palace/pkg/storage/database"
 	"github.com/lashajini/mind-palace/pkg/types"
 )

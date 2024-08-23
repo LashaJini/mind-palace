@@ -1,0 +1,18 @@
+syntax = "proto3";
+
+option go_package = "github.com/lashajini/mind-palace/proto";
+
+import "SharedTypes.proto";
+
+service Log {
+  rpc Message (LogRequest) returns (SharedTypes.Empty) {}
+}
+
+message LogRequest {
+  string msg = 1;
+  string filename = 2;
+  int32 line = 3;
+  string service_name = 4;
+  string type = 5; // info, debug, warning, fatal, exception
+  string id = 6;
+}

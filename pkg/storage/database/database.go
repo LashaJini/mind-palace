@@ -1,12 +1,14 @@
 package database
 
 import (
+	"context"
 	"database/sql"
 	"fmt"
 	"time"
 
 	"github.com/lashajini/mind-palace/pkg/common"
 	"github.com/lashajini/mind-palace/pkg/errors"
+	"github.com/lashajini/mind-palace/pkg/rpc/loggers"
 	_ "github.com/lib/pq"
 )
 
@@ -20,8 +22,9 @@ type MindPalaceDB struct {
 }
 
 func InitDB(cfg *common.Config) *MindPalaceDB {
+	ctx := context.Background()
 	connStr := cfg.DBAddr()
-	common.Log.Debug().Msg(connStr)
+	loggers.Log.Debug(ctx, connStr)
 
 	var err error
 	db, err := sql.Open(cfg.DB_DRIVER, connStr)
@@ -30,9 +33,9 @@ func InitDB(cfg *common.Config) *MindPalaceDB {
 	for i := 1; i <= RETRY_COUNT; i++ {
 		err = db.Ping()
 		if err != nil {
-			common.Log.Warn().Msgf("database ping '%d' failed (retrying in 1 sec), reason: %v", i, err)
+			loggers.Log.Warn(ctx, "database ping '%d' failed (retrying in 1 sec), reason: %v", i, err)
 		} else {
-			common.Log.Info().Msgf("database ping '%d' successful", i)
+			loggers.Log.Info(ctx, "database ping '%d' successful", i)
 			err = nil
 			break
 		}
@@ -53,6 +56,7 @@ func (m *MindPalaceDB) DB() *sql.DB {
 }
 
 func (m *MindPalaceDB) ListMPSchemas() ([]string, error) {
+	ctx := context.Background()
 	var results []string
 	q := fmt.Sprintf("SELECT schema_name FROM information_schema.schemata WHERE schema_name LIKE '%%%s' OR schema_name = 'public'", m.cfg.DB_SCHEMA_SUFFIX)
 	rows, err := m.db.Query(q)
@@ -73,18 +77,19 @@ func (m *MindPalaceDB) ListMPSchemas() ([]string, error) {
 		results = append(results, name)
 	}
 
-	common.Log.Info().Msgf("found schemas %v", results)
+	loggers.Log.Info(ctx, "found schemas %v", results)
 	return results, nil
 }
 
 func (m *MindPalaceDB) CreateSchema(user string) (string, error) {
+	ctx := context.Background()
 	schema := m.ConstructSchema(user)
 	_, err := m.db.Exec(fmt.Sprintf("CREATE SCHEMA %s", schema))
 	if err != nil {
 		return "", err
 	}
 
-	common.Log.Info().Msgf("created schema '%s'", schema)
+	loggers.Log.Info(ctx, "created schema '%s'", schema)
 	m.SetSchema(schema)
 	return schema, nil
 }

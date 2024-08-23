@@ -1,11 +1,12 @@
 package models
 
 import (
+	"context"
 	"errors"
 	"time"
 
 	"github.com/google/uuid"
-	"github.com/lashajini/mind-palace/pkg/common"
+	"github.com/lashajini/mind-palace/pkg/rpc/loggers"
 	"github.com/lashajini/mind-palace/pkg/storage/database"
 )
 
@@ -30,6 +31,7 @@ func InsertManyChunksTx(tx *database.MultiInstruction, memoryID uuid.UUID, chunk
 	if len(chunks) == 0 {
 		return nil, errors.New("reason: empty chunks")
 	}
+	ctx := context.Background()
 
 	joinedColumns, _ := joinColumns(chunkColumns, "id")
 
@@ -49,7 +51,7 @@ func InsertManyChunksTx(tx *database.MultiInstruction, memoryID uuid.UUID, chunk
 	values := valuesString(valueTuples)
 
 	q := insertF(tx.CurrentSchema(), database.Table.Chunk, joinedColumns, values, "RETURNING id")
-	common.Log.DBInfo(tx.ID, q)
+	loggers.Log.DBInfo(ctx, tx.ID, q)
 
 	rows, err := tx.Query(q)
 	if err != nil {

@@ -11,7 +11,9 @@ import (
 	"github.com/lashajini/mind-palace/pkg/common"
 	"github.com/lashajini/mind-palace/pkg/errors"
 	"github.com/lashajini/mind-palace/pkg/mpuser"
-	rpcclient "github.com/lashajini/mind-palace/pkg/rpc/client"
+	"github.com/lashajini/mind-palace/pkg/rpc/loggers"
+	addonrpc "github.com/lashajini/mind-palace/pkg/rpc/palace/addon"
+	vdbrpc "github.com/lashajini/mind-palace/pkg/rpc/vdb"
 	"github.com/lashajini/mind-palace/pkg/storage/database"
 )
 
@@ -37,8 +39,8 @@ func Add(file string) error {
 		return err
 	}
 
-	addonClient := rpcclient.NewAddonClient(cfg)
-	vdbGrpcClient := rpcclient.NewVDBGrpcClient(cfg, userCfg)
+	addonClient := addonrpc.NewGrpcClient(cfg)
+	vdbGrpcClient := vdbrpc.NewVDBGrpcClient(cfg, userCfg.Config.User)
 	db := database.InitDB(cfg)
 	db.SetSchema(db.ConstructSchema(currentUser))
 
@@ -96,6 +98,7 @@ func validateFile(file string) {
 }
 
 func getCurrentUser() string {
+	ctx := context.Background()
 	currentUser, err := common.CurrentUser()
 	errors.On(err).Exit()
 
@@ -104,13 +107,14 @@ func getCurrentUser() string {
 		errors.ExitWithMsg(msg)
 	}
 
-	common.Log.Info().Msgf("current user '%s'", currentUser)
+	loggers.Log.Info(ctx, "current user '%s'", currentUser)
 	return currentUser
 }
 
 func revertAdd(dst string) {
 	if r := recover(); r != nil {
-		common.Log.Info().Msg("Reverting...")
+		ctx := context.Background()
+		loggers.Log.Info(ctx, "Reverting...")
 
 		err := os.Remove(dst)
 		errors.On(err).Exit()
@@ -118,6 +122,6 @@ func revertAdd(dst string) {
 		err = os.Remove(dst)
 		errors.On(err).Exit()
 
-		common.Log.Info().Msgf("File removed %s", dst)
+		loggers.Log.Info(ctx, "File removed %s", dst)
 	}
 }

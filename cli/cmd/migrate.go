@@ -1,6 +1,7 @@
 package cli
 
 import (
+	"context"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -9,6 +10,7 @@ import (
 	"github.com/golang-migrate/migrate/v4"
 	"github.com/lashajini/mind-palace/pkg/common"
 	"github.com/lashajini/mind-palace/pkg/errors"
+	"github.com/lashajini/mind-palace/pkg/rpc/loggers"
 	"github.com/lashajini/mind-palace/pkg/storage/database"
 	"github.com/spf13/cobra"
 
@@ -44,6 +46,7 @@ func init() {
 }
 
 func Migrate(cmd *cobra.Command, args []string) {
+	ctx := context.Background()
 	cfg := common.NewConfig()
 	m, err := migrate.New("file://"+cfg.MIGRATIONS_DIR, cfg.DBAddr())
 	errors.On(err).Exit()
@@ -51,7 +54,7 @@ func Migrate(cmd *cobra.Command, args []string) {
 	if VERSION {
 		version, dirty, err := m.Version()
 		errors.On(err).Exit()
-		common.Log.Info().Msgf("version: %d dirty: %t", version, dirty)
+		loggers.Log.Info(ctx, "version: %d dirty: %t", version, dirty)
 
 		return
 	}

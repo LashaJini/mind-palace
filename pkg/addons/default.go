@@ -6,7 +6,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/lashajini/mind-palace/pkg/errors"
 	"github.com/lashajini/mind-palace/pkg/models"
-	rpcclient "github.com/lashajini/mind-palace/pkg/rpc/client"
+	vdbrpc "github.com/lashajini/mind-palace/pkg/rpc/vdb"
 	"github.com/lashajini/mind-palace/pkg/storage/database"
 	"github.com/lashajini/mind-palace/pkg/types"
 )
@@ -16,7 +16,7 @@ type DefaultAddon struct {
 }
 
 func (d *DefaultAddon) Action(db *database.MindPalaceDB, memoryIDC chan uuid.UUID, args ...any) (err error) {
-	vdbGrpcClient := args[0].(*rpcclient.VDBGrpcClient)
+	vdbGrpcClient := args[0].(*vdbrpc.VDBGrpcClient)
 	maxBufSize := args[1].(int)
 	resourceID := args[2].(uuid.UUID)
 	resourcePath := args[3].(string)

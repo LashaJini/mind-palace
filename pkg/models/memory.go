@@ -1,10 +1,11 @@
 package models
 
 import (
+	"context"
 	"time"
 
 	"github.com/google/uuid"
-	"github.com/lashajini/mind-palace/pkg/common"
+	"github.com/lashajini/mind-palace/pkg/rpc/loggers"
 	"github.com/lashajini/mind-palace/pkg/storage/database"
 )
 
@@ -30,6 +31,7 @@ var memoryColumns = []string{
 }
 
 func InsertMemoryTx(tx *database.MultiInstruction, memory *Memory) (uuid.UUID, error) {
+	ctx := context.Background()
 	createdAt := memory.CreatedAt
 	updatedAt := memory.UpdatedAt
 
@@ -42,7 +44,7 @@ func InsertMemoryTx(tx *database.MultiInstruction, memory *Memory) (uuid.UUID, e
 	values := valuesString(valueTuples)
 
 	q := insertF(tx.CurrentSchema(), database.Table.Memory, joinedColumns, values, "RETURNING id")
-	common.Log.DBInfo(tx.ID, q)
+	loggers.Log.DBInfo(ctx, tx.ID, q)
 
 	var id string
 	err := tx.QueryRow(q).Scan(&id)

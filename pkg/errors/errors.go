@@ -1,10 +1,11 @@
 package errors
 
 import (
+	"context"
 	"fmt"
 	"os"
 
-	"github.com/lashajini/mind-palace/pkg/common"
+	"github.com/lashajini/mind-palace/pkg/rpc/loggers"
 )
 
 type _err struct {
@@ -15,37 +16,43 @@ func On(err error) *_err { return &_err{err} }
 
 func (e *_err) Warn() {
 	if e.error != nil {
-		common.Log.Warn().Stack().Err(e.error).Send()
+		ctx := context.Background()
+		loggers.Log.Warn(ctx, e.Error())
 	}
 }
 
 func (e *_err) ExitWithMsgf(format string, a ...any) {
 	if e.error != nil {
-		common.Log.Error().Stack().Err(e.error).Msgf(format, a...)
+		ctx := context.Background()
+		loggers.Log.Error(ctx, e.error, format, a...)
 		os.Exit(1)
 	}
 }
 
 func ExitWithMsgf(format string, a ...any) {
-	common.Log.Error().Stack().Err(nil).Msgf(format, a...)
+	ctx := context.Background()
+	loggers.Log.Error(ctx, nil, format, a...)
 	os.Exit(1)
 }
 
 func (e *_err) ExitWithMsg(msg string) {
 	if e.error != nil {
-		common.Log.Error().Stack().Err(e.error).Msg(msg)
+		ctx := context.Background()
+		loggers.Log.Error(ctx, e.error, msg)
 		os.Exit(1)
 	}
 }
 
 func ExitWithMsg(msg string) {
-	common.Log.Error().Stack().Err(nil).Msg(msg)
+	ctx := context.Background()
+	loggers.Log.Error(ctx, nil, msg)
 	os.Exit(1)
 }
 
 func (e *_err) Exit() {
 	if e.error != nil {
-		common.Log.Error().Stack().Err(e.error).Send()
+		ctx := context.Background()
+		loggers.Log.Error(ctx, e.error, "")
 		os.Exit(1)
 	}
 }

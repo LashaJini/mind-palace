@@ -1,11 +1,12 @@
 package models
 
 import (
+	"context"
 	"errors"
 	"time"
 
 	"github.com/google/uuid"
-	"github.com/lashajini/mind-palace/pkg/common"
+	"github.com/lashajini/mind-palace/pkg/rpc/loggers"
 	"github.com/lashajini/mind-palace/pkg/storage/database"
 )
 
@@ -21,6 +22,7 @@ func InsertSummaryTx(tx *database.MultiInstruction, memoryID, summaryID uuid.UUI
 	if len(summary) == 0 {
 		return errors.New("reason: empty summary")
 	}
+	ctx := context.Background()
 
 	now := time.Now().UTC().Unix()
 	createdAt := now
@@ -33,7 +35,7 @@ func InsertSummaryTx(tx *database.MultiInstruction, memoryID, summaryID uuid.UUI
 	joinedColumns, _ := joinColumns(summaryColumns)
 	values := valuesString(valueTuples)
 	q := insertF(tx.CurrentSchema(), database.Table.Summary, joinedColumns, values, "")
-	common.Log.DBInfo(tx.ID, q)
+	loggers.Log.DBInfo(ctx, tx.ID, q)
 
 	return tx.Exec(q)
 }

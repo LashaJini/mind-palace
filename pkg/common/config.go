@@ -2,6 +2,7 @@ package common
 
 import (
 	"fmt"
+	"log"
 	"os"
 	"path/filepath"
 	"strconv"
@@ -9,13 +10,12 @@ import (
 	"github.com/joho/godotenv"
 )
 
-var Log = NewLoggger()
-
 // developer config
 type Config struct {
 	// grpc server
 	PALACE_GRPC_SERVER_PORT int
 	VDB_GRPC_SERVER_PORT    int
+	LOG_GRPC_SERVER_PORT    int
 
 	// database
 	DB_USER              string
@@ -45,19 +45,16 @@ func NewConfig() *Config {
 
 	err := godotenv.Load(envFile)
 	if err != nil {
-		Log.Error().Stack().Err(err).Send()
-		os.Exit(1)
+		log.Fatal(err)
 	}
 
 	if err != nil {
-		Log.Error().Stack().Err(err).Send()
-		os.Exit(1)
+		log.Fatal(err)
 	}
-
-	Log.Info().Msgf("using env file %s", envFile)
 
 	palaceGrpcServerPort, _ := strconv.Atoi(os.Getenv("PALACE_GRPC_SERVER_PORT"))
 	vdbGrpcServerPort, _ := strconv.Atoi(os.Getenv("VDB_GRPC_SERVER_PORT"))
+	logGrpcServerPort, _ := strconv.Atoi(os.Getenv("LOG_GRPC_SERVER_PORT"))
 
 	dbUser := os.Getenv("DB_USER")
 	dbPass := os.Getenv("DB_PASS")
@@ -76,6 +73,7 @@ func NewConfig() *Config {
 	return &Config{
 		PALACE_GRPC_SERVER_PORT: palaceGrpcServerPort,
 		VDB_GRPC_SERVER_PORT:    vdbGrpcServerPort,
+		LOG_GRPC_SERVER_PORT:    logGrpcServerPort,
 
 		DB_USER:              dbUser,
 		DB_PASS:              dbPass,

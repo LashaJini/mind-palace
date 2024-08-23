@@ -13,7 +13,10 @@ import (
 	"github.com/lashajini/mind-palace/pkg/common"
 	"github.com/lashajini/mind-palace/pkg/errors"
 	"github.com/lashajini/mind-palace/pkg/mpuser"
-	rpcclient "github.com/lashajini/mind-palace/pkg/rpc/client"
+	"github.com/lashajini/mind-palace/pkg/rpc/loggers"
+	addonrpc "github.com/lashajini/mind-palace/pkg/rpc/palace/addon"
+	llmrpc "github.com/lashajini/mind-palace/pkg/rpc/palace/llm"
+	vdbrpc "github.com/lashajini/mind-palace/pkg/rpc/vdb"
 	"github.com/lashajini/mind-palace/pkg/storage/database"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
@@ -23,9 +26,9 @@ import (
 
 type E2ETestSuite struct {
 	suite.Suite
-	addonGrpcClient *rpcclient.AddonClient
-	vdbGrpcClient   *rpcclient.VDBGrpcClient
-	llmGrpcClient   *rpcclient.LLMClient
+	addonGrpcClient *addonrpc.Client
+	vdbGrpcClient   *vdbrpc.VDBGrpcClient
+	llmGrpcClient   *llmrpc.Client
 	db              *database.MindPalaceDB
 	user            string
 	cfg             *common.Config
@@ -54,11 +57,11 @@ func (s *E2ETestSuite) SetupSuite() {
 
 	s.cfg = common.NewConfig()
 
-	s.addonGrpcClient = rpcclient.NewAddonClient(s.cfg)
+	s.addonGrpcClient = addonrpc.NewGrpcClient(s.cfg)
 	err = s.addonGrpcClient.Ping(s.ctx)
 	errors.On(err).Panic()
 
-	s.llmGrpcClient = rpcclient.NewLLMClient(s.cfg)
+	s.llmGrpcClient = llmrpc.NewGrpcClient(s.cfg)
 	errors.On(err).Panic()
 
 	s.db = database.InitDB(s.cfg)
@@ -73,7 +76,7 @@ func (s *E2ETestSuite) SetupSuite() {
 	inMemorySource, ups := database.Up(s.cfg, sqlTemplates)
 	database.CommitMigration(s.cfg, inMemorySource, ups)
 
-	s.vdbGrpcClient = rpcclient.NewVDBGrpcClient(s.cfg, s.userCfg)
+	s.vdbGrpcClient = vdbrpc.NewVDBGrpcClient(s.cfg, s.userCfg.Config.User)
 	err = s.vdbGrpcClient.Ping(s.ctx)
 	errors.On(err).Panic()
 
@@ -85,7 +88,7 @@ func (s *E2ETestSuite) SetupSuite() {
 	errors.On(err).Panic()
 
 	s.input_filepath = f.Name()
-	common.Log.Info().Msgf("temp file created '%s'", s.input_filepath)
+	loggers.Log.Info(s.ctx, "temp file created '%s'", s.input_filepath)
 }
 
 func (s *E2ETestSuite) Test_add_with_default_addon() {
@@ -277,28 +280,28 @@ func (s *E2ETestSuite) TearDownSubTest() {
 // drop vdb
 func (s *E2ETestSuite) TearDownSuite() {
 	var err error
-	common.Log.Info().Msg("starting E2E test teardown")
+	loggers.Log.Info(s.ctx, "starting E2E test teardown")
 
 	err = mpuser.DeleteUser(s.user)
 	if err != nil {
-		common.Log.Warn().Msgf("could not delete user '%s', reason: %v", s.user, err)
+		loggers.Log.Warn(s.ctx, "could not delete user '%s', reason: %v", s.user, err)
 	} else {
-		common.Log.Info().Msgf("user '%s' deleted", s.user)
+		loggers.Log.Info(s.ctx, "user '%s' deleted", s.user)
 	}
 	common.UpdateMindPalaceInfo(common.MindPalaceInfo{CurrentUser: ""})
 
 	err = s.vdbGrpcClient.Drop(s.ctx)
 	if err != nil {
-		common.Log.Warn().Msgf("could not drop vector database, reason: %v", err)
+		loggers.Log.Warn(s.ctx, "could not drop vector database, reason: %v", err)
 	} else {
-		common.Log.Info().Msgf("vector database dropped")
+		loggers.Log.Info(s.ctx, "vector database dropped")
 	}
 
 	err = os.Remove(s.input_filepath)
 	if err != nil {
-		common.Log.Warn().Msgf("could not delete temp file '%s', reason: %v", s.input_filepath, err)
+		loggers.Log.Warn(s.ctx, "could not delete temp file '%s', reason: %v", s.input_filepath, err)
 	} else {
-		common.Log.Info().Msgf("temp file '%s' deleted", s.input_filepath)
+		loggers.Log.Info(s.ctx, "temp file '%s' deleted", s.input_filepath)
 	}
 }
 
@@ -308,7 +311,7 @@ func TestE2ETestSuite(t *testing.T) {
 
 func revert(s *E2ETestSuite) {
 	if r := recover(); r != nil {
-		common.Log.Info().Msgf("RECOVERED FROM: %v", r)
+		loggers.Log.Info(s.ctx, "RECOVERED FROM: %v", r)
 
 		s.TearDownSuite()
 		panic(r)

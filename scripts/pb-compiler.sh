@@ -17,12 +17,12 @@ if ! which protoc-gen-go-grpc >/dev/null; then
 	exit 1
 fi
 
-mkdir pkg/rpc/client/gen -p
+mkdir pkg/rpc/gen -p
 
 protoc \
 	--proto_path=./proto \
-	--go_out=./pkg/rpc/client/gen --go_opt=paths=source_relative \
-	--go-grpc_out=./pkg/rpc/client/gen --go-grpc_opt=paths=source_relative \
+	--go_out=./pkg/rpc/gen --go_opt=paths=source_relative \
+	--go-grpc_out=./pkg/rpc/gen --go-grpc_opt=paths=source_relative \
 	proto/*.proto
 
 bash ./scripts/pb-compiler-py.sh

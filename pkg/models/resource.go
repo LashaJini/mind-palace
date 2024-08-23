@@ -1,10 +1,11 @@
 package models
 
 import (
+	"context"
 	"time"
 
 	"github.com/google/uuid"
-	"github.com/lashajini/mind-palace/pkg/common"
+	"github.com/lashajini/mind-palace/pkg/rpc/loggers"
 	"github.com/lashajini/mind-palace/pkg/storage/database"
 )
 
@@ -37,6 +38,7 @@ var originalResourceColumns = []string{
 }
 
 func InsertResourceTx(tx *database.MultiInstruction, resource *OriginalResource) error {
+	ctx := context.Background()
 	joinedColumns, _ := joinColumns(originalResourceColumns)
 
 	var valueTuples [][]any
@@ -52,7 +54,7 @@ func InsertResourceTx(tx *database.MultiInstruction, resource *OriginalResource)
 	values := valuesString(valueTuples)
 
 	q := insertF(tx.CurrentSchema(), database.Table.OriginalResource, joinedColumns, values, "")
-	common.Log.DBInfo(tx.ID, q)
+	loggers.Log.DBInfo(ctx, tx.ID, q)
 
 	return tx.Exec(q)
 }

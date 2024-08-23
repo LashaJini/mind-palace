@@ -1,8 +1,10 @@
 package models
 
 import (
+	"context"
+
 	"github.com/google/uuid"
-	"github.com/lashajini/mind-palace/pkg/common"
+	"github.com/lashajini/mind-palace/pkg/rpc/loggers"
 	"github.com/lashajini/mind-palace/pkg/storage/database"
 )
 
@@ -17,6 +19,7 @@ var chunkKeywordColumns = []string{
 }
 
 func InsertManyChunksKeywordsTx(tx *database.MultiInstruction, chunkIDKeywordIDsMap map[uuid.UUID][]int) error {
+	ctx := context.Background()
 	joinedColumns, _ := joinColumns(chunkKeywordColumns)
 
 	var valueTuples [][]any
@@ -33,7 +36,7 @@ func InsertManyChunksKeywordsTx(tx *database.MultiInstruction, chunkIDKeywordIDs
 	values := valuesString(valueTuples)
 
 	q := insertF(tx.CurrentSchema(), database.Table.ChunkKeyword, joinedColumns, values, "")
-	common.Log.DBInfo(tx.ID, q)
+	loggers.Log.DBInfo(ctx, tx.ID, q)
 
 	err := tx.Exec(q)
 	if err != nil {
