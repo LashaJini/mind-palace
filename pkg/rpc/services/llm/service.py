@@ -32,6 +32,9 @@ class LLMService:
 
         return pbShared.Empty()
 
+    def Ping(self, request, context):
+        return pbShared.Empty()
+
 
 class EmbeddingModelService:
     def __init__(self, embedding_model: EmbeddingModel):

@@ -34,6 +34,7 @@ class STDFormatter(logging.Formatter):
         logging.WARNING: {"levelcolor": yellow, "levelname": "WRN"},
         logging.ERROR: {"levelcolor": red, "levelname": "ERR"},
         logging.CRITICAL: {"levelcolor": bold_red, "levelname": "CRT"},
+        logging.FATAL: {"levelcolor": bold_red, "levelname": "CRT"},
     }
 
     def format(self, record):

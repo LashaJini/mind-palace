@@ -17,7 +17,7 @@ type KeywordsAddon struct {
 }
 
 func (k *KeywordsAddon) Action(db *database.MindPalaceDB, memoryIDC chan uuid.UUID, args ...any) (err error) {
-	vdbGrpcClient := args[0].(*vdbrpc.VDBGrpcClient)
+	vdbGrpcClient := args[0].(*vdbrpc.Client)
 	keywordsChunks := k.Response.GetKeywordsResponse().List
 
 	ctx := context.Background()

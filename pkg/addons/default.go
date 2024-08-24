@@ -16,7 +16,7 @@ type DefaultAddon struct {
 }
 
 func (d *DefaultAddon) Action(db *database.MindPalaceDB, memoryIDC chan uuid.UUID, args ...any) (err error) {
-	vdbGrpcClient := args[0].(*vdbrpc.VDBGrpcClient)
+	vdbGrpcClient := args[0].(*vdbrpc.Client)
 	maxBufSize := args[1].(int)
 	resourceID := args[2].(uuid.UUID)
 	resourcePath := args[3].(string)

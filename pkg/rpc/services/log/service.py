@@ -15,6 +15,7 @@ class LogService:
             "warning": self.log.warning,
             "exception": self.log.exception,
             "error": self.log.error,
+            "fatal": self.log.fatal,
         }
         self.types = self.callers.keys()
 
@@ -30,4 +31,7 @@ class LogService:
             raise ValueError(f"Unknown type {request.type}")
 
         self.callers[request.type](msg=request.msg, extra=extra)
+        return pbShared.Empty()
+
+    def Ping(self, request, context):
         return pbShared.Empty()

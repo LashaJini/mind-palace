@@ -17,6 +17,8 @@ service LLM {
 
   rpc GetConfig(SharedTypes.Empty) returns (LLMConfig) {}
   rpc SetConfig(LLMConfig) returns (SharedTypes.Empty) {}
+
+  rpc Ping(SharedTypes.Empty) returns (SharedTypes.Empty) {}
 }
 
 service EmbeddingModel {

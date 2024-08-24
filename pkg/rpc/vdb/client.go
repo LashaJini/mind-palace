@@ -2,37 +2,43 @@ package vdbrpc
 
 import (
 	"context"
-	"fmt"
-	"time"
 
 	"github.com/google/uuid"
 	"github.com/lashajini/mind-palace/pkg/common"
+	rpcclient "github.com/lashajini/mind-palace/pkg/rpc"
 	pb "github.com/lashajini/mind-palace/pkg/rpc/gen"
+	"github.com/lashajini/mind-palace/pkg/rpc/log"
 	"github.com/lashajini/mind-palace/pkg/rpc/loggers"
-	"google.golang.org/grpc"
-	"google.golang.org/grpc/credentials/insecure"
 )
 
 const RETRY_COUNT = 15
 
-type VDBGrpcClient struct {
-	client pb.VDBClient
+type Client struct {
+	*rpcclient.Client[pb.VDBClient, *log.Client]
 
 	user string
 }
 
-func NewVDBGrpcClient(cfg *common.Config, user string) *VDBGrpcClient {
-	addr := fmt.Sprintf("localhost:%d", cfg.VDB_GRPC_SERVER_PORT)
-	var opts []grpc.DialOption
-	opts = append(opts, grpc.WithTransportCredentials(insecure.NewCredentials()))
+func NewGrpcClient(cfg *common.Config, user string) *Client {
+	client := rpcclient.NewGrpcClient(
+		cfg.VDB_GRPC_SERVER_PORT,
+		"VDB",
+		RETRY_COUNT,
+		pb.NewVDBClient,
+		loggers.Log,
+	)
+	c := &Client{client, user}
 
-	conn, _ := grpc.NewClient(addr, opts...)
-	client := pb.NewVDBClient(conn)
+	ctx := context.Background()
+	if err := c.Ping(ctx); err != nil {
+		c.Logger.Fatal(ctx, err, "")
+		panic(err)
+	}
 
-	return &VDBGrpcClient{client, user}
+	return c
 }
 
-func (c *VDBGrpcClient) Insert(ctx context.Context, ids []uuid.UUID, outputs []string) error {
+func (c *Client) Insert(ctx context.Context, ids []uuid.UUID, outputs []string) error {
 	var _ids []string
 	for _, id := range ids {
 		_ids = append(_ids, id.String())
@@ -44,30 +50,13 @@ func (c *VDBGrpcClient) Insert(ctx context.Context, ids []uuid.UUID, outputs []s
 		Inputs: outputs,
 	}
 
-	_, err := c.client.Insert(ctx, vdbRows)
+	_, err := c.Service.Insert(ctx, vdbRows)
 
 	return err
 }
 
-func (c *VDBGrpcClient) Ping(ctx context.Context) error {
-	var err error
-	for i := 1; i <= RETRY_COUNT; i++ {
-		_, err := c.client.Ping(ctx, &pb.Empty{})
-		if err != nil {
-			loggers.Log.Warn(ctx, "vector database ping '%d' failed (retrying in 1 sec), reason: %v", i, err)
-		} else {
-			loggers.Log.Info(ctx, "vector database ping '%d' successful", i)
-			err = nil
-			break
-		}
-		time.Sleep(1 * time.Second)
-	}
-
-	return err
-}
-
-func (c *VDBGrpcClient) Drop(ctx context.Context) error {
-	_, err := c.client.Drop(ctx, &pb.Empty{})
+func (c *Client) Drop(ctx context.Context) error {
+	_, err := c.Service.Drop(ctx, &pb.Empty{})
 
 	return err
 }

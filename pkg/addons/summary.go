@@ -18,7 +18,7 @@ type SummaryAddon struct {
 func (s *SummaryAddon) Action(db *database.MindPalaceDB, memoryIDC chan uuid.UUID, args ...any) (err error) {
 	summary := s.Response.GetSummaryResponse().Summary
 
-	vdbGrpcClient := args[0].(*vdbrpc.VDBGrpcClient)
+	vdbGrpcClient := args[0].(*vdbrpc.Client)
 
 	ctx := context.Background()
 	tx := database.NewMultiInstruction(ctx, db)

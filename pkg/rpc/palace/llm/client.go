@@ -2,27 +2,37 @@ package llmrpc
 
 import (
 	"context"
-	"fmt"
 
 	"github.com/lashajini/mind-palace/pkg/common"
+	rpcclient "github.com/lashajini/mind-palace/pkg/rpc"
 	pb "github.com/lashajini/mind-palace/pkg/rpc/gen"
-	"google.golang.org/grpc"
-	"google.golang.org/grpc/credentials/insecure"
+	"github.com/lashajini/mind-palace/pkg/rpc/log"
+	"github.com/lashajini/mind-palace/pkg/rpc/loggers"
 )
 
+const RETRY_COUNT = 15
+
 type Client struct {
-	client pb.LLMClient
+	*rpcclient.Client[pb.LLMClient, *log.Client]
 }
 
 func NewGrpcClient(cfg *common.Config) *Client {
-	addr := fmt.Sprintf("localhost:%d", cfg.PALACE_GRPC_SERVER_PORT)
-	var opts []grpc.DialOption
-	opts = append(opts, grpc.WithTransportCredentials(insecure.NewCredentials()))
+	client := rpcclient.NewGrpcClient(
+		cfg.PALACE_GRPC_SERVER_PORT,
+		"Palace(LLM)",
+		RETRY_COUNT,
+		pb.NewLLMClient,
+		loggers.Log,
+	)
+	c := &Client{client}
 
-	conn, _ := grpc.NewClient(addr, opts...)
-	client := pb.NewLLMClient(conn)
+	ctx := context.Background()
+	if err := c.Ping(ctx); err != nil {
+		c.Logger.Fatal(ctx, err, "")
+		panic(err)
+	}
 
-	return &Client{client}
+	return c
 }
 
 func (c *Client) SetConfig(ctx context.Context, cfg map[string]string) error {
@@ -33,6 +43,6 @@ func (c *Client) SetConfig(ctx context.Context, cfg map[string]string) error {
 
 	pbCfg := &pb.LLMConfig{Map: m}
 
-	_, err := c.client.SetConfig(ctx, pbCfg)
+	_, err := c.Service.SetConfig(ctx, pbCfg)
 	return err
 }
