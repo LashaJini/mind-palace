@@ -60,7 +60,16 @@ deps-go: ## Install go dependencies.
 
 deps-py: ## Install python dependencies.
 	@echo "> Installing python dependencies..."
-	@poetry install
+	@poetry lock --no-update
+	@poetry install --sync
+	@$(MAKE) deps-llama
+
+# export PATH="/usr/local/cuda-12.5/bin:$PATH"
+# export CUDA_HOME=/usr/local/cuda-12.5
+deps-llama: ## Install llama python bindings.
+	# CMAKE_ARGS="-DLLAMA_CUDA=on" LLAMA_CCACHE=OFF FORCE_CMAKE=1 poetry run pip install llama-index-core==0.10.43 llama-index-llms-llama-cpp==0.1.3 --no-cache-dir --force-reinstall --upgrade
+	# CMAKE_ARGS="-DLLAMA_CUDA=on" LLAMA_CCACHE=OFF FORCE_CMAKE=1 poetry run pip install llama-cpp-python --no-cache-dir --force-reinstall --upgrade
+	CMAKE_ARGS="-DLLAMA_CUDA=on" LLAMA_CCACHE=OFF FORCE_CMAKE=1 poetry run pip install llama-cpp-python --upgrade
 
 dev-deps: ## Install dev dependencies.
 	@go install github.com/kisielk/godepgraph@latest
@@ -68,12 +77,6 @@ dev-deps: ## Install dev dependencies.
 	@go install google.golang.org/protobuf/cmd/protoc-gen-go@v1.28.0
 	@go install google.golang.org/grpc/cmd/protoc-gen-go-grpc@v1.2.0
 	@poetry add pytest-cov
-
-# export PATH="/usr/local/cuda-12.5/bin:$PATH"
-# export CUDA_HOME=/usr/local/cuda-12.5
-deps-llama: ## Install llama python bindings.
-	# CMAKE_ARGS="-DLLAMA_CUDA=on" LLAMA_CCACHE=OFF FORCE_CMAKE=1 poetry run pip install llama-index-core==0.10.43 llama-index-llms-llama-cpp==0.1.3 --no-cache-dir --force-reinstall --upgrade
-	CMAKE_ARGS="-DLLAMA_CUDA=on" LLAMA_CCACHE=OFF FORCE_CMAKE=1 poetry run pip install llama-cpp-python --no-cache-dir --force-reinstall --upgrade
 
 rpc: ## Compile .proto files.
 	@echo "> Compiling '.proto' files..."

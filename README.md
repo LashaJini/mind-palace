@@ -11,6 +11,12 @@
 - `protoc-gen-go` 1.28
 - `protoc-gen-go-grpc` 1.2
 
+## Installation
+
+```bash
+make deps
+```
+
 ## Helpful
 
 ```bash
