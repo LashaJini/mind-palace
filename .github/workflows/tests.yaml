@@ -51,6 +51,10 @@ jobs:
         make clean-rpc
         make rpc
 
+    - name: Lint
+      run: |
+        make lint
+
     - name: Run tests
       run: |
         make test

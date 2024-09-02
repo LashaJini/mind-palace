@@ -69,6 +69,9 @@ func (suite *ModelsTestSuite) initMigrationFiles() []string {
 		}
 
 		err = os.WriteFile(filepath.Join(suite.tmpMigrationsDir, filepath.Base(migrationFile)), sqlBuffer.Bytes(), 0644)
+		if err != nil {
+			log.Fatal(err)
+		}
 	}
 	schemaQuery := fmt.Sprintf("CREATE SCHEMA %s", suite.currentSchema)
 	err := os.WriteFile(filepath.Join(suite.tmpMigrationsDir, "000_init_user_schema.up.sql"), []byte(schemaQuery), 0644)

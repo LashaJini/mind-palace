@@ -36,7 +36,7 @@ func (suite *ModelsTestSuite) Test_InsertManyMemoryKeywordsTx_success() {
 	err = tx.Commit()
 	assert.NoError(t, err)
 
-	q := fmt.Sprintf(fmt.Sprintf("select keyword_id, memory_id from %s.%s order by keyword_id asc", suite.currentSchema, database.Table.MemoryKeyword))
+	q := fmt.Sprintf("select keyword_id, memory_id from %s.%s order by keyword_id asc", suite.currentSchema, database.Table.MemoryKeyword)
 	rows, err := suite.db.DB().Query(q)
 	assert.NoError(t, err)
 	defer rows.Close()

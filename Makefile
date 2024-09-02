@@ -76,6 +76,7 @@ dev-deps: ## Install dev dependencies.
 	@go install golang.org/x/tools/cmd/cover@latest
 	@go install google.golang.org/protobuf/cmd/protoc-gen-go@v1.28.0
 	@go install google.golang.org/grpc/cmd/protoc-gen-go-grpc@v1.2.0
+	@go install honnef.co/go/tools/cmd/staticcheck@latest
 	@poetry add pytest-cov
 
 rpc: ## Compile .proto files.
@@ -138,6 +139,9 @@ graph: ## Generate dependency graph.
 	-stoponerror=false \
 		-s . | dot -Tpng -o godepgraph.png
 	@eog godepgraph.png
+
+lint: ## Run linters.
+	@staticcheck $(shell go list ./pkg/... ./cli/...)
 
 godoc: ## Generate godocs.
 	@echo "> Generating godoc..."
