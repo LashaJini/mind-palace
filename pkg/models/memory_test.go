@@ -10,7 +10,7 @@ import (
 
 func (suite *ModelsTestSuite) Test_InsertMemoryTx_success() {
 	t := suite.T()
-	tx := database.NewMultiInstruction(suite.ctx, suite.db)
+	tx := database.NewMultiInstruction(suite.db)
 
 	t.Cleanup(suite.MemoryCleanup)
 

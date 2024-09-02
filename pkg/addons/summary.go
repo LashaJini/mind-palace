@@ -15,13 +15,12 @@ type SummaryAddon struct {
 	Addon
 }
 
-func (s *SummaryAddon) Action(db *database.MindPalaceDB, memoryIDC chan uuid.UUID, args ...any) (err error) {
+func (s *SummaryAddon) Action(ctx context.Context, db *database.MindPalaceDB, memoryIDC chan uuid.UUID, args ...any) (err error) {
 	summary := s.Response.GetSummaryResponse().Summary
 
 	vdbGrpcClient := args[0].(*vdbrpc.Client)
 
-	ctx := context.Background()
-	tx := database.NewMultiInstruction(ctx, db)
+	tx := database.NewMultiInstruction(db)
 	defer revert(tx)
 
 	err = tx.Begin()
@@ -30,23 +29,28 @@ func (s *SummaryAddon) Action(db *database.MindPalaceDB, memoryIDC chan uuid.UUI
 	}
 
 	summaryID := uuid.New()
-	memoryID := <-memoryIDC
-	err = models.InsertSummaryTx(tx, memoryID, summaryID, summary)
-	if err != nil {
-		return fmt.Errorf("failed to insert summary: %w", err)
-	}
+	select {
+	case memoryID := <-memoryIDC:
+		err = models.InsertSummaryTx(tx, memoryID, summaryID, summary)
+		if err != nil {
+			return fmt.Errorf("failed to insert summary: %w", err)
+		}
 
-	err = tx.Commit()
-	if err != nil {
-		return fmt.Errorf("failed to commit transaction: %w", err)
-	}
+		err = tx.Commit()
+		if err != nil {
+			return fmt.Errorf("failed to commit transaction: %w", err)
+		}
 
-	err = vdbGrpcClient.Insert(ctx, []uuid.UUID{memoryID}, []string{summary})
-	if err != nil {
-		return fmt.Errorf("failed to insert in vdb: %w", err)
-	}
+		err = vdbGrpcClient.Insert(ctx, []uuid.UUID{memoryID}, []string{summary})
+		if err != nil {
+			return fmt.Errorf("failed to insert in vdb: %w", err)
+		}
 
-	return nil
+		return nil
+	case <-ctx.Done():
+		rollback(tx)
+		return fmt.Errorf("failed to insert summary: %w", ctx.Err())
+	}
 }
 
 var SummaryAddonInstance = SummaryAddon{
