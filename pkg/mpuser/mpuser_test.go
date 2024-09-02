@@ -1,6 +1,7 @@
 package mpuser
 
 import (
+	"context"
 	"log"
 	"os"
 	"testing"
@@ -31,7 +32,7 @@ type DefaultAddon struct {
 	Response    *pb.AddonResponse
 }
 
-func (a *DefaultAddon) Action(db *database.MindPalaceDB, memoryIDC chan uuid.UUID, args ...any) (err error) {
+func (a *DefaultAddon) Action(ctx context.Context, db *database.MindPalaceDB, memoryIDC chan uuid.UUID, args ...any) (err error) {
 	return nil
 }
 func (a *DefaultAddon) Empty() bool                            { return true }

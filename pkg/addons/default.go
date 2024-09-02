@@ -15,15 +15,21 @@ type DefaultAddon struct {
 	Addon
 }
 
-func (d *DefaultAddon) Action(db *database.MindPalaceDB, memoryIDC chan uuid.UUID, args ...any) (err error) {
+func (d *DefaultAddon) Action(ctx context.Context, db *database.MindPalaceDB, memoryIDC chan uuid.UUID, args ...any) (err error) {
 	vdbGrpcClient := args[0].(*vdbrpc.Client)
 	maxBufSize := args[1].(int)
 	resourceID := args[2].(uuid.UUID)
 	resourcePath := args[3].(string)
+	cancel := args[4].(context.CancelFunc)
 
-	ctx := context.Background()
-	tx := database.NewMultiInstruction(ctx, db)
-	defer revert(tx)
+	tx := database.NewMultiInstruction(db)
+	defer func() {
+		if r := recover(); r != nil {
+			rollback(tx)
+
+			cancel()
+		}
+	}()
 
 	memory := models.NewMemory()
 	err = tx.Begin()
@@ -53,15 +59,6 @@ func (d *DefaultAddon) Action(db *database.MindPalaceDB, memoryIDC chan uuid.UUI
 	}
 
 	return nil
-}
-
-func revert(tx *database.MultiInstruction) {
-	if r := recover(); r != nil {
-		err := tx.Rollback()
-		errors.On(err).PanicWithMsg("failed to rollback")
-
-		panic(r)
-	}
 }
 
 var DefaultAddonInstance = DefaultAddon{

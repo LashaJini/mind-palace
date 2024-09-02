@@ -16,12 +16,11 @@ type KeywordsAddon struct {
 	Addon
 }
 
-func (k *KeywordsAddon) Action(db *database.MindPalaceDB, memoryIDC chan uuid.UUID, args ...any) (err error) {
+func (k *KeywordsAddon) Action(ctx context.Context, db *database.MindPalaceDB, memoryIDC chan uuid.UUID, args ...any) (err error) {
 	vdbGrpcClient := args[0].(*vdbrpc.Client)
 	keywordsChunks := k.Response.GetKeywordsResponse().List
 
-	ctx := context.Background()
-	tx := database.NewMultiInstruction(ctx, db)
+	tx := database.NewMultiInstruction(db)
 	defer revert(tx)
 
 	err = tx.Begin()
@@ -51,36 +50,41 @@ func (k *KeywordsAddon) Action(db *database.MindPalaceDB, memoryIDC chan uuid.UU
 		return fmt.Errorf("failed to insert keywords: %w", err)
 	}
 
-	memoryID := <-memoryIDC
-	chunkIDs, err := models.InsertManyChunksTx(tx, memoryID, chunks)
-	if err != nil {
-		return fmt.Errorf("failed to insert chunks: %w", err)
-	}
-
-	chunkIDKeywordIDsMap := make(map[uuid.UUID][]int)
-	for i, chunkID := range chunkIDs {
-		var keywordIDs []int
-		for _, keyword := range keywordsChunks[i].Keywords {
-			keywordIDs = append(keywordIDs, keywordIDsMap[keyword])
+	select {
+	case memoryID := <-memoryIDC:
+		chunkIDs, err := models.InsertManyChunksTx(tx, memoryID, chunks)
+		if err != nil {
+			return fmt.Errorf("failed to insert chunks: %w", err)
 		}
 
-		chunkIDKeywordIDsMap[chunkID] = keywordIDs
+		chunkIDKeywordIDsMap := make(map[uuid.UUID][]int)
+		for i, chunkID := range chunkIDs {
+			var keywordIDs []int
+			for _, keyword := range keywordsChunks[i].Keywords {
+				keywordIDs = append(keywordIDs, keywordIDsMap[keyword])
+			}
+
+			chunkIDKeywordIDsMap[chunkID] = keywordIDs
+		}
+
+		err = models.InsertManyChunksKeywordsTx(tx, chunkIDKeywordIDsMap)
+		if err != nil {
+			return fmt.Errorf("failed to insert chunk keyword pairs: %w", err)
+		}
+
+		err = vdbGrpcClient.Insert(ctx, chunkIDs, chunks)
+		errors.On(err).Panic()
+
+		err = tx.Commit()
+		if err != nil {
+			return fmt.Errorf("failed to commit transaction: %w", err)
+		}
+
+		return nil
+	case <-ctx.Done():
+		rollback(tx)
+		return fmt.Errorf("failed to insert keywords: %w", ctx.Err())
 	}
-
-	err = models.InsertManyChunksKeywordsTx(tx, chunkIDKeywordIDsMap)
-	if err != nil {
-		return fmt.Errorf("failed to insert chunk keyword pairs: %w", err)
-	}
-
-	err = vdbGrpcClient.Insert(ctx, chunkIDs, chunks)
-	errors.On(err).Panic()
-
-	err = tx.Commit()
-	if err != nil {
-		return fmt.Errorf("failed to commit transaction: %w", err)
-	}
-
-	return nil
 }
 
 var KeywordsAddonInstance = KeywordsAddon{

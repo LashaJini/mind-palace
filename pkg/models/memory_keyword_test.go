@@ -11,7 +11,7 @@ import (
 
 func (suite *ModelsTestSuite) Test_InsertManyMemoryKeywordsTx_success() {
 	t := suite.T()
-	tx := database.NewMultiInstruction(suite.ctx, suite.db)
+	tx := database.NewMultiInstruction(suite.db)
 
 	err := tx.Begin()
 	assert.NoError(t, err)

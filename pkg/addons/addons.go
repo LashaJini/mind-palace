@@ -1,6 +1,7 @@
 package addons
 
 import (
+	"context"
 	"fmt"
 
 	"github.com/google/uuid"
@@ -45,7 +46,7 @@ func (a *Addon) Empty() bool {
 	return a == nil || a.Name == ""
 }
 
-func (a Addon) Action(db *database.MindPalaceDB, memoryIDC chan uuid.UUID, args ...any) error {
+func (a Addon) Action(ctx context.Context, db *database.MindPalaceDB, memoryIDC chan uuid.UUID, args ...any) error {
 	return nil
 }
 

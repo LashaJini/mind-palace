@@ -44,9 +44,8 @@ func Add(file string) error {
 	db := database.InitDB(cfg)
 	db.SetSchema(db.ConstructSchema(currentUser))
 
-	// TODO: ctx
-	ctx := context.Background()
-	defer revertAdd(dst)
+	ctx, cancel := context.WithCancel(context.Background())
+	defer revertAdd(dst, cancel)
 
 	maxBufSize := len(addons.List) - 1 // all addons - default
 	memoryIDC := make(chan uuid.UUID, maxBufSize)
@@ -65,7 +64,7 @@ func Add(file string) error {
 
 			go func() {
 				defer wg.Done()
-				err := addon.Action(db, memoryIDC, vdbGrpcClient, maxBufSize, resourceID, resourcePath)
+				err := addon.Action(ctx, db, memoryIDC, vdbGrpcClient, maxBufSize, resourceID, resourcePath, cancel)
 				errors.On(err).Warn()
 			}()
 		}
@@ -111,7 +110,7 @@ func getCurrentUser() string {
 	return currentUser
 }
 
-func revertAdd(dst string) {
+func revertAdd(dst string, cancel context.CancelFunc) {
 	if r := recover(); r != nil {
 		ctx := context.Background()
 		loggers.Log.Info(ctx, "Reverting...")
@@ -123,5 +122,7 @@ func revertAdd(dst string) {
 		errors.On(err).Exit()
 
 		loggers.Log.Info(ctx, "File removed %s", dst)
+
+		cancel()
 	}
 }

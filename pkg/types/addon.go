@@ -1,6 +1,7 @@
 package types
 
 import (
+	"context"
 	"strings"
 
 	"github.com/google/uuid"
@@ -10,7 +11,7 @@ import (
 
 type IAddon interface {
 	Empty() bool
-	Action(db *database.MindPalaceDB, memoryIDC chan uuid.UUID, args ...any) error
+	Action(ctx context.Context, db *database.MindPalaceDB, memoryIDC chan uuid.UUID, args ...any) error
 	String() string
 
 	GetName() string
