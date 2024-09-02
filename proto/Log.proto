@@ -6,6 +6,8 @@ import "SharedTypes.proto";
 
 service Log {
   rpc Message (LogRequest) returns (SharedTypes.Empty) {}
+
+  rpc Ping(SharedTypes.Empty) returns (SharedTypes.Empty) {}
 }
 
 message LogRequest {

@@ -6,4 +6,4 @@ import (
 )
 
 var cfg = common.NewConfig()
-var Log = log.NewLogClient(cfg, "CLI")
+var Log = log.NewGrpcClient(cfg, "CLI")

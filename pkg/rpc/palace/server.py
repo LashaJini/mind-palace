@@ -45,7 +45,7 @@ def server():
 
     server.add_insecure_port(f"[::]:{config.PALACE_GRPC_SERVER_PORT}")
     server.start()
-    log.info(f"Server started on port: {config.PALACE_GRPC_SERVER_PORT}")
+    log.info(f"Palace Server started on port: {config.PALACE_GRPC_SERVER_PORT}")
     # server.wait_for_termination()
     try:
         while True:

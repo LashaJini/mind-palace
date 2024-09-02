@@ -27,7 +27,7 @@ import (
 type E2ETestSuite struct {
 	suite.Suite
 	addonGrpcClient *addonrpc.Client
-	vdbGrpcClient   *vdbrpc.VDBGrpcClient
+	vdbGrpcClient   *vdbrpc.Client
 	llmGrpcClient   *llmrpc.Client
 	db              *database.MindPalaceDB
 	user            string
@@ -76,7 +76,7 @@ func (s *E2ETestSuite) SetupSuite() {
 	inMemorySource, ups := database.Up(s.cfg, sqlTemplates)
 	database.CommitMigration(s.cfg, inMemorySource, ups)
 
-	s.vdbGrpcClient = vdbrpc.NewVDBGrpcClient(s.cfg, s.userCfg.Config.User)
+	s.vdbGrpcClient = vdbrpc.NewGrpcClient(s.cfg, s.userCfg.Config.User)
 	err = s.vdbGrpcClient.Ping(s.ctx)
 	errors.On(err).Panic()
 

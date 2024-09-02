@@ -30,8 +30,25 @@ func InitDB(cfg *common.Config) *MindPalaceDB {
 	db, err := sql.Open(cfg.DB_DRIVER, connStr)
 	errors.On(err).Panic()
 
+	m := &MindPalaceDB{
+		db:               db,
+		ConnectionString: connStr,
+		cfg:              cfg,
+		CurrentSchema:    cfg.DB_DEFAULT_NAMESPACE,
+	}
+
+	if err := m.Ping(ctx); err != nil {
+		loggers.Log.Fatal(ctx, err, "")
+		panic(err)
+	}
+
+	return m
+}
+
+func (m *MindPalaceDB) Ping(ctx context.Context) error {
+	var err error
 	for i := 1; i <= RETRY_COUNT; i++ {
-		err = db.Ping()
+		err = m.db.Ping()
 		if err != nil {
 			loggers.Log.Warn(ctx, "database ping '%d' failed (retrying in 1 sec), reason: %v", i, err)
 		} else {
@@ -41,14 +58,8 @@ func InitDB(cfg *common.Config) *MindPalaceDB {
 		}
 		time.Sleep(1 * time.Second)
 	}
-	errors.On(err).Panic()
 
-	return &MindPalaceDB{
-		db:               db,
-		ConnectionString: connStr,
-		cfg:              cfg,
-		CurrentSchema:    cfg.DB_DEFAULT_NAMESPACE,
-	}
+	return err
 }
 
 func (m *MindPalaceDB) DB() *sql.DB {

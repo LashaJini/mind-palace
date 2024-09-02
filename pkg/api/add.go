@@ -40,7 +40,7 @@ func Add(file string) error {
 	}
 
 	addonClient := addonrpc.NewGrpcClient(cfg)
-	vdbGrpcClient := vdbrpc.NewVDBGrpcClient(cfg, userCfg.Config.User)
+	vdbGrpcClient := vdbrpc.NewGrpcClient(cfg, userCfg.Config.User)
 	db := database.InitDB(cfg)
 	db.SetSchema(db.ConstructSchema(currentUser))
 
