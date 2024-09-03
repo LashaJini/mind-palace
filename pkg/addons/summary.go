@@ -2,10 +2,10 @@ package addons
 
 import (
 	"context"
-	"fmt"
 
 	"github.com/google/uuid"
 	"github.com/lashajini/mind-palace/pkg/models"
+	"github.com/lashajini/mind-palace/pkg/mperrors"
 	vdbrpc "github.com/lashajini/mind-palace/pkg/rpc/vdb"
 	"github.com/lashajini/mind-palace/pkg/storage/database"
 	"github.com/lashajini/mind-palace/pkg/types"
@@ -21,11 +21,27 @@ func (s *SummaryAddon) Action(ctx context.Context, db *database.MindPalaceDB, me
 	vdbGrpcClient := args[0].(*vdbrpc.Client)
 
 	tx := database.NewMultiInstruction(db)
-	defer revert(tx)
+	defer func() {
+		if r := recover(); r != nil {
+			if rollbackErr := tx.Rollback(); rollbackErr != nil {
+				err = mperrors.On(rollbackErr).Wrap("summary rollback failed")
+			} else {
+				err = mperrors.Onf("(recovered) panic: %v", r)
+			}
+		}
+	}()
+
+	defer func() {
+		if err != nil {
+			if rollbackErr := tx.Rollback(); rollbackErr != nil {
+				err = mperrors.On(rollbackErr).Wrap("summary rollback failed")
+			}
+		}
+	}()
 
 	err = tx.Begin()
 	if err != nil {
-		return fmt.Errorf("failed to start transaction: %w", err)
+		return mperrors.On(err).Wrap("summary transaction begin failed")
 	}
 
 	summaryID := uuid.New()
@@ -33,23 +49,26 @@ func (s *SummaryAddon) Action(ctx context.Context, db *database.MindPalaceDB, me
 	case memoryID := <-memoryIDC:
 		err = models.InsertSummaryTx(tx, memoryID, summaryID, summary)
 		if err != nil {
-			return fmt.Errorf("failed to insert summary: %w", err)
+			return mperrors.On(err).Wrap("failed to insert summary")
 		}
 
 		err = tx.Commit()
 		if err != nil {
-			return fmt.Errorf("failed to commit transaction: %w", err)
+			return mperrors.On(err).Wrap("summary transaction commit failed")
 		}
 
 		err = vdbGrpcClient.Insert(ctx, []uuid.UUID{memoryID}, []string{summary})
 		if err != nil {
-			return fmt.Errorf("failed to insert in vdb: %w", err)
+			return mperrors.On(err).Wrap("summary vdb insert failed")
 		}
 
 		return nil
 	case <-ctx.Done():
-		rollback(tx)
-		return fmt.Errorf("failed to insert summary: %w", ctx.Err())
+		if ctx.Err() != nil {
+			return mperrors.On(ctx.Err()).Wrap("summary addon action failed")
+		}
+
+		return nil
 	}
 }
 

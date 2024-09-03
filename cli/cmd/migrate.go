@@ -1,7 +1,6 @@
 package cli
 
 import (
-	"context"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -9,8 +8,7 @@ import (
 
 	"github.com/golang-migrate/migrate/v4"
 	"github.com/lashajini/mind-palace/pkg/common"
-	"github.com/lashajini/mind-palace/pkg/errors"
-	"github.com/lashajini/mind-palace/pkg/rpc/loggers"
+	"github.com/lashajini/mind-palace/pkg/mperrors"
 	"github.com/lashajini/mind-palace/pkg/storage/database"
 	"github.com/spf13/cobra"
 
@@ -46,22 +44,19 @@ func init() {
 }
 
 func Migrate(cmd *cobra.Command, args []string) {
-	ctx := context.Background()
 	cfg := common.NewConfig()
 	m, err := migrate.New("file://"+cfg.MIGRATIONS_DIR, cfg.DBAddr())
-	errors.On(err).Exit()
+	mperrors.On(err).Exit()
 
 	if VERSION {
 		version, dirty, err := m.Version()
-		errors.On(err).Exit()
-		loggers.Log.Info(ctx, "version: %d dirty: %t", version, dirty)
-
+		mperrors.On(err).ExitWithMsgf("version: %d dirty: %t", version, dirty)
 		return
 	}
 
 	if cmd.Flags().Changed("force") {
 		err := m.Force(FORCE)
-		errors.On(err).Exit()
+		mperrors.On(err).Exit()
 		return
 	}
 
@@ -72,12 +67,12 @@ func Migrate(cmd *cobra.Command, args []string) {
 		downFilePath := filepath.Join(cfg.MIGRATIONS_DIR, fmt.Sprintf("%s.down.sql", fileName))
 
 		upFile, err := os.Create(upFilePath)
-		errors.On(err).Exit()
-		defer upFile.Close()
+		mperrors.On(err).Exit()
+		defer _close(upFile)
 
 		downFile, err := os.Create(downFilePath)
-		errors.On(err).Exit()
-		defer downFile.Close()
+		mperrors.On(err).Exit()
+		defer _close(downFile)
 
 		return
 	}
@@ -85,10 +80,10 @@ func Migrate(cmd *cobra.Command, args []string) {
 	// up or down migrations
 
 	db := database.InitDB(cfg)
-	defer db.DB().Close()
+	defer closeDB(db)
 
 	schemas, err := db.ListMPSchemas()
-	errors.On(err).Exit()
+	mperrors.On(err).Exit()
 
 	sqlTemplates := common.NewSQLTemplates(schemas)
 
@@ -108,5 +103,12 @@ func Migrate(cmd *cobra.Command, args []string) {
 		}
 	}
 
-	database.CommitMigration(cfg, inMemorySource, steps)
+	err = database.CommitMigration(cfg, inMemorySource, steps)
+	mperrors.On(err).Exit()
+}
+
+func _close(f *os.File) {
+	if err := f.Close(); err != nil {
+		mperrors.On(err).Exit()
+	}
 }

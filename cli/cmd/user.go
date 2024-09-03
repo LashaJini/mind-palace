@@ -5,7 +5,7 @@ import (
 	"path/filepath"
 
 	"github.com/lashajini/mind-palace/pkg/common"
-	"github.com/lashajini/mind-palace/pkg/errors"
+	"github.com/lashajini/mind-palace/pkg/mperrors"
 	"github.com/lashajini/mind-palace/pkg/mpuser"
 	"github.com/lashajini/mind-palace/pkg/storage/database"
 	"github.com/spf13/cobra"
@@ -39,49 +39,60 @@ func User(cmd *cobra.Command, args []string) {
 	currentUser := ""
 	if cmd.Flags().Changed("new") {
 		if len(newUser) < 1 {
-			errors.ExitWithMsg("new user cannot be empty")
+			mperrors.ExitWithMsg("new user cannot be empty")
 		}
 
 		_, err := mpuser.CreateMindPalace(newUser)
-		errors.On(err).Exit()
+		mperrors.On(err).Exit()
 
 		cfg := common.NewConfig()
 		db := database.InitDB(cfg)
-		defer db.DB().Close()
+		defer closeDB(db)
 
 		_, err = db.CreateSchema(newUser)
-		errors.On(err).Exit()
+		mperrors.On(err).Exit()
 
-		pattern := filepath.Join(cfg.MIGRATIONS_DIR, "*.up.sql")
-		sqlUpFiles, err := filepath.Glob(pattern)
-		errors.On(err).Exit()
-
-		sqlTemplate := common.SQLTemplate{Namespace: db.CurrentSchema}
-		for _, sqlUpFile := range sqlUpFiles {
-			var sqlBuffer bytes.Buffer
-			err = sqlTemplate.Inject(&sqlBuffer, sqlUpFile)
-			errors.On(err).Exit()
-
-			_, err = db.DB().Exec(sqlBuffer.String())
-			errors.On(err).Exit()
-		}
+		err = migrateNewUser(cfg, db)
+		mperrors.On(err).Exit()
 
 		currentUser = newUser
 	} else if cmd.Flags().Changed("switch") {
 		mindPalaceUserPath := common.UserPath(switchUser, true)
 
 		exists, err := common.DirExists(mindPalaceUserPath)
-		errors.On(err).Exit()
+		mperrors.On(err).Exit()
 
 		if !exists {
-			errors.ExitWithMsgf("user '%s' does not exist\n", switchUser)
+			mperrors.ExitWithMsgf("user '%s' does not exist\n", switchUser)
 		}
 
 		currentUser = switchUser
 	}
 
-	common.UpdateMindPalaceInfo(common.MindPalaceInfo{CurrentUser: currentUser})
-	user(args...)
+	err := common.UpdateMindPalaceInfo(common.MindPalaceInfo{CurrentUser: currentUser})
+	mperrors.On(err).Exit()
 }
 
-func user(args ...string) {}
+func migrateNewUser(cfg *common.Config, db *database.MindPalaceDB) error {
+	pattern := filepath.Join(cfg.MIGRATIONS_DIR, "*.up.sql")
+	sqlUpFiles, err := filepath.Glob(pattern)
+	if err != nil {
+		return mperrors.On(err).Wrap("failed to find '*.up.sql' files")
+	}
+
+	sqlTemplate := common.SQLTemplate{Namespace: db.CurrentSchema}
+	for _, sqlUpFile := range sqlUpFiles {
+		var sqlBuffer bytes.Buffer
+		err = sqlTemplate.Inject(&sqlBuffer, sqlUpFile)
+		if err != nil {
+			return mperrors.On(err).Wrap("failed to inject sql")
+		}
+
+		_, err = db.DB().Exec(sqlBuffer.String())
+		if err != nil {
+			return mperrors.On(err).Wrap("failed to exec sql")
+		}
+	}
+
+	return nil
+}

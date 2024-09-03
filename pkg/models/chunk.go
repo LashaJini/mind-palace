@@ -2,10 +2,10 @@ package models
 
 import (
 	"context"
-	"errors"
 	"time"
 
 	"github.com/google/uuid"
+	"github.com/lashajini/mind-palace/pkg/mperrors"
 	"github.com/lashajini/mind-palace/pkg/rpc/loggers"
 	"github.com/lashajini/mind-palace/pkg/storage/database"
 )
@@ -29,7 +29,7 @@ var chunkColumns = []string{
 
 func InsertManyChunksTx(tx *database.MultiInstruction, memoryID uuid.UUID, chunks []string) ([]uuid.UUID, error) {
 	if len(chunks) == 0 {
-		return nil, errors.New("reason: empty chunks")
+		return nil, mperrors.Onf("empty chunks")
 	}
 	ctx := context.Background()
 

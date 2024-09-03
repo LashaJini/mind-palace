@@ -2,7 +2,7 @@ package cli
 
 import (
 	"github.com/lashajini/mind-palace/pkg/api"
-	"github.com/lashajini/mind-palace/pkg/errors"
+	"github.com/lashajini/mind-palace/pkg/mperrors"
 	"github.com/spf13/cobra"
 )
 
@@ -21,7 +21,9 @@ var addCmd = &cobra.Command{
 func init() {
 	rootCmd.AddCommand(addCmd)
 	addCmd.Flags().StringVarP(&FILE, "file", "f", "", "file location")
-	addCmd.MarkFlagRequired("file")
+
+	_ = addCmd.MarkFlagRequired("file")
+
 	addCmd.Flags().BoolVarP(&PREVIEW, "preview", "p", false, "preview result")
 }
 
@@ -29,5 +31,5 @@ func Add(cmd *cobra.Command, args []string) {
 	file, _ := cmd.Flags().GetString("file")
 
 	err := api.Add(file)
-	errors.On(err).Exit()
+	mperrors.On(err).Exit()
 }

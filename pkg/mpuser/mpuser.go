@@ -127,7 +127,7 @@ func UserExists(user string) (string, bool, error) {
 func ReadConfig(user string) (*Config, error) {
 	d, err := os.ReadFile(common.UserConfigPath(user, true))
 	if err != nil {
-		return &Config{}, err
+		return nil, err
 	}
 
 	var userCfg Config
