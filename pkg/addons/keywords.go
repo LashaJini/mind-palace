@@ -2,11 +2,10 @@ package addons
 
 import (
 	"context"
-	"fmt"
 
 	"github.com/google/uuid"
-	"github.com/lashajini/mind-palace/pkg/errors"
 	"github.com/lashajini/mind-palace/pkg/models"
+	"github.com/lashajini/mind-palace/pkg/mperrors"
 	vdbrpc "github.com/lashajini/mind-palace/pkg/rpc/vdb"
 	"github.com/lashajini/mind-palace/pkg/storage/database"
 	"github.com/lashajini/mind-palace/pkg/types"
@@ -21,11 +20,27 @@ func (k *KeywordsAddon) Action(ctx context.Context, db *database.MindPalaceDB, m
 	keywordsChunks := k.Response.GetKeywordsResponse().List
 
 	tx := database.NewMultiInstruction(db)
-	defer revert(tx)
+	defer func() {
+		if r := recover(); r != nil {
+			if rollbackErr := tx.Rollback(); rollbackErr != nil {
+				err = mperrors.On(rollbackErr).Wrap("keywords rollback failed")
+			} else {
+				err = mperrors.Onf("(recovered) panic: %v", r)
+			}
+		}
+	}()
+
+	defer func() {
+		if err != nil {
+			if rollbackErr := tx.Rollback(); rollbackErr != nil {
+				err = mperrors.On(rollbackErr).Wrap("keywords rollback failed")
+			}
+		}
+	}()
 
 	err = tx.Begin()
 	if err != nil {
-		return fmt.Errorf("failed to start transaction: %w", err)
+		return mperrors.On(err).Wrap("keywords transaction begin failed")
 	}
 
 	// chunk keywords may overlap with each other,
@@ -47,14 +62,14 @@ func (k *KeywordsAddon) Action(ctx context.Context, db *database.MindPalaceDB, m
 
 	keywordIDsMap, err := models.InsertManyKeywordsTx(tx, keywords)
 	if err != nil {
-		return fmt.Errorf("failed to insert keywords: %w", err)
+		return mperrors.On(err).Wrap("failed to insert keywords")
 	}
 
 	select {
 	case memoryID := <-memoryIDC:
 		chunkIDs, err := models.InsertManyChunksTx(tx, memoryID, chunks)
 		if err != nil {
-			return fmt.Errorf("failed to insert chunks: %w", err)
+			return mperrors.On(err).Wrap("failed to insert chunks")
 		}
 
 		chunkIDKeywordIDsMap := make(map[uuid.UUID][]int)
@@ -69,21 +84,26 @@ func (k *KeywordsAddon) Action(ctx context.Context, db *database.MindPalaceDB, m
 
 		err = models.InsertManyChunksKeywordsTx(tx, chunkIDKeywordIDsMap)
 		if err != nil {
-			return fmt.Errorf("failed to insert chunk keyword pairs: %w", err)
+			return mperrors.On(err).Wrap("failed to insert chunk keyword pairs")
 		}
 
 		err = vdbGrpcClient.Insert(ctx, chunkIDs, chunks)
-		errors.On(err).Panic()
+		if err != nil {
+			return mperrors.On(err).Wrap("keywords vdb insert failed")
+		}
 
 		err = tx.Commit()
 		if err != nil {
-			return fmt.Errorf("failed to commit transaction: %w", err)
+			return mperrors.On(err).Wrap("keywords transaction commit failed")
 		}
 
 		return nil
 	case <-ctx.Done():
-		rollback(tx)
-		return fmt.Errorf("failed to insert keywords: %w", ctx.Err())
+		if ctx.Err() != nil {
+			return mperrors.On(ctx.Err()).Wrap("keywords addon action failed")
+		}
+
+		return nil
 	}
 }
 

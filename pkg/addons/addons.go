@@ -5,6 +5,7 @@ import (
 	"fmt"
 
 	"github.com/google/uuid"
+	"github.com/lashajini/mind-palace/pkg/mperrors"
 	pb "github.com/lashajini/mind-palace/pkg/rpc/gen"
 	"github.com/lashajini/mind-palace/pkg/storage/database"
 	"github.com/lashajini/mind-palace/pkg/types"
@@ -64,7 +65,11 @@ func ToAddons(addonResult *pb.AddonResult) ([]types.IAddon, error) {
 	var addons []types.IAddon
 	if addonResult != nil {
 		for key, addonResponse := range addonResult.Map {
-			addon := Find(key)
+			addon, err := Find(key)
+			if err != nil {
+				return nil, mperrors.On(err).Wrap("could not find addon")
+			}
+
 			if !addon.Empty() && addonResponse.Success {
 				addon.SetResponse(addonResponse)
 
@@ -82,12 +87,12 @@ var List = []types.IAddon{
 	&KeywordsAddonInstance,
 }
 
-func Find(name string) types.IAddon {
+func Find(name string) (types.IAddon, error) {
 	for _, a := range List {
 		if a.GetName() == name {
-			return a
+			return a, nil
 		}
 	}
 
-	return &Addon{}
+	return nil, mperrors.Onf("addon %s not found", name)
 }

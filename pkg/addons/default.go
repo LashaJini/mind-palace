@@ -4,8 +4,8 @@ import (
 	"context"
 
 	"github.com/google/uuid"
-	"github.com/lashajini/mind-palace/pkg/errors"
 	"github.com/lashajini/mind-palace/pkg/models"
+	"github.com/lashajini/mind-palace/pkg/mperrors"
 	vdbrpc "github.com/lashajini/mind-palace/pkg/rpc/vdb"
 	"github.com/lashajini/mind-palace/pkg/storage/database"
 	"github.com/lashajini/mind-palace/pkg/types"
@@ -25,7 +25,21 @@ func (d *DefaultAddon) Action(ctx context.Context, db *database.MindPalaceDB, me
 	tx := database.NewMultiInstruction(db)
 	defer func() {
 		if r := recover(); r != nil {
-			rollback(tx)
+			if rollbackErr := tx.Rollback(); rollbackErr != nil {
+				err = mperrors.On(rollbackErr).Wrap("default rollback failed")
+			} else {
+				err = mperrors.Onf("(recovered) panic: %v", r)
+			}
+
+			cancel()
+		}
+	}()
+
+	defer func() {
+		if err != nil {
+			if rollbackErr := tx.Rollback(); rollbackErr != nil {
+				err = mperrors.On(rollbackErr).Wrap("default rollback failed")
+			}
 
 			cancel()
 		}
@@ -33,26 +47,36 @@ func (d *DefaultAddon) Action(ctx context.Context, db *database.MindPalaceDB, me
 
 	memory := models.NewMemory()
 	err = tx.Begin()
-	errors.On(err).Panic()
+	if err != nil {
+		return mperrors.On(err).Wrap("default transaction begin failed")
+	}
 
 	memoryID, err := models.InsertMemoryTx(tx, memory)
-	errors.On(err).Panic()
+	if err != nil {
+		return mperrors.On(err).Wrap("default insert memory failed")
+	}
 
 	resource := models.NewResource(resourceID, memoryID, resourcePath)
 
 	err = models.InsertResourceTx(tx, resource)
-	errors.On(err).Panic()
+	if err != nil {
+		return mperrors.On(err).Wrap("default insert resource failed")
+	}
 
 	defaultResponse := d.Response.GetDefaultResponse().Default
 	if defaultResponse == "" {
-		errors.ExitWithMsg("reason: server didn't send default addon response")
+		return mperrors.Onf("server didn't send default addon response")
 	}
 
 	err = vdbGrpcClient.Insert(ctx, []uuid.UUID{memoryID}, []string{defaultResponse})
-	errors.On(err).Panic()
+	if err != nil {
+		return mperrors.On(err).Wrap("default vdb insert failed")
+	}
 
 	err = tx.Commit()
-	errors.On(err).Panic()
+	if err != nil {
+		return mperrors.On(err).Wrap("default transaction commit failed")
+	}
 
 	for range maxBufSize {
 		memoryIDC <- memoryID

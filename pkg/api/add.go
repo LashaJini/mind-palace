@@ -9,7 +9,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/lashajini/mind-palace/pkg/addons"
 	"github.com/lashajini/mind-palace/pkg/common"
-	"github.com/lashajini/mind-palace/pkg/errors"
+	"github.com/lashajini/mind-palace/pkg/mperrors"
 	"github.com/lashajini/mind-palace/pkg/mpuser"
 	"github.com/lashajini/mind-palace/pkg/rpc/loggers"
 	addonrpc "github.com/lashajini/mind-palace/pkg/rpc/palace/addon"
@@ -19,8 +19,14 @@ import (
 
 func Add(file string) error {
 	cfg := common.NewConfig()
-	currentUser := getCurrentUser()
-	validateFile(file)
+	currentUser, err := getCurrentUser()
+	if err != nil {
+		return mperrors.On(err).Wrap("failed to get current user")
+	}
+
+	if err := validateFile(file); err != nil {
+		return mperrors.On(err).Wrap("failed to validate file")
+	}
 
 	resourceID := uuid.New()
 	fileExtension := filepath.Ext(file)
@@ -29,14 +35,14 @@ func Add(file string) error {
 	dst := filepath.Join(originalResourceFullPath, fileName)
 	resourcePath := filepath.Join(common.OriginalResourceRelativePath(currentUser), fileName)
 
-	err := common.CopyFile(file, dst)
+	err = common.CopyFile(file, dst)
 	if err != nil {
-		return err
+		return mperrors.On(err).Wrap("failed to copy file")
 	}
 
 	userCfg, err := mpuser.ReadConfig(currentUser)
 	if err != nil {
-		return err
+		return mperrors.On(err).Wrap("failed to read user config")
 	}
 
 	addonClient := addonrpc.NewGrpcClient(cfg)
@@ -52,11 +58,15 @@ func Add(file string) error {
 
 	var wg sync.WaitGroup
 
-	addonResultC, _ := addonClient.Add(ctx, dst, userCfg.Steps())
+	addonResultC, err := addonClient.Add(ctx, dst, userCfg.Steps())
+	if err != nil {
+		return mperrors.On(err).Wrap("failed to add addon")
+	}
+
 	for addonResult := range addonResultC {
 		addons, err := addons.ToAddons(addonResult)
 		if err != nil {
-			return err
+			return mperrors.On(err).Wrap("failed to convert addons")
 		}
 
 		for _, addon := range addons {
@@ -65,7 +75,7 @@ func Add(file string) error {
 			go func() {
 				defer wg.Done()
 				err := addon.Action(ctx, db, memoryIDC, vdbGrpcClient, maxBufSize, resourceID, resourcePath, cancel)
-				errors.On(err).Warn()
+				mperrors.On(err).Warn()
 			}()
 		}
 	}
@@ -80,34 +90,42 @@ func Add(file string) error {
 	return nil
 }
 
-func validateFile(file string) {
+func validateFile(file string) error {
 	exists, err := common.FileExists(file)
-	errors.On(err).Exit()
+	if err != nil {
+		return mperrors.On(err).Wrap("failed to check if file exists")
+	}
 
 	if !exists {
-		errors.ExitWithMsgf("file '%s' does not exist", file)
+		return mperrors.Onf("file '%s' does not exist", file)
 	}
 
 	isText, err := common.IsTextFile(file)
-	errors.On(err).Exit()
+	if err != nil {
+		return mperrors.On(err).Wrap("failed to check if file is a text file")
+	}
 
 	if !isText {
-		errors.ExitWithMsgf("file '%s' is not a text file\n", file)
+		return mperrors.Onf("file '%s' is not a text file\n", file)
 	}
+
+	return nil
 }
 
-func getCurrentUser() string {
+func getCurrentUser() (string, error) {
 	ctx := context.Background()
 	currentUser, err := common.CurrentUser()
-	errors.On(err).Exit()
+	if err != nil {
+		return "", mperrors.On(err).Wrap("failed to get current user")
+	}
 
 	if currentUser == "" {
 		msg := "there are no users available. Create one by using: mind-palace user --new <name>"
-		errors.ExitWithMsg(msg)
+		return "", mperrors.Onf(msg)
 	}
 
 	loggers.Log.Info(ctx, "current user '%s'", currentUser)
-	return currentUser
+	return currentUser, nil
 }
 
 func revertAdd(dst string, cancel context.CancelFunc) {
@@ -116,10 +134,7 @@ func revertAdd(dst string, cancel context.CancelFunc) {
 		loggers.Log.Info(ctx, "Reverting...")
 
 		err := os.Remove(dst)
-		errors.On(err).Exit()
-
-		err = os.Remove(dst)
-		errors.On(err).Exit()
+		mperrors.On(err).Exit()
 
 		loggers.Log.Info(ctx, "File removed %s", dst)
 

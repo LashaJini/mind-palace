@@ -11,7 +11,7 @@ import (
 
 	"github.com/lashajini/mind-palace/pkg/addons"
 	"github.com/lashajini/mind-palace/pkg/common"
-	"github.com/lashajini/mind-palace/pkg/errors"
+	"github.com/lashajini/mind-palace/pkg/mperrors"
 	"github.com/lashajini/mind-palace/pkg/mpuser"
 	"github.com/lashajini/mind-palace/pkg/rpc/loggers"
 	addonrpc "github.com/lashajini/mind-palace/pkg/rpc/palace/addon"
@@ -51,7 +51,7 @@ func (s *E2ETestSuite) SetupSuite() {
 	var err error
 	s.user = "test_user"
 	s.userCfg, err = mpuser.CreateNewUser(s.user)
-	errors.On(err).Panic()
+	mperrors.On(err).Panic()
 
 	common.UpdateMindPalaceInfo(common.MindPalaceInfo{CurrentUser: s.user})
 
@@ -59,17 +59,17 @@ func (s *E2ETestSuite) SetupSuite() {
 
 	s.addonGrpcClient = addonrpc.NewGrpcClient(s.cfg)
 	err = s.addonGrpcClient.Ping(s.ctx)
-	errors.On(err).Panic()
+	mperrors.On(err).Panic()
 
 	s.llmGrpcClient = llmrpc.NewGrpcClient(s.cfg)
-	errors.On(err).Panic()
+	mperrors.On(err).Panic()
 
 	s.db = database.InitDB(s.cfg)
 	s.schema, err = s.db.CreateSchema(s.user)
-	errors.On(err).Panic()
+	mperrors.On(err).Panic()
 
 	schemas, err := s.db.ListMPSchemas()
-	errors.On(err).Panic()
+	mperrors.On(err).Panic()
 
 	sqlTemplates := common.NewSQLTemplates(schemas)
 
@@ -78,14 +78,14 @@ func (s *E2ETestSuite) SetupSuite() {
 
 	s.vdbGrpcClient = vdbrpc.NewGrpcClient(s.cfg, s.userCfg.Config.User)
 	err = s.vdbGrpcClient.Ping(s.ctx)
-	errors.On(err).Panic()
+	mperrors.On(err).Panic()
 
 	f, err := os.CreateTemp("", "mindpalace_test_file")
-	errors.On(err).Panic()
+	mperrors.On(err).Panic()
 
 	s.input_text = []byte("The tower is 324 metres (1,063 ft) tall, about the same height as an 81-storey building, and the tallest structure in Paris. Its base is square, measuring 125 metres (410 ft) on each side. During its construction, the Eiffel Tower surpassed the Washington Monument to become the tallest man-made structure in the world, a title it held for 41 years until the Chrysler Building in New York City was finished in 1930. It was the first structure to reach a height of 300 metres. Due to the addition of a broadcasting aerial at the top of the tower in 1957, it is now taller than the Chrysler Building by 5.2 metres (17 ft). Excluding transmitters, the Eiffel Tower is the second tallest free-standing structure in France after the Millau Viaduct.")
 	_, err = f.Write(s.input_text)
-	errors.On(err).Panic()
+	mperrors.On(err).Panic()
 
 	s.input_filepath = f.Name()
 	loggers.Log.Info(s.ctx, "temp file created '%s'", s.input_filepath)

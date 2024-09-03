@@ -2,10 +2,10 @@ package models
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"time"
 
+	"github.com/lashajini/mind-palace/pkg/mperrors"
 	"github.com/lashajini/mind-palace/pkg/rpc/loggers"
 	"github.com/lashajini/mind-palace/pkg/storage/database"
 )
@@ -26,7 +26,7 @@ var keywordColumns = []string{
 
 func InsertManyKeywordsTx(tx *database.MultiInstruction, keywords []string) (map[string]int, error) {
 	if len(keywords) == 0 {
-		return nil, errors.New("reason: empty keywords")
+		return nil, mperrors.Onf("empty keywords")
 	}
 	ctx := context.Background()
 

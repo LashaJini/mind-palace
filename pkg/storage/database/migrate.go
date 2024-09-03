@@ -12,7 +12,7 @@ import (
 	"github.com/golang-migrate/migrate/v4"
 	"github.com/golang-migrate/migrate/v4/source"
 	"github.com/lashajini/mind-palace/pkg/common"
-	"github.com/lashajini/mind-palace/pkg/errors"
+	"github.com/lashajini/mind-palace/pkg/mperrors"
 	"github.com/lashajini/mind-palace/pkg/rpc/loggers"
 )
 
@@ -87,7 +87,7 @@ func Up(cfg *common.Config, sqlTemplates []common.SQLTemplate) (*InMemorySource,
 			var sqlBuffer bytes.Buffer
 			for _, sqlTemplate := range sqlTemplates {
 				err := sqlTemplate.Inject(&sqlBuffer, path)
-				errors.On(err).Exit()
+				mperrors.On(err).Exit()
 			}
 
 			migration := &source.Migration{
@@ -105,7 +105,7 @@ func Up(cfg *common.Config, sqlTemplates []common.SQLTemplate) (*InMemorySource,
 		return nil
 	})
 
-	errors.On(err).Exit()
+	mperrors.On(err).Exit()
 
 	loggers.Log.Info(ctx, "total 'up' migrations found: %d", ups)
 
@@ -123,7 +123,7 @@ func Down(cfg *common.Config, sqlTemplates []common.SQLTemplate) *InMemorySource
 			var sqlBuffer bytes.Buffer
 			for _, sqlTemplate := range sqlTemplates {
 				err := sqlTemplate.Inject(&sqlBuffer, path)
-				errors.On(err).Exit()
+				mperrors.On(err).Exit()
 			}
 
 			migration := &source.Migration{
@@ -137,7 +137,7 @@ func Down(cfg *common.Config, sqlTemplates []common.SQLTemplate) *InMemorySource
 		return nil
 	})
 
-	errors.On(err).Exit()
+	mperrors.On(err).Exit()
 
 	return inMemorySource
 }
@@ -146,26 +146,26 @@ func migrationIDFromFile(path string) uint {
 	fileName := filepath.Base(path)
 	timestamp := strings.Split(fileName, "_")[0]
 	migrationID, err := strconv.Atoi(timestamp)
-	errors.On(err).Exit()
+	mperrors.On(err).Exit()
 
 	return uint(migrationID)
 }
 
-func CommitMigration(cfg *common.Config, inMemorySource *InMemorySource, steps int) {
+func CommitMigration(cfg *common.Config, inMemorySource *InMemorySource, steps int) error {
 	mm, err := migrate.NewWithSourceInstance("in-memory", inMemorySource, cfg.DBAddr())
-	errors.On(err).Exit()
+	if err != nil {
+		return mperrors.On(err).Wrap("could not create migration instance")
+	}
 
-	migrationSteps(mm, steps)
+	return migrationSteps(mm, steps)
 }
 
-func migrationSteps(m *migrate.Migrate, steps int) {
-	ctx := context.Background()
+func migrationSteps(m *migrate.Migrate, steps int) error {
 	err := m.Steps(steps)
 	if err == migrate.ErrNoChange {
-		loggers.Log.Warn(ctx, "no migrations applied. %s", err)
-		return
+		loggers.Log.Warn(context.Background(), "no migrations applied. %s", err)
+		return nil
 	}
-	errors.On(err).Exit()
 
-	loggers.Log.Info(ctx, "successfully migrated")
+	return mperrors.On(err).Wrap("migration steps failed")
 }

@@ -2,10 +2,10 @@ package models
 
 import (
 	"context"
-	"errors"
 	"time"
 
 	"github.com/google/uuid"
+	"github.com/lashajini/mind-palace/pkg/mperrors"
 	"github.com/lashajini/mind-palace/pkg/rpc/loggers"
 	"github.com/lashajini/mind-palace/pkg/storage/database"
 )
@@ -20,7 +20,7 @@ var summaryColumns = []string{
 
 func InsertSummaryTx(tx *database.MultiInstruction, memoryID, summaryID uuid.UUID, summary string) error {
 	if len(summary) == 0 {
-		return errors.New("reason: empty summary")
+		return mperrors.Onf("empty summary")
 	}
 	ctx := context.Background()
 

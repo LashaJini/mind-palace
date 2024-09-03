@@ -7,7 +7,7 @@ import (
 	"time"
 
 	"github.com/lashajini/mind-palace/pkg/common"
-	"github.com/lashajini/mind-palace/pkg/errors"
+	"github.com/lashajini/mind-palace/pkg/mperrors"
 	"github.com/lashajini/mind-palace/pkg/rpc/loggers"
 	_ "github.com/lib/pq"
 )
@@ -28,7 +28,7 @@ func InitDB(cfg *common.Config) *MindPalaceDB {
 
 	var err error
 	db, err := sql.Open(cfg.DB_DRIVER, connStr)
-	errors.On(err).Panic()
+	mperrors.On(err).Panic()
 
 	m := &MindPalaceDB{
 		db:               db,
