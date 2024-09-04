@@ -23,7 +23,7 @@ func (s *SummaryAddon) Action(ctx context.Context, db *database.MindPalaceDB, me
 	tx := database.NewMultiInstruction(db)
 	defer func() {
 		if r := recover(); r != nil {
-			if rollbackErr := tx.Rollback(); rollbackErr != nil {
+			if rollbackErr := tx.Rollback(ctx); rollbackErr != nil {
 				err = mperrors.On(rollbackErr).Wrap("summary rollback failed")
 			} else {
 				err = mperrors.Onf("(recovered) panic: %v", r)
@@ -33,13 +33,13 @@ func (s *SummaryAddon) Action(ctx context.Context, db *database.MindPalaceDB, me
 
 	defer func() {
 		if err != nil {
-			if rollbackErr := tx.Rollback(); rollbackErr != nil {
+			if rollbackErr := tx.Rollback(ctx); rollbackErr != nil {
 				err = mperrors.On(rollbackErr).Wrap("summary rollback failed")
 			}
 		}
 	}()
 
-	err = tx.Begin()
+	err = tx.BeginTx(ctx)
 	if err != nil {
 		return mperrors.On(err).Wrap("summary transaction begin failed")
 	}
@@ -47,12 +47,12 @@ func (s *SummaryAddon) Action(ctx context.Context, db *database.MindPalaceDB, me
 	summaryID := uuid.New()
 	select {
 	case memoryID := <-memoryIDC:
-		err = models.InsertSummaryTx(tx, memoryID, summaryID, summary)
+		err = models.InsertSummaryTx(ctx, tx, memoryID, summaryID, summary)
 		if err != nil {
 			return mperrors.On(err).Wrap("failed to insert summary")
 		}
 
-		err = tx.Commit()
+		err = tx.Commit(ctx)
 		if err != nil {
 			return mperrors.On(err).Wrap("summary transaction commit failed")
 		}

@@ -1,3 +1,4 @@
+import signal
 import grpc
 import time
 from concurrent import futures
@@ -45,13 +46,20 @@ def server():
 
     server.add_insecure_port(f"[::]:{config.PALACE_GRPC_SERVER_PORT}")
     server.start()
-    log.info(f"Palace Server started on port: {config.PALACE_GRPC_SERVER_PORT}")
-    # server.wait_for_termination()
+    log.info(f"Palace gRPC Server started on port: {config.PALACE_GRPC_SERVER_PORT}")
+
+    def handle_sigterm(*_):
+        log.warning("Palace gRPC server graceful shutdown initiated...")
+        log.warning("Palace gRPC Server stopped. Exiting.")
+        exit(0)
+
+    signal.signal(signal.SIGINT, handle_sigterm)  # Handle Ctrl+C
+    signal.signal(signal.SIGTERM, handle_sigterm)  # Handle termination
+
     try:
-        while True:
-            time.sleep(config.ONE_DAY_IN_SECONDS)
+        server.wait_for_termination()
     except KeyboardInterrupt:
-        server.stop(0)
+        handle_sigterm()
 
 
 def main():

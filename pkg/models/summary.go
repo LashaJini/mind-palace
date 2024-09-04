@@ -18,11 +18,10 @@ var summaryColumns = []string{
 	"updated_at",
 }
 
-func InsertSummaryTx(tx *database.MultiInstruction, memoryID, summaryID uuid.UUID, summary string) error {
+func InsertSummaryTx(ctx context.Context, tx *database.MultiInstruction, memoryID, summaryID uuid.UUID, summary string) error {
 	if len(summary) == 0 {
 		return mperrors.Onf("empty summary")
 	}
-	ctx := context.Background()
 
 	now := time.Now().UTC().Unix()
 	createdAt := now
@@ -37,5 +36,5 @@ func InsertSummaryTx(tx *database.MultiInstruction, memoryID, summaryID uuid.UUI
 	q := insertF(tx.CurrentSchema(), database.Table.Summary, joinedColumns, values, "")
 	loggers.Log.DBInfo(ctx, tx.ID, q)
 
-	return tx.Exec(q)
+	return tx.Exec(ctx, q)
 }

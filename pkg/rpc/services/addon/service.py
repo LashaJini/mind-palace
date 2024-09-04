@@ -1,4 +1,5 @@
 from typing import List
+import grpc
 from llama_index.core import SimpleDirectoryReader
 
 from pkg.rpc.services.addon.addons.factory import AddonFactory
@@ -11,6 +12,7 @@ from pkg.rpc.services.addon.prompts.factory import PromptsFactory
 import pkg.rpc.gen.Palace_pb2 as pbPalace
 import pkg.rpc.gen.SharedTypes_pb2 as pbShared
 from pkg.rpc.log.client import LogGrpcClient
+from pkg.rpc.loggers.vdb import log
 
 
 class AddonService:
@@ -19,133 +21,139 @@ class AddonService:
         self.verbose = verbose
         self.log = log
 
-    def ApplyAddon(self, request: pbPalace.JoinedAddons, context):
-        try:
-            file = request.file
-            documents = SimpleDirectoryReader(input_files=[file]).load_data()
+    def ApplyAddon(self, request: pbPalace.JoinedAddons, context: grpc.ServicerContext):
+        if context.is_active():
+            try:
+                file = request.file
+                documents = SimpleDirectoryReader(input_files=[file]).load_data()
 
-            input = documents[0].text
+                input = documents[0].text
 
-            addons = request.addons
-            if addons.joined:
-                instructions = []
-                formats = []
-                names = []
-                for name in addons.names:
-                    prompt = PromptsFactory.construct(name)
-                    joinable = prompt.joinable_template()
+                addons = request.addons
+                if addons.joined:
+                    instructions = []
+                    formats = []
+                    names = []
+                    for name in addons.names:
+                        prompt = PromptsFactory.construct(name)
+                        joinable = prompt.joinable_template()
 
-                    addon_instructions = joinable.instructions
-                    addon_format = joinable.format
+                        addon_instructions = joinable.instructions
+                        addon_format = joinable.format
 
-                    instructions.append(addon_instructions)
-                    formats.append(addon_format)
-                    names.append(name)
+                        instructions.append(addon_instructions)
+                        formats.append(addon_format)
+                        names.append(name)
 
+                    result = (
+                        JoinedAddons(names)
+                        .prepare_input(user_input=input)
+                        .apply(
+                            llm=self.llm,
+                            instructions=", ".join([s for s in instructions if s]),
+                            format="\n".join([s for s in formats if s]),
+                            verbose=self.verbose,
+                        )
+                        .finalize(verbose=self.verbose)
+                        .result()
+                    )
+                    self.log.debug(f"Result {result}")
+                    return result
+
+                # TODO: abstract away
+                name = addons.names[0]
                 result = (
-                    JoinedAddons(names)
+                    AddonFactory.construct(name)
                     .prepare_input(user_input=input)
                     .apply(
                         llm=self.llm,
-                        instructions=", ".join([s for s in instructions if s]),
-                        format="\n".join([s for s in formats if s]),
                         verbose=self.verbose,
+                        max_keywords=10,
                     )
                     .finalize(verbose=self.verbose)
                     .result()
                 )
                 self.log.debug(f"Result {result}")
                 return result
+            except Exception as e:
+                self.log.exception(str(e))
+        log.warning("context is not active. Skipping addon 'ApplyAddon'")
 
-            # TODO: abstract away
-            name = addons.names[0]
-            result = (
-                AddonFactory.construct(name)
-                .prepare_input(user_input=input)
-                .apply(
-                    llm=self.llm,
-                    verbose=self.verbose,
-                    max_keywords=10,
+    def JoinAddons(self, request, context: grpc.ServicerContext):
+        if context.is_active():
+            try:
+                file = request.file
+                documents = SimpleDirectoryReader(input_files=[file]).load_data()
+                input_text = documents[0].text
+
+                input_text_token_count = self.llm.token_size(input_text)
+                sys_prompt_token_count = self.llm.token_size(Prompts.sys_prompt)
+                joined_prompt_token_count = self.llm.token_size(
+                    joined_prompts.DEFAULT_JOINED_TMPL
                 )
-                .finalize(verbose=self.verbose)
-                .result()
-            )
-            self.log.debug(f"Result {result}")
-            return result
-        except Exception as e:
-            self.log.exception(str(e))
+                token_decrements = [
+                    input_text_token_count,
+                    sys_prompt_token_count,
+                    joined_prompt_token_count,
+                ]
 
-    def JoinAddons(self, request, context):
-        try:
-            file = request.file
-            documents = SimpleDirectoryReader(input_files=[file]).load_data()
-            input_text = documents[0].text
-
-            input_text_token_count = self.llm.token_size(input_text)
-            sys_prompt_token_count = self.llm.token_size(Prompts.sys_prompt)
-            joined_prompt_token_count = self.llm.token_size(
-                joined_prompts.DEFAULT_JOINED_TMPL
-            )
-            token_decrements = [
-                input_text_token_count,
-                sys_prompt_token_count,
-                joined_prompt_token_count,
-            ]
-
-            addons_tokens = []
-            for step in request.steps:
-                prompt = PromptsFactory.construct(name=step)
-                format_token_count = prompt.joinable_template_token_count(llm=self.llm)
-                addons_tokens.append({"name": step, "token": format_token_count})
-
-            # TODO: algo for most addons joined together
-            addons_tokens.sort(key=lambda x: x["token"])
-
-            self.log.debug(f"addons + approx tokens required: {addons_tokens}")
-
-            available_tokens = self.llm.calculate_available_tokens(token_decrements)
-            tokens_left = available_tokens
-
-            addons: List[pbPalace.JoinedAddon] = []
-            batch_addons = []
-
-            def add_batch_to_addons():
-                if len(batch_addons) > 0:
-                    addons.append(
-                        pbPalace.JoinedAddon(
-                            names=batch_addons, joined=len(batch_addons) > 1
-                        )
+                addons_tokens = []
+                for step in request.steps:
+                    prompt = PromptsFactory.construct(name=step)
+                    format_token_count = prompt.joinable_template_token_count(
+                        llm=self.llm
                     )
+                    addons_tokens.append({"name": step, "token": format_token_count})
 
-            for addon in addons_tokens:
-                token_cost = addon.get("token")
-                addon_name = addon.get("name")
+                # TODO: algo for most addons joined together
+                addons_tokens.sort(key=lambda x: x["token"])
 
-                if token_cost < tokens_left:
-                    tokens_left -= token_cost
-                    batch_addons.append(addon_name)
-                else:
-                    add_batch_to_addons()
+                self.log.debug(f"addons + approx tokens required: {addons_tokens}")
 
-                    # reset for the next batch
-                    batch_addons = [addon_name]
-                    tokens_left = available_tokens - token_cost
+                available_tokens = self.llm.calculate_available_tokens(token_decrements)
+                tokens_left = available_tokens
 
-            # drain remaining addons in batch
-            add_batch_to_addons()
+                addons: List[pbPalace.JoinedAddon] = []
+                batch_addons = []
 
-            [
-                self.log.debug(
-                    f"{'Joined addons' if addon_cluster.joined else 'Single addon'}: {', '.join(addon_cluster.names) if addon_cluster.joined else addon_cluster.names[0]}"
-                )
-                for addon_cluster in addons
-            ]
+                def add_batch_to_addons():
+                    if len(batch_addons) > 0:
+                        addons.append(
+                            pbPalace.JoinedAddon(
+                                names=batch_addons, joined=len(batch_addons) > 1
+                            )
+                        )
 
-            joinedAddons = pbPalace.JoinedAddonsResponse(addons=addons)
+                for addon in addons_tokens:
+                    token_cost = addon.get("token")
+                    addon_name = addon.get("name")
 
-            return joinedAddons
-        except Exception as e:
-            self.log.exception(str(e))
+                    if token_cost < tokens_left:
+                        tokens_left -= token_cost
+                        batch_addons.append(addon_name)
+                    else:
+                        add_batch_to_addons()
+
+                        # reset for the next batch
+                        batch_addons = [addon_name]
+                        tokens_left = available_tokens - token_cost
+
+                # drain remaining addons in batch
+                add_batch_to_addons()
+
+                [
+                    self.log.debug(
+                        f"{'Joined addons' if addon_cluster.joined else 'Single addon'}: {', '.join(addon_cluster.names) if addon_cluster.joined else addon_cluster.names[0]}"
+                    )
+                    for addon_cluster in addons
+                ]
+
+                joinedAddons = pbPalace.JoinedAddonsResponse(addons=addons)
+
+                return joinedAddons
+            except Exception as e:
+                self.log.exception(str(e))
+        log.warning("context is not active. Skipping addon 'JoinAddons'")
 
     def Ping(self, request, context):
         return pbShared.Empty()

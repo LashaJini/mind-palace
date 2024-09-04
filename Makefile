@@ -93,7 +93,7 @@ test-py: ## Run unit and integration tests (python).
 	MP_ENV=test poetry run pytest $(ARGS)
 
 test-go: ## Run unit and integration tests (go).
-	@$(MAKE) MP_ENV=test test-go-helper ARGS="-tags=e2e $$ARGS"
+	@$(MAKE) MP_ENV=test test-go-helper ARGS="-count=1 -tags=e2e $$ARGS"
 
 # -count=1 ignores caching
 test-go-helper:

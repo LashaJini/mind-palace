@@ -27,11 +27,10 @@ var chunkColumns = []string{
 	"updated_at",
 }
 
-func InsertManyChunksTx(tx *database.MultiInstruction, memoryID uuid.UUID, chunks []string) ([]uuid.UUID, error) {
+func InsertManyChunksTx(ctx context.Context, tx *database.MultiInstruction, memoryID uuid.UUID, chunks []string) ([]uuid.UUID, error) {
 	if len(chunks) == 0 {
 		return nil, mperrors.Onf("empty chunks")
 	}
-	ctx := context.Background()
 
 	joinedColumns, _ := joinColumns(chunkColumns, "id")
 
@@ -53,7 +52,7 @@ func InsertManyChunksTx(tx *database.MultiInstruction, memoryID uuid.UUID, chunk
 	q := insertF(tx.CurrentSchema(), database.Table.Chunk, joinedColumns, values, "RETURNING id")
 	loggers.Log.DBInfo(ctx, tx.ID, q)
 
-	rows, err := tx.Query(q)
+	rows, err := tx.Query(ctx, q)
 	if err != nil {
 		return nil, err
 	}

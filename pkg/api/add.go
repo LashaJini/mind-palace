@@ -15,9 +15,10 @@ import (
 	addonrpc "github.com/lashajini/mind-palace/pkg/rpc/palace/addon"
 	vdbrpc "github.com/lashajini/mind-palace/pkg/rpc/vdb"
 	"github.com/lashajini/mind-palace/pkg/storage/database"
+	"github.com/lashajini/mind-palace/pkg/types"
 )
 
-func Add(file string) error {
+func Add(ctx context.Context, file string) error {
 	cfg := common.NewConfig()
 	currentUser, err := getCurrentUser()
 	if err != nil {
@@ -50,8 +51,8 @@ func Add(file string) error {
 	db := database.InitDB(cfg)
 	db.SetSchema(db.ConstructSchema(currentUser))
 
-	ctx, cancel := context.WithCancel(context.Background())
-	defer revertAdd(dst, cancel)
+	ctx, cancel := context.WithCancel(ctx)
+	defer recoverAdd(ctx, dst, cancel)
 
 	maxBufSize := len(addons.List) - 1 // all addons - default
 	memoryIDC := make(chan uuid.UUID, maxBufSize)
@@ -72,11 +73,12 @@ func Add(file string) error {
 		for _, addon := range addons {
 			wg.Add(1)
 
-			go func() {
+			go func(addon types.IAddon) {
 				defer wg.Done()
+
 				err := addon.Action(ctx, db, memoryIDC, vdbGrpcClient, maxBufSize, resourceID, resourcePath, cancel)
 				mperrors.On(err).Warn()
-			}()
+			}(addon)
 		}
 	}
 
@@ -87,7 +89,7 @@ func Add(file string) error {
 		<-memoryIDC
 	}
 
-	return nil
+	return ctx.Err()
 }
 
 func validateFile(file string) error {
@@ -128,9 +130,8 @@ func getCurrentUser() (string, error) {
 	return currentUser, nil
 }
 
-func revertAdd(dst string, cancel context.CancelFunc) {
+func recoverAdd(ctx context.Context, dst string, cancel context.CancelFunc) {
 	if r := recover(); r != nil {
-		ctx := context.Background()
 		loggers.Log.Info(ctx, "Reverting...")
 
 		err := os.Remove(dst)

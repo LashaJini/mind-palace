@@ -18,10 +18,10 @@ func (suite *ModelsTestSuite) Test_InsertMemoryTx_success() {
 	assert.NoError(t, err)
 
 	memory := NewMemory()
-	id, err := InsertMemoryTx(tx, memory)
+	id, err := InsertMemoryTx(suite.ctx, tx, memory)
 	assert.NoError(t, err)
 
-	err = tx.Commit()
+	err = tx.Commit(suite.ctx)
 	assert.NoError(t, err)
 
 	q := fmt.Sprintf("select created_at, updated_at from %s.%s where id = '%s'", suite.currentSchema, database.Table.Memory, id.String())

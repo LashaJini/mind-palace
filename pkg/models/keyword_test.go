@@ -18,14 +18,14 @@ func (suite *ModelsTestSuite) Test_InsertManyKeywordsTx_success() {
 	assert.NoError(t, err)
 
 	keywords := []string{"keyword1", "keyword2", "keyword3"}
-	keywordIDs, _ := InsertManyKeywordsTx(tx, keywords)
+	keywordIDs, _ := InsertManyKeywordsTx(suite.ctx, tx, keywords)
 	expectedIDs := map[string]int{
 		"keyword1": 1,
 		"keyword2": 2,
 		"keyword3": 3,
 	}
 
-	err = tx.Commit()
+	err = tx.Commit(suite.ctx)
 	assert.NoError(t, err)
 
 	if len(keywordIDs) != len(expectedIDs) {

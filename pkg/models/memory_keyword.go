@@ -18,8 +18,7 @@ var memoryKeywordColumns = []string{
 	"memory_id",
 }
 
-func InsertManyMemoryKeywordsTx(tx *database.MultiInstruction, keywords map[string]int, memoryID uuid.UUID) error {
-	ctx := context.Background()
+func InsertManyMemoryKeywordsTx(ctx context.Context, tx *database.MultiInstruction, keywords map[string]int, memoryID uuid.UUID) error {
 	joinedColumns, _ := joinColumns(memoryKeywordColumns)
 
 	var valueTuples [][]any
@@ -36,7 +35,7 @@ func InsertManyMemoryKeywordsTx(tx *database.MultiInstruction, keywords map[stri
 	q := insertF(tx.CurrentSchema(), database.Table.MemoryKeyword, joinedColumns, values, "")
 	loggers.Log.DBInfo(ctx, tx.ID, q)
 
-	err := tx.Exec(q)
+	err := tx.Exec(ctx, q)
 	if err != nil {
 		return err
 	}

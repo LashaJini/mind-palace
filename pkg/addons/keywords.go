@@ -22,7 +22,7 @@ func (k *KeywordsAddon) Action(ctx context.Context, db *database.MindPalaceDB, m
 	tx := database.NewMultiInstruction(db)
 	defer func() {
 		if r := recover(); r != nil {
-			if rollbackErr := tx.Rollback(); rollbackErr != nil {
+			if rollbackErr := tx.Rollback(ctx); rollbackErr != nil {
 				err = mperrors.On(rollbackErr).Wrap("keywords rollback failed")
 			} else {
 				err = mperrors.Onf("(recovered) panic: %v", r)
@@ -32,13 +32,13 @@ func (k *KeywordsAddon) Action(ctx context.Context, db *database.MindPalaceDB, m
 
 	defer func() {
 		if err != nil {
-			if rollbackErr := tx.Rollback(); rollbackErr != nil {
+			if rollbackErr := tx.Rollback(ctx); rollbackErr != nil {
 				err = mperrors.On(rollbackErr).Wrap("keywords rollback failed")
 			}
 		}
 	}()
 
-	err = tx.Begin()
+	err = tx.BeginTx(ctx)
 	if err != nil {
 		return mperrors.On(err).Wrap("keywords transaction begin failed")
 	}
@@ -60,14 +60,14 @@ func (k *KeywordsAddon) Action(ctx context.Context, db *database.MindPalaceDB, m
 		keywords = append(keywords, keyword)
 	}
 
-	keywordIDsMap, err := models.InsertManyKeywordsTx(tx, keywords)
+	keywordIDsMap, err := models.InsertManyKeywordsTx(ctx, tx, keywords)
 	if err != nil {
 		return mperrors.On(err).Wrap("failed to insert keywords")
 	}
 
 	select {
 	case memoryID := <-memoryIDC:
-		chunkIDs, err := models.InsertManyChunksTx(tx, memoryID, chunks)
+		chunkIDs, err := models.InsertManyChunksTx(ctx, tx, memoryID, chunks)
 		if err != nil {
 			return mperrors.On(err).Wrap("failed to insert chunks")
 		}
@@ -82,7 +82,7 @@ func (k *KeywordsAddon) Action(ctx context.Context, db *database.MindPalaceDB, m
 			chunkIDKeywordIDsMap[chunkID] = keywordIDs
 		}
 
-		err = models.InsertManyChunksKeywordsTx(tx, chunkIDKeywordIDsMap)
+		err = models.InsertManyChunksKeywordsTx(ctx, tx, chunkIDKeywordIDsMap)
 		if err != nil {
 			return mperrors.On(err).Wrap("failed to insert chunk keyword pairs")
 		}
@@ -92,7 +92,7 @@ func (k *KeywordsAddon) Action(ctx context.Context, db *database.MindPalaceDB, m
 			return mperrors.On(err).Wrap("keywords vdb insert failed")
 		}
 
-		err = tx.Commit()
+		err = tx.Commit(ctx)
 		if err != nil {
 			return mperrors.On(err).Wrap("keywords transaction commit failed")
 		}

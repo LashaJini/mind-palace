@@ -1,6 +1,8 @@
 package cli
 
 import (
+	"context"
+
 	"github.com/lashajini/mind-palace/pkg/mperrors"
 	"github.com/lashajini/mind-palace/pkg/storage/database"
 	"github.com/spf13/cobra"
@@ -13,9 +15,8 @@ var rootCmd = &cobra.Command{
 	Run:   func(cmd *cobra.Command, args []string) {},
 }
 
-func Execute() {
-	err := rootCmd.Execute()
-	mperrors.On(err).Exit()
+func Execute(ctx context.Context) error {
+	return rootCmd.ExecuteContext(ctx)
 }
 
 func closeDB(db *database.MindPalaceDB) {

@@ -37,8 +37,7 @@ var originalResourceColumns = []string{
 	"updated_at",
 }
 
-func InsertResourceTx(tx *database.MultiInstruction, resource *OriginalResource) error {
-	ctx := context.Background()
+func InsertResourceTx(ctx context.Context, tx *database.MultiInstruction, resource *OriginalResource) error {
 	joinedColumns, _ := joinColumns(originalResourceColumns)
 
 	var valueTuples [][]any
@@ -56,5 +55,5 @@ func InsertResourceTx(tx *database.MultiInstruction, resource *OriginalResource)
 	q := insertF(tx.CurrentSchema(), database.Table.OriginalResource, joinedColumns, values, "")
 	loggers.Log.DBInfo(ctx, tx.ID, q)
 
-	return tx.Exec(q)
+	return tx.Exec(ctx, q)
 }

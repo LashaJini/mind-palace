@@ -20,10 +20,10 @@ class LogGrpcClient:
 
         self.ping()
 
-    def _request(self, msg: str, type: str) -> pbLog.LogRequest:
+    def _request(self, msg: str, type: str, caller_incr: int) -> pbLog.LogRequest:
         s = inspect.stack()
         # caller [2] -> log type (info, debug...) [1] -> _request [0]
-        nth_call = 2
+        nth_call = 2 + caller_incr
         filename = s[nth_call].filename
         line = s[nth_call].lineno
 
@@ -41,25 +41,33 @@ class LogGrpcClient:
             try:
                 self.client.Ping(pbShared.Empty())
 
-                self.info(f"log grpc server ping '{i}' successful\n")
+                self.info(f"log grpc server ping '{i}' successful", 2)
                 return
             except Exception as e:
                 print(
-                    f"log grpc server ping '{i}' failed (retrying in 1 sec), reason: {e}\n",
+                    f"log grpc server ping '{i}' failed (retrying in 1 sec), reason: {e}",
                 )
                 err = e
             sleep(1)
 
         raise ConnectionError("log grpc server is not responding!", err)
 
-    def info(self, msg: str):
-        self.client.Message(request=self._request(msg=msg, type="info"))
+    def info(self, msg: str, caller_incr: int = 0):
+        self.client.Message(
+            request=self._request(msg=msg, type="info", caller_incr=caller_incr)
+        )
 
-    def debug(self, msg: str):
-        self.client.Message(request=self._request(msg=msg, type="debug"))
+    def debug(self, msg: str, caller_incr: int = 0):
+        self.client.Message(
+            request=self._request(msg=msg, type="debug", caller_incr=caller_incr)
+        )
 
-    def warning(self, msg: str):
-        self.client.Message(request=self._request(msg=msg, type="warning"))
+    def warning(self, msg: str, caller_incr: int = 0):
+        self.client.Message(
+            request=self._request(msg=msg, type="warning", caller_incr=caller_incr)
+        )
 
-    def exception(self, msg: str):
-        self.client.Message(request=self._request(msg=msg, type="exception"))
+    def exception(self, msg: str, caller_incr: int = 0):
+        self.client.Message(
+            request=self._request(msg=msg, type="exception", caller_incr=caller_incr)
+        )

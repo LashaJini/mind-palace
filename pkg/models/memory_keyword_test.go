@@ -18,7 +18,7 @@ func (suite *ModelsTestSuite) Test_InsertManyMemoryKeywordsTx_success() {
 	t.Cleanup(suite.MemoryKeywordCleanup)
 
 	memory := NewMemory()
-	memoryID, err := InsertMemoryTx(tx, memory)
+	memoryID, err := InsertMemoryTx(suite.ctx, tx, memory)
 	memory.ID = memoryID
 	assert.NoError(t, err)
 
@@ -27,13 +27,13 @@ func (suite *ModelsTestSuite) Test_InsertManyMemoryKeywordsTx_success() {
 		"keyword2",
 		"keyword3",
 	}
-	keywordIDs, err := InsertManyKeywordsTx(tx, keywords)
+	keywordIDs, err := InsertManyKeywordsTx(suite.ctx, tx, keywords)
 	assert.NoError(t, err)
 
-	err = InsertManyMemoryKeywordsTx(tx, keywordIDs, memory.ID)
+	err = InsertManyMemoryKeywordsTx(suite.ctx, tx, keywordIDs, memory.ID)
 	assert.NoError(t, err)
 
-	err = tx.Commit()
+	err = tx.Commit(suite.ctx)
 	assert.NoError(t, err)
 
 	q := fmt.Sprintf("select keyword_id, memory_id from %s.%s order by keyword_id asc", suite.currentSchema, database.Table.MemoryKeyword)
