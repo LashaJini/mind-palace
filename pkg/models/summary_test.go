@@ -19,16 +19,16 @@ func (suite *ModelsTestSuite) Test_InsertSummaryTx_success() {
 	assert.NoError(t, err)
 
 	memory := NewMemory()
-	memoryID, err := InsertMemoryTx(tx, memory)
+	memoryID, err := InsertMemoryTx(suite.ctx, tx, memory)
 	memory.ID = memoryID
 	assert.NoError(t, err)
 
 	summaryID := uuid.New()
 	summary := "this is a summary"
-	err = InsertSummaryTx(tx, memoryID, summaryID, summary)
+	err = InsertSummaryTx(suite.ctx, tx, memoryID, summaryID, summary)
 	assert.NoError(t, err)
 
-	err = tx.Commit()
+	err = tx.Commit(suite.ctx)
 	assert.NoError(t, err)
 
 	q := fmt.Sprintf("select memory_id, text from %s.%s where id = '%s'", suite.currentSchema, database.Table.Summary, summaryID.String())

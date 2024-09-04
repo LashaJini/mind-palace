@@ -30,6 +30,6 @@ func init() {
 func Add(cmd *cobra.Command, args []string) {
 	file, _ := cmd.Flags().GetString("file")
 
-	err := api.Add(file)
+	err := api.Add(cmd.Context(), file)
 	mperrors.On(err).Exit()
 }

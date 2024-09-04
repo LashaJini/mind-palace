@@ -45,21 +45,27 @@ func (c *Client) Add(ctx context.Context, file string, steps []string) (<-chan *
 		}
 		joinedAddons, _ := c.Service.JoinAddons(ctx, resource)
 
-		if joinedAddons != nil {
-			for _, joinedAddon := range joinedAddons.Addons {
-				tmp := &pb.JoinedAddons{
-					File:   file,
-					Addons: joinedAddon,
-				}
-				// server may decide that it's more efficient to join multiple addons together
-				addonResult, _ := c.Service.ApplyAddon(ctx, tmp)
+		select {
+		case <-ctx.Done():
+			close(addonResultC)
+			return
+		default:
+			if joinedAddons != nil {
+				for _, joinedAddon := range joinedAddons.Addons {
+					tmp := &pb.JoinedAddons{
+						File:   file,
+						Addons: joinedAddon,
+					}
+					// server may decide that it's more efficient to join multiple addons together
+					addonResult, _ := c.Service.ApplyAddon(ctx, tmp)
 
-				addonResultC <- addonResult
+					addonResultC <- addonResult
+				}
 			}
 		}
 
 		close(addonResultC)
 	}()
 
-	return addonResultC, nil
+	return addonResultC, ctx.Err()
 }

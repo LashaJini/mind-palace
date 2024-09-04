@@ -51,6 +51,8 @@ func Migrate(cmd *cobra.Command, args []string) {
 	if VERSION {
 		version, dirty, err := m.Version()
 		mperrors.On(err).ExitWithMsgf("version: %d dirty: %t", version, dirty)
+
+		fmt.Println(version)
 		return
 	}
 

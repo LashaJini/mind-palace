@@ -30,8 +30,7 @@ var memoryColumns = []string{
 	"updated_at",
 }
 
-func InsertMemoryTx(tx *database.MultiInstruction, memory *Memory) (uuid.UUID, error) {
-	ctx := context.Background()
+func InsertMemoryTx(ctx context.Context, tx *database.MultiInstruction, memory *Memory) (uuid.UUID, error) {
 	createdAt := memory.CreatedAt
 	updatedAt := memory.UpdatedAt
 
@@ -47,7 +46,7 @@ func InsertMemoryTx(tx *database.MultiInstruction, memory *Memory) (uuid.UUID, e
 	loggers.Log.DBInfo(ctx, tx.ID, q)
 
 	var id string
-	err := tx.QueryRow(q).Scan(&id)
+	err := tx.QueryRow(ctx, q).Scan(&id)
 	if err != nil {
 		return uuid.Nil, err
 	}

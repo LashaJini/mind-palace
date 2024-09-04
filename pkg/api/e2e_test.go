@@ -95,7 +95,7 @@ func (s *E2ETestSuite) Test_add_with_default_addon() {
 	t := s.T()
 	defer s.TearDownSubTest()
 
-	Add(s.input_filepath)
+	Add(s.ctx, s.input_filepath)
 
 	var total_memory int
 	s.db.DB().QueryRow(fmt.Sprintf("SELECT count(*) FROM %s.memory", s.schema)).Scan(&total_memory)
@@ -110,7 +110,7 @@ func (s *E2ETestSuite) Test_add_with_default_and_keywords_addons_joined() {
 	err := s.userCfg.EnableAddon(&addons.KeywordsAddonInstance)
 	assert.NoError(t, err)
 
-	Add(s.input_filepath)
+	Add(s.ctx, s.input_filepath)
 
 	var total_keywords int
 	s.db.DB().QueryRow(fmt.Sprintf("SELECT count(*) FROM %s.keyword", s.schema)).Scan(&total_keywords)
@@ -130,7 +130,7 @@ func (s *E2ETestSuite) Test_add_with_default_and_summary_addons_joined() {
 	err := s.userCfg.EnableAddon(&addons.SummaryAddonInstance)
 	assert.NoError(t, err)
 
-	Add(s.input_filepath)
+	Add(s.ctx, s.input_filepath)
 
 	var total_summary int
 	s.db.DB().QueryRow(fmt.Sprintf("SELECT count(*) FROM %s.summary", s.schema)).Scan(&total_summary)
@@ -147,7 +147,7 @@ func (s *E2ETestSuite) Test_add_with_all_addons_joined() {
 	err = s.userCfg.EnableAddon(&addons.SummaryAddonInstance)
 	assert.NoError(t, err)
 
-	Add(s.input_filepath)
+	Add(s.ctx, s.input_filepath)
 
 	var total_memory int
 	s.db.DB().QueryRow(fmt.Sprintf("SELECT count(*) FROM %s.memory", s.schema)).Scan(&total_memory)
@@ -182,7 +182,7 @@ func (s *E2ETestSuite) Test_add_with_default_and_keywords_addons_single() {
 	err = s.userCfg.EnableAddon(&addons.KeywordsAddonInstance)
 	assert.NoError(t, err)
 
-	Add(s.input_filepath)
+	Add(s.ctx, s.input_filepath)
 
 	var total_memory int
 	s.db.DB().QueryRow(fmt.Sprintf("SELECT count(*) FROM %s.memory", s.schema)).Scan(&total_memory)
@@ -212,7 +212,7 @@ func (s *E2ETestSuite) Test_add_with_default_and_summary_addons_single() {
 	err = s.userCfg.EnableAddon(&addons.SummaryAddonInstance)
 	assert.NoError(t, err)
 
-	Add(s.input_filepath)
+	Add(s.ctx, s.input_filepath)
 
 	var total_memory int
 	s.db.DB().QueryRow(fmt.Sprintf("SELECT count(*) FROM %s.memory", s.schema)).Scan(&total_memory)
@@ -240,7 +240,7 @@ func (s *E2ETestSuite) Test_add_with_all_addons_single() {
 	err = s.userCfg.EnableAddon(&addons.SummaryAddonInstance)
 	assert.NoError(t, err)
 
-	Add(s.input_filepath)
+	Add(s.ctx, s.input_filepath)
 
 	var total_memory int
 	s.db.DB().QueryRow(fmt.Sprintf("SELECT count(*) FROM %s.memory", s.schema)).Scan(&total_memory)

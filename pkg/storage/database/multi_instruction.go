@@ -36,30 +36,40 @@ func (t *MultiInstruction) Begin() error {
 	return nil
 }
 
-func (t *MultiInstruction) Commit() error {
-	loggers.Log.TXInfo(context.Background(), t.ID, "COMMIT Transaction")
+func (t *MultiInstruction) BeginTx(ctx context.Context) error {
+	loggers.Log.TXInfo(ctx, t.ID, "BEGIN Transaction")
+	tx, err := t.db.DB().BeginTx(ctx, nil)
+	if err != nil {
+		return err
+	}
+	t.tx = tx
+	return nil
+}
+
+func (t *MultiInstruction) Commit(ctx context.Context) error {
+	loggers.Log.TXInfo(ctx, t.ID, "COMMIT Transaction")
 	return t.tx.Commit()
 }
 
-func (t *MultiInstruction) Rollback() error {
-	loggers.Log.TXInfo(context.Background(), t.ID, "ROLLBACK Transaction")
+func (t *MultiInstruction) Rollback(ctx context.Context) error {
+	loggers.Log.TXInfo(ctx, t.ID, "ROLLBACK Transaction")
 	return t.tx.Rollback()
 }
 
-func (t *MultiInstruction) Query(query string, args ...interface{}) (*sql.Rows, error) {
-	return t.tx.QueryContext(context.Background(), query, args...)
+func (t *MultiInstruction) Query(ctx context.Context, query string, args ...interface{}) (*sql.Rows, error) {
+	return t.tx.QueryContext(ctx, query, args...)
 }
 
-func (t *MultiInstruction) QueryRow(query string, args ...interface{}) *sql.Row {
-	return t.tx.QueryRowContext(context.Background(), query, args...)
+func (t *MultiInstruction) QueryRow(ctx context.Context, query string, args ...interface{}) *sql.Row {
+	return t.tx.QueryRowContext(ctx, query, args...)
 }
 
-func (t *MultiInstruction) Exec(query string, args ...interface{}) error {
-	_, err := t.tx.ExecContext(context.Background(), query, args...)
+func (t *MultiInstruction) Exec(ctx context.Context, query string, args ...interface{}) error {
+	_, err := t.tx.ExecContext(ctx, query, args...)
 
 	return err
 }
 
-func (t *MultiInstruction) Prepare(query string) (*sql.Stmt, error) {
-	return t.tx.PrepareContext(context.Background(), query)
+func (t *MultiInstruction) Prepare(ctx context.Context, query string) (*sql.Stmt, error) {
+	return t.tx.PrepareContext(ctx, query)
 }

@@ -25,7 +25,7 @@ func (d *DefaultAddon) Action(ctx context.Context, db *database.MindPalaceDB, me
 	tx := database.NewMultiInstruction(db)
 	defer func() {
 		if r := recover(); r != nil {
-			if rollbackErr := tx.Rollback(); rollbackErr != nil {
+			if rollbackErr := tx.Rollback(ctx); rollbackErr != nil {
 				err = mperrors.On(rollbackErr).Wrap("default rollback failed")
 			} else {
 				err = mperrors.Onf("(recovered) panic: %v", r)
@@ -37,7 +37,7 @@ func (d *DefaultAddon) Action(ctx context.Context, db *database.MindPalaceDB, me
 
 	defer func() {
 		if err != nil {
-			if rollbackErr := tx.Rollback(); rollbackErr != nil {
+			if rollbackErr := tx.Rollback(ctx); rollbackErr != nil {
 				err = mperrors.On(rollbackErr).Wrap("default rollback failed")
 			}
 
@@ -46,19 +46,19 @@ func (d *DefaultAddon) Action(ctx context.Context, db *database.MindPalaceDB, me
 	}()
 
 	memory := models.NewMemory()
-	err = tx.Begin()
+	err = tx.BeginTx(ctx)
 	if err != nil {
 		return mperrors.On(err).Wrap("default transaction begin failed")
 	}
 
-	memoryID, err := models.InsertMemoryTx(tx, memory)
+	memoryID, err := models.InsertMemoryTx(ctx, tx, memory)
 	if err != nil {
 		return mperrors.On(err).Wrap("default insert memory failed")
 	}
 
 	resource := models.NewResource(resourceID, memoryID, resourcePath)
 
-	err = models.InsertResourceTx(tx, resource)
+	err = models.InsertResourceTx(ctx, tx, resource)
 	if err != nil {
 		return mperrors.On(err).Wrap("default insert resource failed")
 	}
@@ -73,7 +73,7 @@ func (d *DefaultAddon) Action(ctx context.Context, db *database.MindPalaceDB, me
 		return mperrors.On(err).Wrap("default vdb insert failed")
 	}
 
-	err = tx.Commit()
+	err = tx.Commit(ctx)
 	if err != nil {
 		return mperrors.On(err).Wrap("default transaction commit failed")
 	}

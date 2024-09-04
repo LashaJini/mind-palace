@@ -1,5 +1,5 @@
 import grpc
-import time
+import signal
 from concurrent import futures
 
 from pkg.rpc import config
@@ -21,13 +21,20 @@ def server():
     vdbService.add_VDBServicer_to_server(VDBService(client=client), server)
     server.add_insecure_port(f"[::]:{config.VDB_GRPC_SERVER_PORT}")
     server.start()
-    log.info(f"VDB Server started on port: {config.VDB_GRPC_SERVER_PORT}")
-    # server.wait_for_termination()
+    log.info(f"VDB gRPC Server started on port: {config.VDB_GRPC_SERVER_PORT}")
+
+    def handle_sigterm(*_):
+        log.warning("VDB gRPC server graceful shutdown initiated...")
+        log.warning("VDB gRPC Server stopped. Exiting.")
+        exit(0)
+
+    signal.signal(signal.SIGINT, handle_sigterm)  # Handle Ctrl+C
+    signal.signal(signal.SIGTERM, handle_sigterm)  # Handle termination
+
     try:
-        while True:
-            time.sleep(config.ONE_DAY_IN_SECONDS)
+        server.wait_for_termination()
     except KeyboardInterrupt:
-        server.stop(0)
+        handle_sigterm()
 
 
 def main():

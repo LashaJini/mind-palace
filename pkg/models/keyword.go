@@ -24,11 +24,10 @@ var keywordColumns = []string{
 	"updated_at",
 }
 
-func InsertManyKeywordsTx(tx *database.MultiInstruction, keywords []string) (map[string]int, error) {
+func InsertManyKeywordsTx(ctx context.Context, tx *database.MultiInstruction, keywords []string) (map[string]int, error) {
 	if len(keywords) == 0 {
 		return nil, mperrors.Onf("empty keywords")
 	}
-	ctx := context.Background()
 
 	joinedColumns, _ := joinColumns(keywordColumns, "id")
 
@@ -56,7 +55,7 @@ func InsertManyKeywordsTx(tx *database.MultiInstruction, keywords []string) (map
 	)
 	loggers.Log.DBInfo(ctx, tx.ID, q)
 
-	rows, err := tx.Query(q)
+	rows, err := tx.Query(ctx, q)
 	if err != nil {
 		return nil, err
 	}

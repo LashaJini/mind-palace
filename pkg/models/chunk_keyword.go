@@ -18,8 +18,7 @@ var chunkKeywordColumns = []string{
 	"chunk_id",
 }
 
-func InsertManyChunksKeywordsTx(tx *database.MultiInstruction, chunkIDKeywordIDsMap map[uuid.UUID][]int) error {
-	ctx := context.Background()
+func InsertManyChunksKeywordsTx(ctx context.Context, tx *database.MultiInstruction, chunkIDKeywordIDsMap map[uuid.UUID][]int) error {
 	joinedColumns, _ := joinColumns(chunkKeywordColumns)
 
 	var valueTuples [][]any
@@ -38,7 +37,7 @@ func InsertManyChunksKeywordsTx(tx *database.MultiInstruction, chunkIDKeywordIDs
 	q := insertF(tx.CurrentSchema(), database.Table.ChunkKeyword, joinedColumns, values, "")
 	loggers.Log.DBInfo(ctx, tx.ID, q)
 
-	err := tx.Exec(q)
+	err := tx.Exec(ctx, q)
 	if err != nil {
 		return err
 	}
