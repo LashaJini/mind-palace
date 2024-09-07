@@ -19,11 +19,11 @@ class SummaryPrompts(Prompts):
         "{context_str}\n"
         "\n"
         "\n"
-        f"Provide summary in the following format: '{format_start} <summary> {format_end}'\n"
+        f"**Summary:** Provide the summary in the following format: `{format_start} <summary> {format_end}`. Ensure that you end the summary with `{format_end}`"
     )
     DEFAULT_SUMMARY_JOINABLE_TMPL: JoinableTemplateDict = {
         "instructions": "write summary",
-        "format": f"Provide summary in the following format: '{format_start} <summary> {format_end}'",
+        "format": f"**Summary:** Provide the summary in the following format: `{format_start} <summary> {format_end}`. Ensure that you end the summary with `{format_end}`",
     }
 
     tmpl = DEFAULT_SUMMARY_TMPL

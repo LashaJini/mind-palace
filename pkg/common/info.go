@@ -2,6 +2,7 @@ package common
 
 import (
 	"encoding/json"
+	"fmt"
 	"os"
 )
 
@@ -26,6 +27,13 @@ func CurrentUser() (string, error) {
 
 	info := MindPalaceInfo{}
 	err = json.Unmarshal(d, &info)
+	if err != nil {
+		return "", err
+	}
+
+	if info.CurrentUser == "" {
+		return "", fmt.Errorf("current user is not set")
+	}
 
 	return info.CurrentUser, err
 }

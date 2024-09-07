@@ -5,6 +5,7 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/lashajini/mind-palace/pkg/common"
+	"github.com/lashajini/mind-palace/pkg/mperrors"
 	rpcclient "github.com/lashajini/mind-palace/pkg/rpc"
 	pb "github.com/lashajini/mind-palace/pkg/rpc/gen"
 	"github.com/lashajini/mind-palace/pkg/rpc/log"
@@ -12,6 +13,14 @@ import (
 )
 
 const RETRY_COUNT = 15
+const ROW_TYPE_CHUNK = common.ROW_TYPE_CHUNK
+const ROW_TYPE_WHOLE = common.ROW_TYPE_WHOLE
+
+type VDBClient interface {
+	Search(ctx context.Context, text string) (*pb.SearchResponse, error)
+	Insert(ctx context.Context, ids []uuid.UUID, outputs []string, types []string) error
+	Drop(ctx context.Context) error
+}
 
 type Client struct {
 	*rpcclient.Client[pb.VDBClient, *log.Client]
@@ -38,21 +47,38 @@ func NewGrpcClient(cfg *common.Config, user string) *Client {
 	return c
 }
 
-func (c *Client) Insert(ctx context.Context, ids []uuid.UUID, outputs []string) error {
-	var _ids []string
-	for _, id := range ids {
-		_ids = append(_ids, id.String())
+func (c *Client) Insert(ctx context.Context, ids []uuid.UUID, outputs []string, types []string) error {
+	if len(ids) != len(outputs) && len(ids) != len(types) {
+		return mperrors.Onf("length of ids, outputs and types must be same")
 	}
 
-	vdbRows := &pb.VDBRows{
-		User:   c.user,
-		Ids:    _ids,
-		Inputs: outputs,
+	var vdbRows []*pb.InsertRequest_VDBRow
+	for i, id := range ids {
+		vdbRow := &pb.InsertRequest_VDBRow{
+			Id:    id.String(),
+			Input: outputs[i],
+			Type:  types[i],
+		}
+
+		vdbRows = append(vdbRows, vdbRow)
 	}
 
-	_, err := c.Service.Insert(ctx, vdbRows)
+	insertRequest := &pb.InsertRequest{
+		User: c.user,
+		Rows: vdbRows,
+	}
+
+	_, err := c.Service.Insert(ctx, insertRequest)
 
 	return err
+}
+
+func (c *Client) Search(ctx context.Context, text string) (*pb.SearchResponse, error) {
+	vdbSearchRequest := &pb.SearchRequest{
+		Text: text, User: c.user,
+	}
+
+	return c.Service.Search(ctx, vdbSearchRequest)
 }
 
 func (c *Client) Drop(ctx context.Context) error {

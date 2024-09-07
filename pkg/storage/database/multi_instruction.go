@@ -23,7 +23,7 @@ func NewMultiInstruction(db *MindPalaceDB) *MultiInstruction {
 }
 
 func (t *MultiInstruction) CurrentSchema() string {
-	return t.db.CurrentSchema
+	return t.db.CurrentSchema()
 }
 
 func (t *MultiInstruction) Begin() error {

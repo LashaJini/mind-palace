@@ -12,8 +12,8 @@ import (
 )
 
 var (
-	NEW    string
-	SWITCH string
+	USER_NEW    string
+	USER_SWITCH string
 )
 
 var userCmd = &cobra.Command{
@@ -25,8 +25,8 @@ var userCmd = &cobra.Command{
 
 func init() {
 	rootCmd.AddCommand(userCmd)
-	userCmd.Flags().StringVarP(&NEW, "new", "n", "", "new user")
-	userCmd.Flags().StringVarP(&SWITCH, "switch", "s", "", "switch user")
+	userCmd.Flags().StringVarP(&USER_NEW, "new", "n", "", "new user")
+	userCmd.Flags().StringVarP(&USER_SWITCH, "switch", "s", "", "switch user")
 
 	userCmd.MarkFlagsOneRequired("new", "switch")
 	userCmd.MarkFlagsMutuallyExclusive("new", "switch")
@@ -80,7 +80,7 @@ func migrateNewUser(cfg *common.Config, db *database.MindPalaceDB) error {
 		return mperrors.On(err).Wrap("failed to find '*.up.sql' files")
 	}
 
-	sqlTemplate := common.SQLTemplate{Namespace: db.CurrentSchema}
+	sqlTemplate := common.SQLTemplate{Namespace: db.CurrentSchema()}
 	for _, sqlUpFile := range sqlUpFiles {
 		var sqlBuffer bytes.Buffer
 		err = sqlTemplate.Inject(&sqlBuffer, sqlUpFile)

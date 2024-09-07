@@ -68,7 +68,7 @@ func (d *DefaultAddon) Action(ctx context.Context, db *database.MindPalaceDB, me
 		return mperrors.Onf("server didn't send default addon response")
 	}
 
-	err = vdbGrpcClient.Insert(ctx, []uuid.UUID{memoryID}, []string{defaultResponse})
+	err = vdbGrpcClient.Insert(ctx, []uuid.UUID{memoryID}, []string{defaultResponse}, []string{vdbrpc.ROW_TYPE_WHOLE})
 	if err != nil {
 		return mperrors.On(err).Wrap("default vdb insert failed")
 	}

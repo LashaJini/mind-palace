@@ -20,11 +20,11 @@ class KeywordsPrompts(Prompts):
         "{context_str}\n"
         "\n"
         "\n"
-        f"For each chunk, provide up to {{max_keywords}} keywords in the following comma-separated format: '{format_start} <keywords> {format_end}'\n"
+        f"**Keywords:** for each chunk (total {{total_chunks}}), provide up to {{max_keywords}} keywords in the following comma-separated format: `{format_start} <keywords> {format_end}`. Ensure that each set of keywords ends with `{format_end}`"
     )
     DEFAULT_KEYWORD_EXTRACT_JOINABLE_TMPL: JoinableTemplateDict = {
         "instructions": "extract the most relevant keywords only from the text within <CHUNK></CHUNK> sections. Each keyword should represent significant concepts, names, or terms from the chunk",
-        "format": f"For each chunk, provide up to {{max_keywords}} keywords in the following comma-separated format: '{format_start} <keywords> {format_end}'",
+        "format": f"**Keywords:** For each chunk (total {{total_chunks}}), provide up to {{max_keywords}} keywords in the following comma-separated format: `{format_start} <keywords> {format_end}`. Ensure that each set of keywords ends with `{format_end}`",
     }
 
     tmpl = DEFAULT_KEYWORD_EXTRACT_TMPL
@@ -32,8 +32,8 @@ class KeywordsPrompts(Prompts):
     default_max_keywords = 5
 
     def standalone_template(self, verbose=False, **kwargs):
-        if "max_keywords" not in kwargs:
-            log.warning("Missing 'max_keywords'")
+        kwargs["max_keywords"] = kwargs.get("max_keywords", self.default_max_keywords)
+        kwargs["total_chunks"] = kwargs.get("total_chunks", 0)
 
         return super()._standalone_template(self.tmpl, verbose, **kwargs)
 
@@ -41,8 +41,8 @@ class KeywordsPrompts(Prompts):
         return llm.token_size(text=self.tmpl)
 
     def prompt(self, context_str: str, verbose=False, **kwargs):
-        if "max_keywords" not in kwargs:
-            kwargs["max_keywords"] = self.default_max_keywords
+        kwargs["max_keywords"] = kwargs.get("max_keywords", self.default_max_keywords)
+        kwargs["total_chunks"] = kwargs.get("total_chunks", 0)
 
         result = self.standalone_template().format(
             context_str=context_str, verbose=verbose, **kwargs
@@ -53,8 +53,8 @@ class KeywordsPrompts(Prompts):
         return result
 
     def joinable_template(self, **kwargs) -> JoinableTemplate:
-        if "max_keywords" not in kwargs:
-            kwargs["max_keywords"] = self.default_max_keywords
+        kwargs["max_keywords"] = kwargs.get("max_keywords", self.default_max_keywords)
+        kwargs["total_chunks"] = kwargs.get("total_chunks", 0)
 
         return JoinableTemplate(
             {

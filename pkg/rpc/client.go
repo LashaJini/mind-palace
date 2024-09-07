@@ -19,7 +19,7 @@ type Logger interface {
 	Debug(ctx context.Context, format string, v ...interface{}) (*pb.Empty, error)
 	Warn(ctx context.Context, format string, v ...interface{}) (*pb.Empty, error)
 	Error(ctx context.Context, err error, format string, v ...interface{}) (*pb.Empty, error)
-	Fatal(ctx context.Context, err error, format string, v ...interface{}) (*pb.Empty, error)
+	Fatal(ctx context.Context, err error, format string, v ...interface{})
 	Info(ctx context.Context, format string, v ...interface{}) (*pb.Empty, error)
 	DBInfo(ctx context.Context, id uuid.UUID, format string, v ...interface{}) (*pb.Empty, error)
 	TXInfo(ctx context.Context, id uuid.UUID, format string, v ...interface{}) (*pb.Empty, error)

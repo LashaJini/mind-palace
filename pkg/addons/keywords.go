@@ -22,7 +22,7 @@ func (k *KeywordsAddon) Action(ctx context.Context, db *database.MindPalaceDB, m
 	tx := database.NewMultiInstruction(db)
 	defer func() {
 		if r := recover(); r != nil {
-			if rollbackErr := tx.Rollback(ctx); rollbackErr != nil {
+			if rollbackErr := tx.Rollback(context.Background()); rollbackErr != nil {
 				err = mperrors.On(rollbackErr).Wrap("keywords rollback failed")
 			} else {
 				err = mperrors.Onf("(recovered) panic: %v", r)
@@ -32,13 +32,13 @@ func (k *KeywordsAddon) Action(ctx context.Context, db *database.MindPalaceDB, m
 
 	defer func() {
 		if err != nil {
-			if rollbackErr := tx.Rollback(ctx); rollbackErr != nil {
+			if rollbackErr := tx.Rollback(context.Background()); rollbackErr != nil {
 				err = mperrors.On(rollbackErr).Wrap("keywords rollback failed")
 			}
 		}
 	}()
 
-	err = tx.BeginTx(ctx)
+	err = tx.Begin()
 	if err != nil {
 		return mperrors.On(err).Wrap("keywords transaction begin failed")
 	}
@@ -87,7 +87,12 @@ func (k *KeywordsAddon) Action(ctx context.Context, db *database.MindPalaceDB, m
 			return mperrors.On(err).Wrap("failed to insert chunk keyword pairs")
 		}
 
-		err = vdbGrpcClient.Insert(ctx, chunkIDs, chunks)
+		var types []string
+		for range chunks {
+			types = append(types, vdbrpc.ROW_TYPE_CHUNK)
+		}
+
+		err = vdbGrpcClient.Insert(ctx, chunkIDs, chunks, types)
 		if err != nil {
 			return mperrors.On(err).Wrap("keywords vdb insert failed")
 		}

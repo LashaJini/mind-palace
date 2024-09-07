@@ -2,6 +2,7 @@ package models
 
 import (
 	"context"
+	"fmt"
 	"time"
 
 	"github.com/google/uuid"
@@ -9,6 +10,24 @@ import (
 	"github.com/lashajini/mind-palace/pkg/rpc/loggers"
 	"github.com/lashajini/mind-palace/pkg/storage/database"
 )
+
+type Summary struct {
+	ID        uuid.UUID
+	MemoryID  uuid.UUID
+	Text      string
+	CreatedAt int64
+	UpdatedAt int64
+}
+
+func (s Summary) String() string {
+	return fmt.Sprintf("Summary{\n\tID: %s,\n\tMemoryID: %s,\n\tText: %s,\n\tCreatedAt: %d,\n\tUpdatedAt: %d\n}",
+		s.ID,
+		s.MemoryID,
+		s.Text,
+		s.CreatedAt,
+		s.UpdatedAt,
+	)
+}
 
 var summaryColumns = []string{
 	"id",

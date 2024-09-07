@@ -4,12 +4,12 @@ from concurrent import futures
 
 from pkg.rpc import config
 from pkg.rpc.services.vdb.service import VDBService
-from pkg.rpc.services.vdb.vdb import Milvus
+from pkg.rpc.services.vdb.vdb import VDB
 from pkg.rpc.loggers.vdb import log
 
 import pkg.rpc.gen.VDB_pb2_grpc as vdbService
 
-client = Milvus(
+client = VDB(
     host=config.VDB_HOST,
     port=config.VDB_PORT,
     log=log,

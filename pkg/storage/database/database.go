@@ -14,10 +14,25 @@ import (
 
 const RETRY_COUNT = 3
 
+type SQLRows interface {
+	Close() error
+	ColumnTypes() ([]*sql.ColumnType, error)
+	Columns() ([]string, error)
+	Err() error
+	NextResultSet() bool
+	Next() bool
+	Scan(dest ...any) error
+}
+
+type DB interface {
+	Query(query string, args ...interface{}) (SQLRows, error)
+	CurrentSchema() string
+}
+
 type MindPalaceDB struct {
 	db               *sql.DB
 	ConnectionString string
-	CurrentSchema    string
+	currentSchema    string
 	cfg              *common.Config
 }
 
@@ -34,7 +49,7 @@ func InitDB(cfg *common.Config) *MindPalaceDB {
 		db:               db,
 		ConnectionString: connStr,
 		cfg:              cfg,
-		CurrentSchema:    cfg.DB_DEFAULT_NAMESPACE,
+		currentSchema:    cfg.DB_DEFAULT_NAMESPACE,
 	}
 
 	if err := m.Ping(ctx); err != nil {
@@ -64,6 +79,18 @@ func (m *MindPalaceDB) Ping(ctx context.Context) error {
 
 func (m *MindPalaceDB) DB() *sql.DB {
 	return m.db
+}
+
+func (m *MindPalaceDB) Query(query string, args ...any) (SQLRows, error) {
+	return m.DB().Query(query, args...)
+}
+
+func (m *MindPalaceDB) CurrentSchema() string {
+	return m.currentSchema
+}
+
+func (m *MindPalaceDB) Close() error {
+	return m.db.Close()
 }
 
 func (m *MindPalaceDB) ListMPSchemas() ([]string, error) {
@@ -106,7 +133,7 @@ func (m *MindPalaceDB) CreateSchema(user string) (string, error) {
 }
 
 func (m *MindPalaceDB) SetSchema(schema string) {
-	m.CurrentSchema = schema
+	m.currentSchema = schema
 }
 
 func (m *MindPalaceDB) ConstructSchema(user string) string {

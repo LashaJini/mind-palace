@@ -21,18 +21,21 @@ ner_model_name = "dslim/bert-base-NER"
 class KeywordsAddon(Addon):
     _parser: KeywordsParser
     _output_model: Keywords
+    _prompt_variables: dict
 
     def __init__(self, verbose=False, **kwargs):
         super().__init__(**kwargs)
 
         self._parser = KeywordsParser(verbose=verbose)
         self._output_model = Keywords()
+        self._prompt_variables = {}
 
     def prepare_input(self, user_input: str):
         chunks = self.semantic_chunks(user_input)
 
         self._output_model.chunks = chunks
         self._parser.chunks = chunks
+        self._prompt_variables["total_chunks"] = len(chunks)
 
         return self
 
@@ -40,7 +43,10 @@ class KeywordsAddon(Addon):
         log.debug(f"Total Chunks {len(self._output_model.chunks)}")
 
         result = "\n\n".join(
-            ["<CHUNK>" + chunk + "</CHUNK>" for chunk in self._output_model.chunks]
+            [
+                f"<CHUNK {i+1}>" + chunk.strip() + f"\n</CHUNK {i+1}>"
+                for i, chunk in enumerate(self._output_model.chunks)
+            ]
         )
         return result
 
@@ -97,9 +103,22 @@ class KeywordsAddon(Addon):
                 self.ner_join_words(possible_entities, ner_keywords)
 
                 unique_keywords = list(set(ner_keywords + list(llm_keywords)))
+
+                # llm sometimes generates way too many (duplicated) keyword sets.
+                # If length of keyword sets is greater than total chunks, we take
+                # first len(chunks) keyword sets. In this case, keywords may or may
+                # not exist in corresponding chunk. This forces us to redo the
+                # uniqueness check.
+                #
+                # issue may be related to token limit and/or context window size
+                unique_existing_keywords = []
+                for keyword in unique_keywords:
+                    if keyword in text.lower():
+                        unique_existing_keywords.append(keyword)
+
                 keywords_chunk.CopyFrom(
                     pbPalace.KeywordsResponse.KeywordChunk(
-                        keywords=unique_keywords, chunk=text
+                        keywords=unique_existing_keywords, chunk=text
                     )
                 )
 

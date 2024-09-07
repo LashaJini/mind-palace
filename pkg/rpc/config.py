@@ -8,6 +8,8 @@ MP_ENV = mp_env
 VDB_HOST = os.getenv("VDB_HOST", "localhost")
 VDB_PORT = int(os.getenv("VDB_PORT", 19530))
 VDB_NAME = os.getenv("VDB_NAME", "_mind_palace_dev")
+VDB_SEARCH_LIMIT = int(os.getenv("VDB_SEARCH_LIMIT", 8))
+
 PALACE_GRPC_SERVER_PORT = int(os.getenv("PALACE_GRPC_SERVER_PORT", 50051))
 VDB_GRPC_SERVER_PORT = int(os.getenv("VDB_GRPC_SERVER_PORT", 50052))
 LOG_GRPC_SERVER_PORT = int(os.getenv("LOG_GRPC_SERVER_PORT", 50053))

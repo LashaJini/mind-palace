@@ -48,7 +48,15 @@ class Keywords(CustomBaseModel):
     def to_addon_result(self) -> pbPalace.AddonResult:
         result: List[pbPalace.KeywordsResponse.KeywordChunk] = []
 
+        if len(self.keywords) > len(self.chunks):
+            # sometimes llm generates extra keyword sets :shrugging:
+            self.keywords = self.keywords[: len(self.chunks)]
+            log.warning("removed extra set of keywords")
+
         if len(self.keywords) != len(self.chunks):
+            log.warning(
+                f"keywords length: {len(self.keywords)} chunks length: {len(self.chunks)}"
+            )
             raise ValueError("Keywords and chunks must be the same length")
 
         for keywords, chunk in zip(self.keywords, self.chunks):
@@ -74,7 +82,9 @@ class KeywordsParser(OutputParser):
         format_start = KeywordsPrompts.format_start
         format_end = KeywordsPrompts.format_end
         group_name = "keywords"
-        pattern = rf"{format_start}\s*(?P<{group_name}>.*?)\s*{format_end}"
+        pattern = (
+            rf"{format_start}\s*(<CHUNK\s+\d+>\s*)?(?P<{group_name}>.*?)\s*{format_end}"
+        )
 
         super().__init__(
             format_start=format_start,

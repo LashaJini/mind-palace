@@ -20,7 +20,7 @@ import (
 
 func Add(ctx context.Context, file string) error {
 	cfg := common.NewConfig()
-	currentUser, err := getCurrentUser()
+	currentUser, err := common.CurrentUser()
 	if err != nil {
 		return mperrors.On(err).Wrap("failed to get current user")
 	}
@@ -112,22 +112,6 @@ func validateFile(file string) error {
 	}
 
 	return nil
-}
-
-func getCurrentUser() (string, error) {
-	ctx := context.Background()
-	currentUser, err := common.CurrentUser()
-	if err != nil {
-		return "", mperrors.On(err).Wrap("failed to get current user")
-	}
-
-	if currentUser == "" {
-		msg := "there are no users available. Create one by using: mind-palace user --new <name>"
-		return "", mperrors.Onf(msg)
-	}
-
-	loggers.Log.Info(ctx, "current user '%s'", currentUser)
-	return currentUser, nil
 }
 
 func recoverAdd(ctx context.Context, dst string, cancel context.CancelFunc) {

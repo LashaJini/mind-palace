@@ -7,68 +7,70 @@ POSTGRES_PASSWORD=$DB_PASS
 # POSTGRESQL_URL="postgres://$DB_USER:$POSTGRES_PASSWORD@localhost:$DB_PORT/$DB_NAME?sslmode=disable"
 VERSION=$DB_VERSION
 
+POSTGRES_DATA_DIR="$HOME/.mind-palace/$POSTGRES_DATA_DIR"
+
 start() {
-	mkdir $MIGRATIONS_DIR $POSTGRES_DATA_DIR -p
+  mkdir $MIGRATIONS_DIR $POSTGRES_DATA_DIR -p
 
-	# https://hub.docker.com/_/postgres
-	docker run --rm -d \
-		--name $CONTAINER_NAME \
-		-p $DB_PORT:$DB_PORT \
-		-e POSTGRES_PASSWORD=$POSTGRES_PASSWORD \
-		-e POSTGRES_DB=$DB_NAME \
-		-e POSTGRES_USER=$DB_USER \
-		-v ./$POSTGRES_DATA_DIR:/var/lib/postgresql/data \
-		postgres:$VERSION \
-		-c port=$DB_PORT 1>/dev/null
+  # https://hub.docker.com/_/postgres
+  docker run --rm -d \
+    --name $CONTAINER_NAME \
+    -p $DB_PORT:$DB_PORT \
+    -e POSTGRES_PASSWORD=$POSTGRES_PASSWORD \
+    -e POSTGRES_DB=$DB_NAME \
+    -e POSTGRES_USER=$DB_USER \
+    -v ./$POSTGRES_DATA_DIR:/var/lib/postgresql/data \
+    postgres:$VERSION \
+    -c port=$DB_PORT 1>/dev/null
 
-	if [ $? -ne 0 ]; then
-		echo "Start failed."
-		exit 1
-	fi
+  if [ $? -ne 0 ]; then
+    echo "Start failed."
+    exit 1
+  fi
 
-	echo "Success"
+  echo "Success"
 }
 
 stop() {
-	docker stop $CONTAINER_NAME 1>/dev/null
+  docker stop $CONTAINER_NAME 1>/dev/null
 
-	if [ $? -ne 0 ]; then
-		echo "Stop failed."
-		exit 1
-	fi
-	echo "Success"
+  if [ $? -ne 0 ]; then
+    echo "Stop failed."
+    exit 1
+  fi
+  echo "Success"
 }
 
 cli() {
-	docker exec -it $CONTAINER_NAME \
-		bash -c "echo 'set -o vi'>~/.bashrc && \
+  docker exec -it $CONTAINER_NAME \
+    bash -c "echo 'set -o vi'>~/.bashrc && \
 	             echo 'set editing-mode vi'>~/.inputrc && \
 	             psql -U $DB_USER -p $DB_PORT -d $DB_NAME"
 }
 
 drop() {
-	docker exec $CONTAINER_NAME \
-		bash -c "psql -U $DB_USER -p $DB_PORT -d postgres -c 'drop database $DB_NAME'" &&
-		sudo rm -rf $POSTGRES_DATA_DIR
+  docker exec $CONTAINER_NAME \
+    bash -c "psql -U $DB_USER -p $DB_PORT -d postgres -c 'drop database $DB_NAME'" &&
+    sudo rm -rf $POSTGRES_DATA_DIR
 }
 
 case $1 in
 start)
-	start
-	;;
+  start
+  ;;
 stop)
-	stop
-	;;
+  stop
+  ;;
 cli)
-	cli
-	;;
+  cli
+  ;;
 first)
-	first
-	;;
+  first
+  ;;
 drop)
-	drop
-	;;
+  drop
+  ;;
 *)
-	echo "please use bash postgres.sh start|stop|cli|first|drop"
-	;;
+  echo "please use bash postgres.sh start|stop|cli|first|drop"
+  ;;
 esac
