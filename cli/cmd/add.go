@@ -7,8 +7,8 @@ import (
 )
 
 var (
-	FILE    string
-	PREVIEW bool
+	ADD_FILE    string
+	ADD_PREVIEW bool
 )
 
 var addCmd = &cobra.Command{
@@ -20,11 +20,11 @@ var addCmd = &cobra.Command{
 
 func init() {
 	rootCmd.AddCommand(addCmd)
-	addCmd.Flags().StringVarP(&FILE, "file", "f", "", "file location")
+	addCmd.Flags().StringVarP(&ADD_FILE, "file", "f", "", "file location")
 
 	_ = addCmd.MarkFlagRequired("file")
 
-	addCmd.Flags().BoolVarP(&PREVIEW, "preview", "p", false, "preview result")
+	addCmd.Flags().BoolVarP(&ADD_PREVIEW, "preview", "p", false, "preview result")
 }
 
 func Add(cmd *cobra.Command, args []string) {

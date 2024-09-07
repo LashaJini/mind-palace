@@ -11,9 +11,9 @@ import (
 )
 
 var (
-	LIST               bool
-	ENABLE_ADDON_NAME  string
-	DISABLE_ADDON_NAME string
+	ADDONS_LIST               bool
+	ADDONS_ENABLE_ADDON_NAME  string
+	ADDONS_DISABLE_ADDON_NAME string
 )
 
 var addonsCmd = &cobra.Command{
@@ -25,24 +25,24 @@ var addonsCmd = &cobra.Command{
 
 func init() {
 	rootCmd.AddCommand(addonsCmd)
-	addonsCmd.Flags().BoolVarP(&LIST, "list", "l", false, "list available addons")
-	addonsCmd.Flags().StringVarP(&ENABLE_ADDON_NAME, "enable", "e", "", "enable addon <name>")
-	addonsCmd.Flags().StringVarP(&DISABLE_ADDON_NAME, "disable", "d", "", "disable addon <name>")
+	addonsCmd.Flags().BoolVarP(&ADDONS_LIST, "list", "l", false, "list available addons")
+	addonsCmd.Flags().StringVarP(&ADDONS_ENABLE_ADDON_NAME, "enable", "e", "", "enable addon <name>")
+	addonsCmd.Flags().StringVarP(&ADDONS_DISABLE_ADDON_NAME, "disable", "d", "", "disable addon <name>")
 }
 
 func Addons(cmd *cobra.Command, args []string) {
-	if LIST {
+	if ADDONS_LIST {
 		listAddons()
 		return
 	}
 
-	if ENABLE_ADDON_NAME != "" {
-		handleAddon(ENABLE_ADDON_NAME, true)
+	if ADDONS_ENABLE_ADDON_NAME != "" {
+		handleAddon(ADDONS_ENABLE_ADDON_NAME, true)
 		return
 	}
 
-	if DISABLE_ADDON_NAME != "" {
-		handleAddon(DISABLE_ADDON_NAME, false)
+	if ADDONS_DISABLE_ADDON_NAME != "" {
+		handleAddon(ADDONS_DISABLE_ADDON_NAME, false)
 		return
 	}
 }

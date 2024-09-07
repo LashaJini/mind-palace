@@ -31,27 +31,28 @@ class AddonService:
 
                 addons = request.addons
                 if addons.joined:
+                    joined_addons = JoinedAddons([name for name in addons.names])
+                    prepared_input = joined_addons.prepare_input(user_input=input)
+
                     instructions = []
-                    formats = []
-                    names = []
+                    formats: List[str] = []
                     for name in addons.names:
                         prompt = PromptsFactory.construct(name)
-                        joinable = prompt.joinable_template()
+                        joinable = prompt.joinable_template(
+                            **joined_addons.prompt_variables
+                        )
 
                         addon_instructions = joinable.instructions
                         addon_format = joinable.format
 
                         instructions.append(addon_instructions)
                         formats.append(addon_format)
-                        names.append(name)
 
                     result = (
-                        JoinedAddons(names)
-                        .prepare_input(user_input=input)
-                        .apply(
+                        prepared_input.apply(
                             llm=self.llm,
                             instructions=", ".join([s for s in instructions if s]),
-                            format="\n".join([s for s in formats if s]),
+                            format=".\n".join(["- " + s for s in formats if s]),
                             verbose=self.verbose,
                         )
                         .finalize(verbose=self.verbose)
@@ -68,7 +69,6 @@ class AddonService:
                     .apply(
                         llm=self.llm,
                         verbose=self.verbose,
-                        max_keywords=10,
                     )
                     .finalize(verbose=self.verbose)
                     .result()

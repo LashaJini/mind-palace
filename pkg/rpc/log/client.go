@@ -3,6 +3,7 @@ package log
 import (
 	"context"
 	"fmt"
+	"os"
 	"runtime"
 
 	"github.com/google/uuid"
@@ -86,14 +87,16 @@ func (c *Client) Error(ctx context.Context, err error, format string, v ...inter
 	return c.Service.Message(ctx, &request)
 }
 
-func (c *Client) Fatal(ctx context.Context, err error, format string, v ...interface{}) (*pb.Empty, error) {
+func (c *Client) Fatal(ctx context.Context, err error, format string, v ...interface{}) {
 	_format := format
 	if err != nil {
 		_format = fmt.Sprintf("%s: %s", err.Error(), _format)
 	}
 	request := c.request("fatal", uuid.Nil, 0, _format, v...)
 
-	return c.Service.Message(ctx, &request)
+	c.Service.Message(ctx, &request)
+
+	os.Exit(1)
 }
 
 func (c *Client) Info(ctx context.Context, format string, v ...interface{}) (*pb.Empty, error) {

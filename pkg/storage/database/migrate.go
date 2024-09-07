@@ -167,5 +167,9 @@ func migrationSteps(m *migrate.Migrate, steps int) error {
 		return nil
 	}
 
-	return mperrors.On(err).Wrap("migration steps failed")
+	if err != nil {
+		return mperrors.On(err).Wrap("migration steps failed")
+	}
+
+	return nil
 }

@@ -2,6 +2,7 @@ package models
 
 import (
 	"context"
+	"fmt"
 	"time"
 
 	"github.com/google/uuid"
@@ -12,10 +13,22 @@ import (
 
 type Chunk struct {
 	ID        uuid.UUID
+	MemoryID  uuid.UUID
 	Sequence  int
 	Chunk     string
 	CreatedAt int64
 	UpdatedAt int64
+}
+
+func (c Chunk) String() string {
+	return fmt.Sprintf("Chunk{\n\tID: %s,\n\tMemoryID: %s,\n\tSequence: %d,\n\tChunk: %s,\n\tCreatedAt: %d,\n\tUpdatedAt: %d\n}",
+		c.ID,
+		c.MemoryID,
+		c.Sequence,
+		c.Chunk,
+		c.CreatedAt,
+		c.UpdatedAt,
+	)
 }
 
 var chunkColumns = []string{

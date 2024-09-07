@@ -17,6 +17,7 @@ class JoinedAddons(Addon):
     _parser: JoinedParser
     _output_model: Joined
     _addons: dict[str, Addon]
+    _prompt_variables: dict
 
     def __init__(self, names: List[str], verbose=False, **kwargs):
         super().__init__(**kwargs)
@@ -29,10 +30,15 @@ class JoinedAddons(Addon):
             parsers=[addon.parser for addon in self._addons.values()], verbose=verbose
         )
         self._output_model = Joined()
+        self._prompt_variables = {}
 
     def prepare_input(self, user_input: str):
         for _, addon in self._addons.items():
             addon.prepare_input(user_input=user_input)
+            self._prompt_variables = {
+                **self._prompt_variables,
+                **addon._prompt_variables,
+            }
 
         return self
 
@@ -60,6 +66,7 @@ class JoinedAddons(Addon):
         prompt = JoinedPrompts().prompt(
             context_str=self.input(verbose),
             verbose=verbose,
+            **self._prompt_variables,
             **kwargs,
         )
         program = LLMTextCompletionProgram(
@@ -91,3 +98,7 @@ class JoinedAddons(Addon):
     @property
     def parser(self) -> JoinedParser:
         return self._parser
+
+    @property
+    def prompt_variables(self) -> dict:
+        return self._prompt_variables

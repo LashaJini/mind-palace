@@ -2,6 +2,7 @@ package models
 
 import (
 	"context"
+	"fmt"
 	"time"
 
 	"github.com/google/uuid"
@@ -15,6 +16,16 @@ type OriginalResource struct {
 	FilePath  string
 	CreatedAt int64
 	UpdatedAt int64
+}
+
+func (o OriginalResource) String() string {
+	return fmt.Sprintf("OriginalResource{\n\tID: %s,\n\tMemoryID: %s,\n\tFilePath: %s,\n\tCreatedAt: %d,\n\tUpdatedAt: %d\n}",
+		o.ID,
+		o.MemoryID,
+		o.FilePath,
+		o.CreatedAt,
+		o.UpdatedAt,
+	)
 }
 
 func NewResource(id uuid.UUID, memoryID uuid.UUID, filepath string) *OriginalResource {

@@ -10,6 +10,10 @@ const (
 )
 
 const VDB_ORIGINAL_RESOURCE_COLLECTION_NAME = "original"
+const (
+	ROW_TYPE_WHOLE = "whole"
+	ROW_TYPE_CHUNK = "chunk"
+)
 
 const (
 	PROJECT_ROOT = "PROJECT_ROOT"

@@ -681,6 +681,23 @@ test-full = ["adlfs", "aiohttp (!=4.0.0a0,!=4.0.0a1)", "cloudpickle", "dask", "d
 tqdm = ["tqdm"]
 
 [[package]]
+name = "googleapis-common-protos"
+version = "1.65.0"
+description = "Common protobufs used in Google APIs"
+optional = false
+python-versions = ">=3.7"
+files = [
+    {file = "googleapis_common_protos-1.65.0-py2.py3-none-any.whl", hash = "sha256:2972e6c496f435b92590fd54045060867f3fe9be2c82ab148fc8885035479a63"},
+    {file = "googleapis_common_protos-1.65.0.tar.gz", hash = "sha256:334a29d07cddc3aa01dee4988f9afd9b2916ee2ff49d6b757155dc0d197852c0"},
+]
+
+[package.dependencies]
+protobuf = ">=3.20.2,<4.21.1 || >4.21.1,<4.21.2 || >4.21.2,<4.21.3 || >4.21.3,<4.21.4 || >4.21.4,<4.21.5 || >4.21.5,<6.0.0.dev0"
+
+[package.extras]
+grpc = ["grpcio (>=1.44.0,<2.0.0.dev0)"]
+
+[[package]]
 name = "greenlet"
 version = "3.0.3"
 description = "Lightweight in-process concurrent programming"
@@ -808,6 +825,22 @@ files = [
 
 [package.extras]
 protobuf = ["grpcio-tools (>=1.63.0)"]
+
+[[package]]
+name = "grpcio-status"
+version = "1.63.0"
+description = "Status proto mapping for gRPC"
+optional = false
+python-versions = ">=3.8"
+files = [
+    {file = "grpcio_status-1.63.0-py3-none-any.whl", hash = "sha256:127e7c53300a86b224261daf0a7d583d5a2805714315e1dc006889f05bf472a5"},
+    {file = "grpcio_status-1.63.0.tar.gz", hash = "sha256:ebbf767d2f05960c3ebb0d74ba2212c90447e1bff8efce978186463f655a8e46"},
+]
+
+[package.dependencies]
+googleapis-common-protos = ">=1.5.5"
+grpcio = ">=1.63.0"
+protobuf = ">=5.26.1,<6.0dev"
 
 [[package]]
 name = "grpcio-tools"
@@ -3843,4 +3876,4 @@ multidict = ">=4.0"
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.9"
-content-hash = "74e297d938fe5b400b0d327bc77da8e3d92ba1e89065094be76812703b968761"
+content-hash = "0a2ab166c376c0f9141022e95f3d73bd51abb70f644afe860590fa0a5d4151a1"

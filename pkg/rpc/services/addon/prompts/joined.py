@@ -15,7 +15,8 @@ DEFAULT_JOINED_TMPL = (
     "{context_str}\n"
     "\n"
     "\n"
-    "{format}"
+    "{format}\n\n"
+    "Output formats should not overlap with each other.\n"
 )
 
 
@@ -29,11 +30,8 @@ class JoinedPrompts(Prompts):
         return llm.token_size(text=self.tmpl)
 
     def prompt(self, context_str: str, verbose=False, **kwargs):
-        if "instructions" not in kwargs:
-            kwargs["instructions"] = ""
-
-        if "format" not in kwargs:
-            kwargs["format"] = ""
+        kwargs["instructions"] = kwargs.get("instructions", "")
+        kwargs["format"] = kwargs.get("format", "")
 
         result = self.standalone_template().format(
             context_str=context_str, verbose=verbose, **kwargs

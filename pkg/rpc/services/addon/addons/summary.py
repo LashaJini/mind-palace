@@ -13,6 +13,7 @@ class SummaryAddon(Addon):
     _parser: SummaryParser
     _output_model: Summary
     _input: str
+    _prompt_variables: dict
 
     def __init__(self, verbose=False, **kwargs):
         super().__init__(**kwargs)
@@ -20,6 +21,7 @@ class SummaryAddon(Addon):
         self._parser = SummaryParser(verbose=verbose)
         self._output_model = Summary()
         self._input = ""
+        self._prompt_variables = {}
 
     def prepare_input(self, user_input: str):
         self._input = user_input

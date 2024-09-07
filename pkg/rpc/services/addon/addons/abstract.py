@@ -11,6 +11,7 @@ class Addon(ABC):
     _parser: Any
     _output_model: Any
     _result: pbPalace.AddonResult | None
+    _prompt_variables: dict
 
     def __init__(self, **kwargs):
         self._result = None

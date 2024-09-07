@@ -24,20 +24,20 @@ var migrateCmd = &cobra.Command{
 }
 
 var (
-	UP      int
-	DOWN    int
-	VERSION bool
-	FORCE   int
-	CREATE  string
+	MIGRATE_UP      int
+	MIGRATE_DOWN    int
+	MIGRATE_VERSION bool
+	MIGRATE_FORCE   int
+	MIGRATE_CREATE  string
 )
 
 func init() {
 	rootCmd.AddCommand(migrateCmd)
-	migrateCmd.PersistentFlags().IntVarP(&UP, "up", "u", 1, "migrate up by <n>. Setting to 0 migrates all")
-	migrateCmd.PersistentFlags().IntVarP(&DOWN, "down", "d", 1, "migrate down by <n>")
-	migrateCmd.Flags().BoolVarP(&VERSION, "version", "v", false, "last migration version")
-	migrateCmd.PersistentFlags().IntVarP(&FORCE, "force", "f", 1, "set migration version. Don't run migrations")
-	migrateCmd.Flags().StringVarP(&CREATE, "create", "c", "", "create migration")
+	migrateCmd.PersistentFlags().IntVarP(&MIGRATE_UP, "up", "u", 1, "migrate up by <n>. Setting to 0 migrates all")
+	migrateCmd.PersistentFlags().IntVarP(&MIGRATE_DOWN, "down", "d", 1, "migrate down by <n>")
+	migrateCmd.Flags().BoolVarP(&MIGRATE_VERSION, "version", "v", false, "last migration version")
+	migrateCmd.PersistentFlags().IntVarP(&MIGRATE_FORCE, "force", "f", 1, "set migration version. Don't run migrations")
+	migrateCmd.Flags().StringVarP(&MIGRATE_CREATE, "create", "c", "", "create migration")
 
 	migrateCmd.MarkFlagsOneRequired("up", "down", "version", "force", "create")
 	migrateCmd.MarkFlagsMutuallyExclusive("up", "down", "version", "force", "create")
@@ -48,7 +48,7 @@ func Migrate(cmd *cobra.Command, args []string) {
 	m, err := migrate.New("file://"+cfg.MIGRATIONS_DIR, cfg.DBAddr())
 	mperrors.On(err).Exit()
 
-	if VERSION {
+	if MIGRATE_VERSION {
 		version, dirty, err := m.Version()
 		mperrors.On(err).ExitWithMsgf("version: %d dirty: %t", version, dirty)
 
@@ -57,14 +57,14 @@ func Migrate(cmd *cobra.Command, args []string) {
 	}
 
 	if cmd.Flags().Changed("force") {
-		err := m.Force(FORCE)
+		err := m.Force(MIGRATE_FORCE)
 		mperrors.On(err).Exit()
 		return
 	}
 
 	if cmd.Flags().Changed("create") {
 		timestamp := time.Now().Format("20060102150405")
-		fileName := fmt.Sprintf("%s_%s", timestamp, CREATE)
+		fileName := fmt.Sprintf("%s_%s", timestamp, MIGRATE_CREATE)
 		upFilePath := filepath.Join(cfg.MIGRATIONS_DIR, fmt.Sprintf("%s.up.sql", fileName))
 		downFilePath := filepath.Join(cfg.MIGRATIONS_DIR, fmt.Sprintf("%s.down.sql", fileName))
 
@@ -94,12 +94,12 @@ func Migrate(cmd *cobra.Command, args []string) {
 	if cmd.Flags().Changed("down") {
 		inMemorySource = database.Down(cfg, sqlTemplates)
 
-		steps = -DOWN
+		steps = -MIGRATE_DOWN
 	} else {
 		var ups int
 		inMemorySource, ups = database.Up(cfg, sqlTemplates)
 
-		steps = UP
+		steps = MIGRATE_UP
 		if steps == 0 {
 			steps = ups
 		}
